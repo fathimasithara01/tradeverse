@@ -1,0 +1,293 @@
+ <div id="content">
+                    <div class="container-fluid">
+                        <h2 class="mb-4">Dashboard Overview</h2>
+                        <div class="row">
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card">
+                                    <div class="icon bg-purple"><i class="fas fa-users"></i></div>
+                                    <div class="info">
+                                        <div class="title">Total Customers</div>
+                                        <div class="value" id="total-customers">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card">
+                                    <div class="icon bg-teal"><i class="fas fa-box-open"></i></div>
+                                    <div class="info">
+                                        <div class="title">Total Traders</div>
+                                        <div class="value" id="total-traders">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card">
+                                    <div class="icon bg-orange"><i class="fas fa-shopping-cart"></i></div>
+                                    <div class="info">
+                                        <div class="title">Total Products</div>
+                                        <div class="value" id="total-products">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6 mb-4">
+                                <div class="card stat-card">
+                                    <div class="icon bg-blue"><i class="fas fa-wallet"></i></div>
+                                    <div class="info">
+                                        <div class="title">Total Orders</div>
+                                        <div class="value" id="total-orders">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Your Charts and other rows can remain here -->
+                    </div>
+                </div>
+
+
+
+                document.addEventListener('DOMContentLoaded', function () {
+            fetch('/admin/dashboard/stats')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('total-customers').textContent = data.CustomerCount;
+                    document.getElementById('total-traders').textContent = data.TraderCount;
+                    document.getElementById('total-products').textContent = data.ProductCount;
+                    document.getElementById('total-orders').textContent = data.OrderCount;
+                })
+                .catch(error => {
+                    console.error('There has been a problem with your fetch operation:', error);
+                });
+        });
+
+
+          // 1. Monthly Orders Chart (Bar)
+        const monthlyOrdersCtx = document.getElementById('monthlyOrdersChart').getContext('2d');
+        new Chart(monthlyOrdersCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Orders',
+                    data: [65, 59, 80, 81, 56, 55, 72],
+                    backgroundColor: 'rgba(2, 117, 216, 0.7)',
+                    borderColor: 'rgba(2, 117, 216, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+
+         // --- Chart Implementations ---
+
+        // 1. Monthly Orders Chart (Bar)
+        const monthlyOrdersCtx = document.getElementById('monthlyOrdersChart').getContext('2d');
+        new Chart(monthlyOrdersCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Orders',
+                    data: [65, 59, 80, 81, 56, 55, 72],
+                    backgroundColor: 'rgba(2, 117, 216, 0.7)',
+                    borderColor: 'rgba(2, 117, 216, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // 2. Product Categories Chart (Doughnut)
+        const productCategoriesCtx = document.getElementById('productCategoriesChart').getContext('2d');
+        new Chart(productCategoriesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Mobiles', 'Fashion', 'Electronics', 'Home', 'Fitness', 'Beauty'],
+                datasets: [{
+                    label: 'Categories',
+                    data: [300, 150, 100, 80, 50, 120],
+                    backgroundColor: [
+                        '#0d6efd',
+                        '#6f42c1',
+                        '#20c997',
+                        '#fd7e14',
+                        '#dc3545',
+                        '#ffc107'
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+
+
+
+         <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>TradeVerse <span class="text-muted" style="font-weight: 400;">
+                        <h4>ONLINE</h4>
+                    </span></h3>
+            </div>
+
+            <ul class="list-unstyled components">
+                <li><a href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li class="active">
+                    <a href="#usersSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                        <i class="fas fa-users"></i> Users & Permissions
+                    </a>
+                    <ul class="collapse list-unstyled show" id="usersSubmenu">
+                        <li class="active"><a href="/admin/users">User</a></li>
+                        <li><a href="#">Roles</a></li>
+                        <li><a href="#">Role Resources</a></li>
+                        <li><a href="#">Assign Role to Users</a></li>
+                    </ul>
+                </li>
+                <li><a href="#"><i class="fas fa-tags"></i> Categories</a></li>
+                <li><a href="#"><i class="fas fa-box"></i> Product</a></li>
+                <li><a href="#"><i class="fas fa-receipt"></i> Order</a></li>
+                <li>
+                    <a href="#customersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-users"></i> Customers
+                    </a>
+                    <ul class="collapse list-unstyled" id="customersSubmenu">
+                        <li><a href="#">customers</a></li>
+                        <li><a href="#">Customers Group</a></li>
+                        <li><a href="#">Interests</a></li>
+                    </ul>
+                </li>
+                <li><a href="#"><i class="fas fa-home"></i> Home Collections</a></li>
+                <li><a href="#"><i class="fas fa-cogs"></i> Attributes</a></li>
+                <li><a href="#"><i class="fas fa-star"></i> General</a></li>
+                <li><a href="#"><i class="fas fa-file-alt"></i> CMS</a></li>
+                <li><a href="#"><i class="fas fa-prescription"></i> Prescription</a></li>
+                <li><a href="#"><i class="fas fa-bullhorn"></i> Marketing</a></li>
+                <li><a href="#"><i class="fas fa-shipping-fast"></i> Shipping</a></li>
+                <li><a href="#"><i class="fas fa-credit-card"></i> Payment</a></li>
+                <li><a href="#"><i class="fas fa-globe"></i> Web Configuration</a></li>
+                <li><a href="#"><i class="fas fa-envelope"></i> Newsletter</a></li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <div class="container-fluid">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Manage Users</h4>
+                        <button class="btn btn-primary"><i class="fas fa-plus"></i> Add User</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>User Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-table-body">
+                                    <!-- User data will be inserted here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to fetch users and populate the table
+            function fetchAndDisplayUsers() {
+                fetch('/admin/api/users')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(users => {
+                        const tableBody = document.getElementById('user-table-body');
+                        tableBody.innerHTML = ''; // Clear existing rows
+
+                        if (!users || users.length === 0) {
+                             tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No users found.</td></tr>';
+                             return;
+                        }
+
+                        users.forEach(user => {
+                            const row = document.createElement('tr');
+                            
+                            // Note: Assuming your 'user' object from the API has properties like 'name' and 'email'.
+                            // Adjust `user.name` and `user.email` if your Go model struct has different field names (e.g., `FirstName`, `LastName`).
+                            row.innerHTML = `
+                                <td>${user.name || 'N/A'}</td>
+                                <td>${user.email || 'N/A'}</td>
+                                <td>Normal User</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" title="Edit"><i class="fas fa-pencil-alt"></i></button>
+                                    <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching users:', error);
+                        const tableBody = document.getElementById('user-table-body');
+                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load user data.</td></tr>';
+                    });
+            }
+
+            // Initial load of users
+            fetchAndDisplayUsers();
+        });
+    </script>
+</body>
+
+</html>

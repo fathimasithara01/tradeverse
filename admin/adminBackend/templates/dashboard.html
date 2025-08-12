@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Overview</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts (for a similar look) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-bg: #ffffff;
+            --main-bg: #f8f9fa;
+            --sidebar-link-color: #5f6368;
+            --sidebar-active-bg: #e8f0fe;
+            --sidebar-active-link-color: #1967d2;
+            --brand-color: #1A73E8;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --card-border-radius: 12px;
+        }
+
+        body {
+            background-color: var(--main-bg);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Styles (Consistent with other pages) --- */
+        #sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--sidebar-bg);
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: var(--sidebar-bg);
+            text-align: center;
+        }
+
+        .sidebar-header h3 {
+            color: var(--brand-color);
+            font-weight: 700;
+        }
+
+        #sidebar .list-unstyled {
+            padding: 20px 0;
+            border-top: 1px solid #dee2e6;
+        }
+
+        #sidebar ul li a {
+            padding: 12px 24px;
+            font-size: 1rem;
+            display: block;
+            color: var(--sidebar-link-color);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        #sidebar ul li a:hover {
+            background: var(--main-bg);
+            color: #000;
+        }
+
+        #sidebar ul li.active>a,
+        a[aria-expanded="true"] {
+            background: var(--sidebar-active-bg);
+            color: var(--sidebar-active-link-color);
+            font-weight: 500;
+            border-left: 4px solid var(--sidebar-active-link-color);
+        }
+
+        #sidebar ul li a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        a[data-bs-toggle="collapse"] {
+            position: relative;
+        }
+
+        .dropdown-toggle::after {
+            display: block;
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+        }
+
+        /* --- Main Content Styles --- */
+        #content {
+            width: 100%;
+            padding: 2rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Stat Card Styles */
+        .stat-card {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            padding: 1rem;
+            border-radius: 50%;
+            margin-right: 1rem;
+            color: #fff;
+        }
+
+        .stat-card .icon.bg-purple {
+            background-color: #6f42c1;
+        }
+
+        .stat-card .icon.bg-teal {
+            background-color: #20c997;
+        }
+
+        .stat-card .icon.bg-orange {
+            background-color: #fd7e14;
+        }
+
+        .stat-card .icon.bg-blue {
+            background-color: #0d6efd;
+        }
+
+        .stat-card .info .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .stat-card .info .title {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 1rem 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>TradeVerse <span class="text-muted" style="font-weight: 400;">
+                        <h4>ONLINE</h4>
+                    </span></h3>
+            </div>
+
+            <ul class="list-unstyled components">
+                <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li>
+                    <a href="#usersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-users"></i> Users & Permissions
+                    </a>
+                    <ul class="collapse list-unstyled" id="usersSubmenu">
+                    <li class="active"><a href="/admin/users">User</a></li>
+                        <li><a href="#">Roles</a></li>
+                        <li><a href="#">Role Resources</a></li>
+                        <li><a href="#">Assign Role to Users</a></li>
+                    </ul>
+                </li>
+                <li><a href="#"><i class="fas fa-tags"></i> Categories</a></li>
+                <li><a href="#"><i class="fas fa-box"></i> Product</a></li>
+                <li><a href="#"><i class="fas fa-receipt"></i> Order</a></li>
+                <li>
+                    <a href="#customersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-users"></i> Customers
+                    </a>
+                    <ul class="collapse list-unstyled" id="customersSubmenu">
+                        <li><a href="#">customers</a></li>
+                        <li><a href="#">Customers Group</a></li>
+                        <li><a href="#">Interests</a></li>
+                    </ul>
+                </li>
+                <li><a href="#"><i class="fas fa-home"></i> Home Collections</a></li>
+                <li><a href="#"><i class="fas fa-cogs"></i> Attributes</a></li>
+                <li><a href="#"><i class="fas fa-star"></i> General</a></li>
+                <li><a href="#"><i class="fas fa-file-alt"></i> CMS</a></li>
+                <li><a href="#"><i class="fas fa-prescription"></i> Prescription</a></li>
+                <li><a href="#"><i class="fas fa-bullhorn"></i> Marketing</a></li>
+                <li><a href="#"><i class="fas fa-shipping-fast"></i> Shipping</a></li>
+                <li><a href="#"><i class="fas fa-credit-card"></i> Payment</a></li>
+                <li><a href="#"><i class="fas fa-globe"></i> Web Configuration</a></li>
+                <li><a href="#"><i class="fas fa-envelope"></i> Newsletter</a></li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <div class="container-fluid">
+                <h2 class="mb-4">Dashboard Overview</h2>
+                <div class="row">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="icon bg-purple"><i class="fas fa-users"></i></div>
+                            <div class="info">
+                                <div class="title">Total Customers</div>
+                                <div class="value" id="total-customers">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="icon bg-teal"><i class="fas fa-box-open"></i></div>
+                            <div class="info">
+                                <div class="title">Total Traders</div>
+                                <div class="value" id="total-traders">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="icon bg-orange"><i class="fas fa-shopping-cart"></i></div>
+                            <div class="info">
+                                <div class="title">Total Products</div>
+                                <div class="value" id="total-products">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="icon bg-blue"><i class="fas fa-wallet"></i></div>
+                            <div class="info">
+                                <div class="title">Total Orders</div>
+                                <div class="value" id="total-orders">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Monthly Orders</h5>
+                                <div class="dropdown">
+                                    <select class="form-select form-select-sm">
+                                        <option selected>2025</option>
+                                        <option value="1">2024</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="monthlyOrdersChart" height="120"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Product Categories</h5>
+                            </div>
+                            <div class="card-body d-flex justify-content-center align-items-center">
+                                <canvas id="productCategoriesChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Cards Row -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Overall Sales Value</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- You can place more detailed sales data here -->
+                                <p class="card-text">Current performing customers...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Orders Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- You can place a small chart or list of order statuses -->
+                                <p class="card-text">Current order distribution...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // --- 1. DYNAMIC STAT CARDS (with auto-refresh) ---
+            function fetchStatsCards() {
+                fetch('/admin/dashboard/stats')
+                    .then(response => response.ok ? response.json() : Promise.reject('Failed to load stats'))
+                    .then(data => {
+                        document.getElementById('total-customers').textContent = data.CustomerCount || 0;
+                        document.getElementById('total-traders').textContent = data.TraderCount || 0;
+                        document.getElementById('total-products').textContent = data.ProductCount || 0;
+                        document.getElementById('total-orders').textContent = data.OrderCount || 0;
+                    })
+                    .catch(error => console.error('Error fetching stat cards:', error));
+            }
+
+            fetchStatsCards(); // Load once immediately
+            setInterval(fetchStatsCards, 5000); // Refresh every 5 seconds
+
+
+            // --- 2. DYNAMIC MONTHLY ORDERS CHART ---
+            const yearSelector = document.getElementById('year-selector'); // Add id="year-selector" to your <select> tag!
+            const monthlyOrdersCtx = document.getElementById('monthlyOrdersChart').getContext('2d');
+
+            // Create the chart with an initial empty state.
+            const monthlyOrdersChart = new Chart(monthlyOrdersCtx, {
+                type: 'bar',
+                data: {
+                    labels: [], // Will be filled by API
+                    datasets: [{
+                        label: 'Orders',
+                        data: [], // Will be filled by API
+                        backgroundColor: 'rgba(2, 117, 216, 0.7)',
+                        borderColor: 'rgba(2, 117, 216, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // This function fetches data and updates the chart.
+            function updateMonthlyChart(year) {
+                fetch(`/admin/api/monthly-orders?year=${year}`)
+                    .then(response => response.ok ? response.json() : Promise.reject('Failed to load chart data'))
+                    .then(chartData => {
+                        // Update the chart object with the new data from the API
+                        monthlyOrdersChart.data.labels = chartData.labels;
+                        monthlyOrdersChart.data.datasets[0].data = chartData.data;
+                        monthlyOrdersChart.update(); // Redraw the chart
+                    })
+                    .catch(error => console.error('Error fetching chart data:', error));
+            }
+
+            // Add an event listener to the dropdown. When it changes, update the chart.
+            yearSelector.addEventListener('change', function () {
+                const selectedYear = this.value;
+                updateMonthlyChart(selectedYear);
+            });
+
+            // Load the chart data for the initially selected year when the page first loads.
+            updateMonthlyChart(yearSelector.value);
+
+
+            // --- 3. DOUGHNUT CHART (can also be made dynamic later) ---
+            // (Your existing doughnut chart code can stay here)
+            const productCategoriesCtx = document.getElementById('productCategoriesChart').getContext('2d');
+            new Chart(productCategoriesCtx, {
+                type: 'doughnut',
+                data: { /* ... static data ... */ }
+            });
+        });
+
+        // --- Fetch and Display Dashboard Stats ---
+        document.addEventListener('DOMContentLoaded', function () {
+            // This function fetches the latest stats from your backend.
+            function fetchDashboardStats() {
+                fetch('/admin/dashboard/stats')
+                    .then(response => {
+                        if (!response.ok) { throw new Error('Network response was not ok'); }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Stats updated:', data); // For debugging
+                        // Update the HTML. The keys (e.g., data.CustomerCount) are case-sensitive and must match the Go JSON tags.
+                        document.getElementById('total-customers').textContent = data.CustomerCount || 0;
+                        document.getElementById('total-traders').textContent = data.TraderCount || 0;
+                        document.getElementById('total-products').textContent = data.ProductCount || 0;
+                        document.getElementById('total-orders').textContent = data.OrderCount || 0;
+                    })
+                    .catch(error => {
+                        console.error('Failed to fetch dashboard stats:', error);
+                    });
+            }
+            // 1. Load the stats as soon as the page is ready.
+            fetchDashboardStats();
+            // 2. Then, set an interval to automatically call the function again every 5 seconds (5000 milliseconds).
+            setInterval(fetchDashboardStats, 5000);
+        });
+    </script>
+
+</body>
+
+</html>

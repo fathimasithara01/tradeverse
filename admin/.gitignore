@@ -1,0 +1,9 @@
+.env
+
+# Go binaries
+*.exe
+*.test
+
+# Compiled files
+/vendor/
+/bin/
