@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"strings"
+	"log"
 
 	"github.com/fathimasithara01/tradeverse/auth"
 	"github.com/fathimasithara01/tradeverse/models"
@@ -18,44 +18,64 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 	return &UserService{Repo: repo}
 }
 
-func (s *UserService) Register(user models.User) (models.User, error) {
-	user.Email = strings.TrimSpace(user.Email)
-	if user.Email == "" || user.Password == "" {
-		return models.User{}, errors.New("email and password are required")
+func (s *UserService) Login(email, password string) (string, models.User, error) {
+	log.Printf("[SERVICE-LOGIN] Attempting to find user by email: %s", email)
+	user, err := s.Repo.FindByEmail(email)
+	if err != nil {
+		log.Printf("[SERVICE-LOGIN-ERROR] User not found or DB error for email '%s': %v\n", email, err)
+		return "", models.User{}, errors.New("invalid credentials")
 	}
 
+	log.Printf("[SERVICE-LOGIN-SUCCESS] Found user in database. UserID: %d, Email: %s\n", user.ID, user.Email)
+
+	if user.ID == 0 {
+		return "", models.User{}, errors.New("internal error: user record found but ID is zero")
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		log.Printf("[SERVICE-LOGIN-ERROR] Password mismatch for user '%s'\n", email)
+		return "", models.User{}, errors.New("invalid credentials")
+	}
+
+	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role))
+	if err != nil {
+		log.Printf("[SERVICE-LOGIN-ERROR] Failed to generate JWT for user '%s': %v\n", email, err)
+		return "", models.User{}, errors.New("failed to generate token")
+	}
+
+	return token, user, nil
+}
+
+func (s *UserService) RegisterCustomer(user models.User, profile models.CustomerProfile) error {
+	_, err := s.Repo.FindByEmail(user.Email)
+	if err == nil {
+		return errors.New("email already registered")
+	}
+
+	user.Role = models.RoleCustomer
+	user.CustomerProfile = profile
+	return s.Repo.Create(&user)
+}
+func (s *UserService) RegisterTrader(user models.User, profile models.TraderProfile) error {
+	_, err := s.Repo.FindByEmail(user.Email)
+	if err == nil {
+		return errors.New("email already registered")
+	}
+
+	user.Role = models.RoleTrader
+	user.TraderProfile = profile
+	return s.Repo.Create(&user)
+}
+
+func (s *UserService) RegisterAdmin(user models.User) (models.User, error) {
 	_, err := s.Repo.FindByEmail(user.Email)
 	if err == nil {
 		return models.User{}, errors.New("email already registered")
 	}
 
-	// Password hashing is now handled by the BeforeCreate hook in the user model.
-	// We just need to call the repository's Create method.
+	user.Role = models.RoleAdmin
 	err = s.Repo.Create(&user)
-	if err != nil {
-		return models.User{}, err
-	}
-	return user, nil
-}
-
-func (s *UserService) Login(email, password string) (string, models.User, error) {
-	user, err := s.Repo.FindByEmail(email)
-	if err != nil {
-		return "", models.User{}, errors.New("invalid email or password")
-	}
-
-	// Compare the provided password with the stored hash
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return "", models.User{}, errors.New("invalid email or password")
-	}
-
-	// Generate JWT
-	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role))
-	if err != nil {
-		return "", models.User{}, errors.New("failed to generate token")
-	}
-	return token, user, nil
+	return user, err
 }
 
 func (s *UserService) CreateCustomer(user models.User, profile models.CustomerProfile) error {
@@ -74,8 +94,4 @@ func (s *UserService) CreateCustomer(user models.User, profile models.CustomerPr
 
 func (s *UserService) GetUsersByRole(role models.UserRole) ([]models.User, error) {
 	return s.Repo.FindByRole(role)
-}
-
-func (s *UserService) DeleteUser(id uint) error {
-	return s.Repo.Delete(id)
 }

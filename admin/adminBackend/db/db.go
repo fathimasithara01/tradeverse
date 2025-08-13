@@ -28,7 +28,8 @@ func ConnectDatabase() {
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.CustomerProfile{}, // Add this
-		&models.TraderProfile{},   // Add this
+		&models.TraderProfile{},
+		&models.Role{}, // Add this
 		&models.Product{},
 		&models.Order{},
 		&models.OrderItem{},

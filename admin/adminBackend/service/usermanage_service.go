@@ -1,27 +1,33 @@
 package service
 
-// import (
-// 	"github.com/fathimasithara01/tradeverse/models"
-// 	"github.com/fathimasithara01/tradeverse/repository"
-// )
+import (
+	"github.com/fathimasithara01/tradeverse/models"
+	"golang.org/x/crypto/bcrypt"
+)
 
-// type UserService struct {
-// 	Repo *repository.CustomerRepository
-// }
+func (s *UserService) GetUserByID(id uint) (models.User, error) {
+	return s.Repo.FindByID(id)
+}
 
-// func NewUserService(repo *repository.CustomerRepository) *UserService {
-// 	return &UserService{Repo: repo}
-// }
+func (s *UserService) UpdateUser(userToUpdate *models.User) error {
+	originalUser, err := s.Repo.FindByID(userToUpdate.ID)
+	if err != nil {
+		return err
+	}
 
-// func (s *UserService) GetCustomerByID(id uint) (models.CustomerProfile, error) {
-// 	return s.Repo.FindByID(id)
-// }
+	if userToUpdate.Password == "" {
+		userToUpdate.Password = originalUser.Password
+	} else {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userToUpdate.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		userToUpdate.Password = string(hashedPassword)
+	}
 
-// func (s *UserService) UpdateCustomer(customer *models.CustomerProfile) error {
+	return s.Repo.Update(userToUpdate)
+}
 
-// 	return s.Repo.Update(customer)
-// }
-
-// func (s *UserService) DeleteCustomer(id uint) error {
-// 	return s.Repo.Delete(id)
-// }
+func (s *UserService) DeleteUser(id uint) error {
+	return s.Repo.Delete(id)
+}

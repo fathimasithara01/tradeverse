@@ -1,0 +1,46 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Add your standard CSS and meta tags here -->
+    <title>Admin - Add User</title>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Add your sidebar HTML here -->
+        <div id="content" class="container-fluid p-4">
+            <h2 class="mb-4">Add New Customer</h2>
+            <div class="card">
+                <div class="card-body">
+                    {{ if .error }}
+                        <div class="alert alert-danger">{{ .error }}</div>
+                    {{ end }}
+                    <form action="/admin/users/add" method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="email" name="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="Password" required>
+                        </div>
+                         <div class="mb-3">
+                            <label for="shippingAddress" class="form-label">Shipping Address</label>
+                            <input type="text" class="form-control" id="shippingAddress" name="ShippingAddress">
+                        </div>
+                         <div class="mb-3">
+                            <label for="phoneNumber" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phoneNumber" name="PhoneNumber">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create User</button>
+                        <a href="/admin/users" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

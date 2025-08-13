@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/fathimasithara01/tradeverse/auth"
@@ -10,28 +11,28 @@ import (
 func JWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, err := c.Cookie("admin_token")
-
-		// If the cookie is not set, redirect to login page.
 		if err != nil {
-			c.Redirect(http.StatusFound, "/admin/login")
-			c.Abort()
+			log.Println("[MIDDLEWARE-ERROR] Cookie 'admin_token' not found.")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization token not provided"})
 			return
 		}
 
-		// Validate the token.
 		claims, err := auth.ValidateJWT(tokenString)
 		if err != nil {
-			// If token is invalid, clear the bad cookie and redirect.
-			c.SetCookie("admin_token", "", -1, "/", "localhost", false, true)
-			c.Redirect(http.StatusFound, "/admin/login")
-			c.Abort()
+			log.Printf("[MIDDLEWARE-ERROR] Token validation failed: %s\n", err.Error())
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}
 
-		// Set admin details in the context for use in controllers.
-		c.Set("admin_id", claims.ID)
-		c.Set("admin_email", claims.Email)
-		c.Set("admin_role", claims.Role)
+		log.Printf("[MIDDLEWARE-SUCCESS] Token validated. Claims: UserID=%d, Role=%s\n", claims.UserID, claims.Role)
+
+		if claims.Role != "admin" {
+			log.Printf("[MIDDLEWARE-FORBIDDEN] Access denied. UserID %d has role '%s', not 'admin'.\n", claims.UserID, claims.Role)
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Access denied: admin privileges required"})
+			return
+		}
+
+		c.Set("userID", claims.UserID)
 
 		c.Next()
 	}

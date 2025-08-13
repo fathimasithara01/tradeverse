@@ -5,8 +5,17 @@ import (
 	"strconv"
 
 	"github.com/fathimasithara01/tradeverse/models"
+	"github.com/fathimasithara01/tradeverse/service"
 	"github.com/gin-gonic/gin"
 )
+
+type UserController struct {
+	UserSvc *service.UserService
+}
+
+func NewUserController(userSvc *service.UserService) *UserController {
+	return &UserController{UserSvc: userSvc}
+}
 
 func (ctrl *UserController) ShowUsersPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "manage_users.html", nil)
@@ -33,20 +42,14 @@ func (ctrl *UserController) ShowEditUserPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "edit_user.html", gin.H{"User": user})
 }
 
-// --- API and Form Handlers ---
-
 func (ctrl *UserController) CreateCustomer(c *gin.Context) {
 	var user models.User
 	var profile models.CustomerProfile
-
-	user.Name = c.PostForm("Name")
-	user.Email = c.PostForm("Email")
-	user.Password = c.PostForm("Password")
-	profile.ShippingAddress = c.PostForm("ShippingAddress")
+	user.Name, user.Email, user.Password = c.PostForm("Name"), c.PostForm("Email"), c.PostForm("Password")
 	profile.PhoneNumber = c.PostForm("PhoneNumber")
 
-	if err := ctrl.UserSvc.CreateCustomer(user, profile); err != nil {
-		c.HTML(http.StatusBadRequest, "add_user.html", gin.H{"error": "Failed to create user: " + err.Error()})
+	if err := ctrl.UserSvc.RegisterCustomer(user, profile); err != nil {
+		c.HTML(http.StatusBadRequest, "add_user.html", gin.H{"error": err.Error()})
 		return
 	}
 	c.Redirect(http.StatusFound, "/admin/users")
@@ -56,17 +59,15 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.ParseUint(idStr, 10, 32)
 
-	// Fetch the existing user to update.
 	userToUpdate, err := ctrl.UserSvc.GetUserByID(uint(id))
 	if err != nil {
 		c.HTML(http.StatusNotFound, "error.html", gin.H{"error": "User not found"})
 		return
 	}
 
-	// Update fields from form data.
 	userToUpdate.Name = c.PostForm("Name")
 	userToUpdate.Email = c.PostForm("Email")
-	userToUpdate.Password = c.PostForm("Password") // Service will handle if it's empty.
+	userToUpdate.Password = c.PostForm("Password")
 	userToUpdate.CustomerProfile.ShippingAddress = c.PostForm("ShippingAddress")
 	userToUpdate.CustomerProfile.PhoneNumber = c.PostForm("PhoneNumber")
 
@@ -83,13 +84,15 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 func (ctrl *UserController) GetUsers(c *gin.Context) {
 	users, err := ctrl.UserSvc.GetUsersByRole(models.RoleCustomer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve customers"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
 		return
+	}
+	if users == nil {
+		users = make([]models.User, 0)
 	}
 	c.JSON(http.StatusOK, users)
 }
 
-// DeleteUser is the API for the delete button.
 func (ctrl *UserController) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)

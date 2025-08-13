@@ -4,25 +4,19 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/fathimasithara01/tradeverse/config"
+	"github.com/fathimasithara01/tradeverse/controllers"
 	"github.com/fathimasithara01/tradeverse/db"
+	"github.com/fathimasithara01/tradeverse/repository"
 	"github.com/fathimasithara01/tradeverse/routes"
+	"github.com/fathimasithara01/tradeverse/service"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// 1. Load configuration from .env file
 	config.LoadConfig()
-
-	// 2. Connect to the database
 	db.ConnectDatabase()
-	// Consider running migrations here, e.g.,
-	// db.DB.AutoMigrate(&models.Admin{}, &models.Trader{})
-
-	// 3. Set Gin mode from config
-	// gin.SetMode(config.AppConfig.GinMode)
 
 	r := gin.Default()
 
@@ -30,16 +24,23 @@ func main() {
 
 	r.LoadHTMLGlob("templates/*.html")
 
-	// 6. Setup routes
-	routes.AdminRoutes(r)
-	// routes.UserRoutes(r)
+	userRepo := repository.NewUserRepository(db.DB)
+	roleRepo := repository.NewRoleRepository(db.DB)
+	dashboardRepo := repository.NewDashboardRepository(db.DB)
 
-	// 7. *** FIX: The root route should redirect to the login page, NOT render a file. ***
-	r.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/admin/login")
-	})
+	userService := service.NewUserService(userRepo)
+	roleService := service.NewRoleService(roleRepo)
+	dashboardService := service.NewDashboardService(dashboardRepo)
 
-	// 8. Start the server
+	authController := controllers.NewAuthController(userService)
+	userController := controllers.NewUserController(userService)
+	roleController := controllers.NewRoleController(roleService)
+	dashboardController := controllers.NewDashboardController(dashboardService)
+
+	routes.WirePublicRoutes(r, authController)
+
+	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController)
+
 	port := config.AppConfig.Port
 	log.Printf("Server starting on port http://localhost:%s", port)
 	if err := r.Run(":" + port); err != nil {
