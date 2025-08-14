@@ -82,16 +82,26 @@ func (s *UserService) CreateCustomer(user models.User, profile models.CustomerPr
 	user.Role = models.RoleCustomer
 	user.CustomerProfile = profile
 
-	// Check if email already exists before trying to create.
 	_, err := s.Repo.FindByEmail(user.Email)
 	if err == nil {
 		return errors.New("email already registered")
 	}
 
-	// The BeforeCreate hook in the User model will hash the password.
 	return s.Repo.Create(&user)
 }
 
 func (s *UserService) GetUsersByRole(role models.UserRole) ([]models.User, error) {
 	return s.Repo.FindByRole(role)
+}
+
+func (s *UserService) GetTradersByStatus(status models.TraderStatus) ([]models.User, error) {
+	return s.Repo.FindTradersByStatus(status)
+}
+
+func (s *UserService) ApproveTrader(traderID uint) error {
+	return s.Repo.UpdateTraderStatus(traderID, models.StatusApproved)
+}
+
+func (s *UserService) RejectTrader(traderID uint) error {
+	return s.Repo.UpdateTraderStatus(traderID, models.StatusRejected)
 }

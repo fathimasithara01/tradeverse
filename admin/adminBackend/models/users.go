@@ -15,11 +15,14 @@ const (
 
 type User struct {
 	gorm.Model
-	Name      string   `gorm:"size:100;not null" json:"name"`
-	Email     string   `gorm:"size:100;unique;not null" json:"email"`
-	Password  string   `gorm:"size:255;not null" json:"-"`
-	Role      UserRole `gorm:"type:varchar(20);not null" json:"role"`
-	IsBlocked bool     `gorm:"default:false" json:"is_blocked"`
+	Name     string `gorm:"size:100;not null" json:"name"`
+	Email    string `gorm:"size:100;unique;not null" json:"email"`
+	Password string `gorm:"size:255;not null" json:"-"`
+
+	Role   UserRole `gorm:"type:varchar(20);not null" json:"role"`
+	RoleID uint     `json:"role_id"`
+
+	IsBlocked bool `gorm:"default:false" json:"is_blocked"`
 
 	RolesCreated []Role `gorm:"foreignKey:CreatedByID"`
 

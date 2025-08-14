@@ -1,9 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Admin Login</title>
-    <!-- *** ADD THIS LINE *** -->
     <link rel="icon" href="/static/favicon.png" type="image/png">
     <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
 </head>
@@ -13,7 +13,6 @@
             <h1>Login</h1>
         </header>
 
-        <!-- The form that sends data to your backend -->
         <form action="/login" method="POST">
             <p>
                 <label for="email">Email:</label>
@@ -26,7 +25,6 @@
             <button type="submit">Login</button>
         </form>
 
-        <!-- This section displays an error message if the controller sends one -->
         {{if .error}}
         <p style="color: red; text-align: center;"><strong>{{.error}}</strong></p>
         {{end}}
@@ -35,4 +33,3 @@
     </main>
 </body>
 </html>
-

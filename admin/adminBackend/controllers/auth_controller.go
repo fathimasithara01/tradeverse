@@ -94,5 +94,5 @@ func (ctrl *AuthController) RegisterAdmin(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "register_admin.html", gin.H{"error": err.Error()})
 		return
 	}
-	c.Redirect(http.StatusFound, "login")
+	c.Redirect(http.StatusFound, "/login")
 }

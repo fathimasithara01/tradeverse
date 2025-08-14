@@ -33,3 +33,18 @@ func (r *UserRepository) FindByEmail(email string) (models.User, error) {
 	}
 	return user, nil
 }
+
+func (r *UserRepository) FindTradersByStatus(status models.TraderStatus) ([]models.User, error) {
+	var users []models.User
+	err := r.DB.Joins("JOIN trader_profiles ON users.id = trader_profiles.user_id").
+		Where("users.role = ? AND trader_profiles.status = ?", models.RoleTrader, status).
+		Preload("TraderProfile"). // IMPORTANT: Preload the profile data.
+		Order("users.id asc").
+		Find(&users).Error
+
+	return users, err
+}
+
+func (r *UserRepository) UpdateTraderStatus(userID uint, newStatus models.TraderStatus) error {
+	return r.DB.Model(&models.TraderProfile{}).Where("user_id = ?", userID).Update("status", newStatus).Error
+}

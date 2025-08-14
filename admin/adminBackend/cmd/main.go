@@ -27,19 +27,22 @@ func main() {
 	userRepo := repository.NewUserRepository(db.DB)
 	roleRepo := repository.NewRoleRepository(db.DB)
 	dashboardRepo := repository.NewDashboardRepository(db.DB)
+	permissionRepo := repository.NewPermissionRepository(db.DB)
 
 	userService := service.NewUserService(userRepo)
-	roleService := service.NewRoleService(roleRepo)
+	roleService := service.NewRoleService(roleRepo, permissionRepo)
 	dashboardService := service.NewDashboardService(dashboardRepo)
+	permissionService := service.NewPermissionService(permissionRepo)
 
 	authController := controllers.NewAuthController(userService)
 	userController := controllers.NewUserController(userService)
 	roleController := controllers.NewRoleController(roleService)
 	dashboardController := controllers.NewDashboardController(dashboardService)
+	permissionController := controllers.NewPermissionController(permissionService, roleService)
 
 	routes.WirePublicRoutes(r, authController)
 
-	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController)
+	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController, permissionController)
 
 	port := config.AppConfig.Port
 	log.Printf("Server starting on port http://localhost:%s", port)

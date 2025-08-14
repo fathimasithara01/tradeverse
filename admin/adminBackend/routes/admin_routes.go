@@ -12,6 +12,7 @@ func WireAdminRoutes(
 	dashCtrl *controllers.DashboardController,
 	userCtrl *controllers.UserController,
 	roleCtrl *controllers.RoleController,
+	permCtrl *controllers.PermissionController,
 ) {
 	admin := r.Group("/admin")
 	{
@@ -44,6 +45,25 @@ func WireAdminRoutes(
 			protected.POST("/roles/edit/:id", roleCtrl.UpdateRole)
 			protected.GET("/api/roles", roleCtrl.GetRoles)
 			protected.DELETE("/api/roles/:id", roleCtrl.DeleteRole)
+
+			protected.GET("/roles/permissions", permCtrl.ShowAssignPage)
+			protected.GET("/api/permissions", permCtrl.GetAllPermissions)
+			protected.GET("/api/roles/:id/permissions", permCtrl.GetPermissionsForRole)
+			protected.POST("/api/roles/:id/permissions", permCtrl.AssignPermissionsToRole)
+
+			protected.GET("/users/customers", userCtrl.ShowCustomersPage)
+			protected.GET("/users/traders", userCtrl.ShowTradersPage)
+
+			protected.GET("/api/users/customers", userCtrl.GetCustomers)
+			protected.GET("/api/users/traders", userCtrl.GetTraders)
+
+			protected.GET("/users/traders/approval", userCtrl.ShowTraderApprovalPage)
+
+			// API routes for the frontend
+			protected.GET("/api/users/traders/pending", userCtrl.GetPendingTraders)
+			protected.GET("/api/users/traders/approved", userCtrl.GetApprovedTraders) // For the 'Approved' tab
+			protected.POST("/api/users/traders/:id/approve", userCtrl.ApproveTrader)
+			protected.POST("/api/users/traders/:id/reject", userCtrl.RejectTrader)
 		}
 	}
 }
