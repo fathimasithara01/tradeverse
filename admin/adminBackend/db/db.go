@@ -24,33 +24,26 @@ func ConnectDatabase() {
 		log.Fatalf(" Failed to connect to DB: %v", err)
 	}
 
-	// err = DB.AutoMigrate(&models.Admin{})
+	log.Println("Migrating parent tables (users, permissions)...")
 	err = DB.AutoMigrate(
 		&models.User{},
-		&models.CustomerProfile{}, // Add this
+		&models.Role{},
+		&models.Permission{},
+
+		&models.CustomerProfile{},
 		&models.TraderProfile{},
-		&models.Role{}, // Add this
-		&models.Product{},
-		&models.Order{},
-		&models.OrderItem{},
-		&models.Address{},
-		// &models.Plan{},
-		// &models.Signal{},
-		// &models.Subscription{},
-		// &models.Payment{},
-		// &models.Announcement{},
-		// &models.Log{},
-		// &models.Follower{},
-		// &models.Withdrawal{},
-		// &models.Wallet{},
-		// &models.WalletTransaction{},
-		// &models.Notification{},
-		// &models.Payment{},
-		// &models.RevenueSplit{},
+
+		// &models.Product{},
+		// &models.Order{},
+
+		&models.CopySession{},
+		&models.TradeLog{},
 	)
 	if err != nil {
-		log.Fatal("error ")
+		log.Printf("DATABASE MIGRATION ERROR (Step 1): %v", err)
+		log.Fatal("FATAL: Failed to migrate parent tables.")
 	}
+	log.Println("Parent tables migrated successfully.")
 
 	log.Println(" Connected to PostgreSQL")
 }

@@ -78,6 +78,33 @@ func (s *UserService) RegisterAdmin(user models.User) (models.User, error) {
 	return user, err
 }
 
+func (s *UserService) CreateTrader(user models.User, profile models.TraderProfile) error {
+	_, err := s.Repo.FindByEmail(user.Email)
+	if err == nil {
+		return errors.New("email is already registered")
+	}
+
+	user.Role = models.RoleTrader
+	user.TraderProfile = profile
+
+	return s.Repo.Create(&user)
+}
+
+func (s *UserService) CreateTraderByAdmin(user models.User, profile models.TraderProfile) error {
+	_, err := s.Repo.FindByEmail(user.Email)
+	if err == nil {
+		return errors.New("email is already registered")
+	}
+
+	user.Role = models.RoleTrader // Set the role to 'trader'
+
+	profile.Status = models.StatusApproved
+
+	user.TraderProfile = profile // Attach the trader-specific profile
+
+	return s.Repo.Create(&user)
+}
+
 func (s *UserService) CreateCustomer(user models.User, profile models.CustomerProfile) error {
 	user.Role = models.RoleCustomer
 	user.CustomerProfile = profile

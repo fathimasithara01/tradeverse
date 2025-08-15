@@ -1,512 +1,294 @@
-<!DOCTYPE html>
-<html lang="en">
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Dashboard</title>
+        
+        <!-- External CSS and Fonts -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Overview</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            /* --- CORRECTED AND CLEANED CSS --- */
+            :root {
+                --sidebar-bg: #ffffff;
+                --sidebar-width: 280px;
+                --main-bg: #f7f9fc;
+                --brand-color: #1a73e8;
+                --text-color: #343a40;
+                --link-color: #5f6368;
+                --link-hover-bg: #f1f3f4;
+                --link-active-bg: #e8f0fe;
+                --link-active-color: #1967d2;
+                --border-color: #e9ecef;
+                --shadow-color: rgba(0, 0, 0, 0.08);
+            }
+            body { background-color: var(--main-bg); font-family: 'Inter', sans-serif; }
+            .wrapper { display: flex; width: 100%; min-height: 100vh; }
+            #sidebar { width: var(--sidebar-width); min-width: var(--sidebar-width); background: var(--sidebar-bg); transition: all 0.3s; box-shadow: 0 0 25px var(--shadow-color); z-index: 1000; display: flex; flex-direction: column; }
+            .sidebar-header { padding: 1.25rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color); }
+            .sidebar-header h3 { color: var(--brand-color); font-weight: 700; margin-bottom: 0; font-size: 1.5rem; }
+            #sidebar-nav { flex-grow: 1; padding: 1rem 0; }
+            #sidebar-nav .nav-heading { padding: 0.5rem 1.5rem; font-size: 0.75rem; font-weight: 600; color: #adb5bd; text-transform: uppercase; letter-spacing: .5px; }
+            #sidebar-nav .nav-item a { padding: 0.8rem 1.5rem; font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; color: var(--link-color); text-decoration: none; transition: all 0.2s; border-left: 4px solid transparent; }
+            #sidebar-nav .nav-item a:hover { background: var(--link-hover-bg); color: var(--text-color); }
+            #sidebar-nav .nav-item.active > a, #sidebar-nav .nav-item a[aria-expanded="true"] { background: var(--link-active-bg); color: var(--link-active-color); border-left-color: var(--link-active-color); }
+            #sidebar-nav .nav-item a i { margin-right: 1rem; width: 20px; text-align: center; font-size: 1.1rem; }
+            .collapse-arrow { margin-left: auto; transition: transform 0.2s ease-in-out; }
+            a[aria-expanded="true"] .collapse-arrow { transform: rotate(90deg); }
+            .nav-collapse .nav-item a { padding-left: 3.8rem !important; font-size: 0.9rem; border-left: none; position: relative; color: #6c757d; }
+            .nav-collapse .nav-item.active a { color: var(--link-active-color); font-weight: 600; }
+            .sidebar-footer { border-top: 1px solid var(--border-color); padding: 1rem 1.5rem; }
+            #content { flex-grow: 1; padding: 2.5rem; }
+            .card { border: none; border-radius: 0.75rem; box-shadow: 0 2px 10px var(--shadow-color); margin-bottom: 1.5rem; }
+            .card-header { background-color: #fff; border-bottom: 1px solid var(--border-color); font-weight: 600; }
+            .stat-card { text-align: center; padding: 1.5rem; }
+            .stat-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+            .stat-card .value { font-size: 2rem; font-weight: 700; }
+            .stat-card .title { font-size: 0.9rem; color: #6c757d; }
+        </style>
+    </head>
 
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <body>
+        <div class="wrapper">
+            <!-- Sidebar -->
+            <nav id="sidebar">
+                <div class="sidebar-header">
+                    <h3>TradeVerse</h3>
+                </div>
 
-    <!-- Google Fonts: Inter is a popular, modern choice for dashboards -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                <ul id="sidebar-nav" class="list-unstyled">
 
-    <style>
-        /* --- Modern CSS Variables for Easy Theming --- */
-        :root {
-            --sidebar-bg: #ffffff;
-            --sidebar-width: 280px;
-            --main-bg: #f7f9fc;
+                    <li class="nav-heading">Main</li>
+                    <li class="nav-item active">
+                        <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
 
-            --brand-color: #1a73e8;
-            --text-color: #343a40;
-            --link-color: #5f6368;
+                    <li class="nav-heading">Core Management</li>
+                    <li class="nav-item">
+                        <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-users"></i>
+                            <span>User Management</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
+                            <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
+                        </ul>
+                    </li>
+                    <!-- Roles & Permissions Dropdown -->
+                    <li class="nav-item">
+                        <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Roles & Permissions</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
+                            <li class="nav-item"><a href="/admin/users">Manage User</a></li>
+                            <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
+                            <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions</a></li>
+                        </ul>
+                    </li>
 
-            --link-hover-bg: #f1f3f4;
-            --link-active-bg: #e8f0fe;
-            --link-active-color: #1967d2;
 
-            --border-color: #e9ecef;
-            --shadow-color: rgba(0, 0, 0, 0.08);
-        }
+                    <li class="nav-item">
+                        <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Platform Activity</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
+                            <li class="nav-item"><a href="/admin/api/activity/live">Live Copying</a></li>
+                            <li class="nav-item"><a href="/admin/api/activity/logs">Trade Log & Errors</a></li>
+                        </ul>
+                    </li>
 
-        body {
-            background-color: var(--main-bg);
-            font-family: 'Inter', sans-serif;
-            color: var(--text-color);
-        }
+                    <li class="nav-item">
+                        <a href="#financialsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-wallet"></i>
+                            <span>Financials</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="financialsSubmenu">
+                            <li class="nav-item"><a href="#">Subscriptions</a></li>
+                            <li class="nav-item"><a href="#">Trader Payouts</a></li>
+                            <li class="nav-item"><a href="#">Transactions</a></li>
+                        </ul>
+                    </li>
 
-        .wrapper {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-            align-items: stretch;
-        }
+                    <li class="nav-heading">Growth & Support</li>
+                    <li class="nav-item">
+                        <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Marketing</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="marketingSubmenu">
+                            <li class="nav-item"><a href="#">Announcements</a></li>
+                            <li class="nav-item"><a href="#">Email Campaigns</a></li>
+                        </ul>
+                    </li>
 
-        /* --- Sidebar --- */
-        #sidebar {
-            width: var(--sidebar-width);
-            min-width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            transition: all 0.3s;
-            box-shadow: 0 0 25px var(--shadow-color);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-        }
+                    <li class="nav-item">
+                        <a href="#"><i class="fas fa-headset"></i> Support Tickets</a>
+                    </li>
 
-        /* --- Sidebar Header (Logo) --- */
-        .sidebar-header {
-            padding: 1.25rem 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-        }
+                    <li class="nav-heading">System</li>
+                    <li class="nav-item">
+                        <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-cogs"></i>
+                            <span>System Settings</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="settingsSubmenu">
+                            <li class="nav-item"><a href="#">General</a></li>
+                            <li class="nav-item"><a href="#">Roles & Permissions</a></li>
+                            <li class="nav-item"><a href="#">Risk Management</a></li>
+                            <li class="nav-item"><a href="#">Broker Integrations</a></li>
+                        </ul>
+                    </li>
+                </ul>
 
-        .sidebar-header h3 {
-            color: var(--brand-color);
-            font-weight: 700;
-            margin-bottom: 0;
-            font-size: 1.5rem;
-        }
-
-        /* --- Sidebar Links --- */
-        #sidebar-nav {
-            flex-grow: 1;
-            padding: 1rem 0;
-            overflow-y: auto;
-        }
-
-        #sidebar-nav .nav-heading {
-            padding: 0.5rem 1.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #adb5bd;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
-
-        #sidebar-nav .nav-item a {
-            padding: 0.8rem 1.5rem;
-            font-size: 0.95rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            color: var(--link-color);
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
-        }
-
-        #sidebar-nav .nav-item a:hover {
-            background: var(--link-hover-bg);
-            color: var(--text-color);
-        }
-
-        #sidebar-nav .nav-item.active>a,
-        #sidebar-nav .nav-item a[aria-expanded="true"] {
-            background: var(--link-active-bg);
-            color: var(--link-active-color);
-            border-left-color: var(--link-active-color);
-        }
-
-        /* --- Icons --- */
-        #sidebar-nav .nav-item a i {
-            margin-right: 1rem;
-            width: 20px;
-            text-align: center;
-            font-size: 1.1rem;
-        }
-
-        /* --- Dropdowns --- */
-        .collapse-arrow {
-            margin-left: auto;
-            transition: transform 0.2s ease-in-out;
-        }
-
-        a[aria-expanded="true"] .collapse-arrow {
-            transform: rotate(90deg);
-        }
-
-        .nav-collapse .nav-item a {
-            padding-left: 3.8rem !important;
-            font-size: 0.9rem;
-            border-left: none;
-            position: relative;
-            color: #6c757d;
-        }
-
-        .nav-collapse .nav-item a:hover {
-            color: var(--text-color);
-        }
-
-        .nav-collapse .nav-item a::before {
-            content: '';
-            position: absolute;
-            left: 2.1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 4px;
-            background-color: #adb5bd;
-            border-radius: 50%;
-        }
-
-        .nav-collapse .nav-item.active a {
-            color: var(--link-active-color);
-            font-weight: 600;
-        }
-
-        .nav-collapse .nav-item.active a::before {
-            background-color: var(--link-active-color);
-        }
-
-        /* --- Sidebar Footer --- */
-        .sidebar-footer {
-            border-top: 1px solid var(--border-color);
-            padding: 1rem 1.5rem;
-        }
-
-        /* --- Main Content Area --- */
-        #content {
-            flex-grow: 1;
-            padding: 2.5rem;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="wrapper">
-        <!-- Sidebar -->
-        <nav id="sidebar">
-            <div class="sidebar-header">
-                <h3>TradeVerse</h3>
-            </div>
-
-            <ul id="sidebar-nav" class="list-unstyled">
-
-                <li class="nav-heading">Main</li>
-                <li class="nav-item active">
-                    <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                </li>
-
-                <li class="nav-heading">Core Management</li>
-                <li class="nav-item">
-                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-users"></i>
-                        <span>User Management</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                <div class="sidebar-footer">
+                    <a href="#" class="d-flex align-items-center text-decoration-none text-dark">
+                        <img src="https://i.pravatar.cc/40?u=admin" alt="Admin" class="rounded-circle me-3" width="40"
+                            height="40">
+                        <div>
+                            <div class="fw-bold">Admin Name</div>
+                            <small>Logout</small>
+                        </div>
                     </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
-                        <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
-                    </ul>
-                </li>
-                <!-- Roles & Permissions Dropdown -->
-                <li class="nav-item">
-                    <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Roles & Permissions</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
-                        <li class="nav-item"><a href="/admin/users">Manage User</a></li>
-                        <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions</a></li>
-                    </ul>
-                </li>
+                </div>
+            </nav>
 
-
-                <li class="nav-item">
-                    <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>Platform Activity</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
-                        <li class="nav-item"><a href="#">Live Copying</a></li>
-                        <li class="nav-item"><a href="#">Trade Log & Errors</a></li>
-                    </ul>
-                </li>
-
-                <li class="nav-item">
-                    <a href="#financialsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-wallet"></i>
-                        <span>Financials</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="financialsSubmenu">
-                        <li class="nav-item"><a href="#">Subscriptions</a></li>
-                        <li class="nav-item"><a href="#">Trader Payouts</a></li>
-                        <li class="nav-item"><a href="#">Transactions</a></li>
-                    </ul>
-                </li>
-
-                <li class="nav-heading">Growth & Support</li>
-                <li class="nav-item">
-                    <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-bullhorn"></i>
-                        <span>Marketing</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="marketingSubmenu">
-                        <li class="nav-item"><a href="#">Announcements</a></li>
-                        <li class="nav-item"><a href="#">Email Campaigns</a></li>
-                    </ul>
-                </li>
-
-                <li class="nav-item">
-                    <a href="#"><i class="fas fa-headset"></i> Support Tickets</a>
-                </li>
-
-                <li class="nav-heading">System</li>
-                <li class="nav-item">
-                    <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-cogs"></i>
-                        <span>System Settings</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="settingsSubmenu">
-                        <li class="nav-item"><a href="#">General</a></li>
-                        <li class="nav-item"><a href="#">Roles & Permissions</a></li>
-                        <li class="nav-item"><a href="#">Risk Management</a></li>
-                        <li class="nav-item"><a href="#">Broker Integrations</a></li>
-                    </ul>
-                </li>
-            </ul>
-
-            <div class="sidebar-footer">
-                <a href="#" class="d-flex align-items-center text-decoration-none text-dark">
-                    <img src="https://i.pravatar.cc/40?u=admin" alt="Admin" class="rounded-circle me-3" width="40"
-                        height="40">
-                    <div>
-                        <div class="fw-bold">Admin Name</div>
-                        <small>Logout</small>
-                    </div>
-                </a>
-            </div>
-        </nav>
-
-        <!-- Page Content -->
-        <div id="content">
-            <div class="container-fluid">
+            <!-- Page Content -->
+            <div id="content">
                 <h2 class="mb-4">Dashboard Overview</h2>
+                
+                <!-- KPIs Row - CORRECTED -->
                 <div class="row">
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="icon bg-purple"><i class="fas fa-users"></i></div>
-                            <div class="info">
-                                <div class="title">Total Customers</div>
-                                <div class="value" id="total-customers">0</div>
-                            </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card stat-card text-info">
+                            <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+                            <div class="value" id="kpi-mrr">$0</div>
+                            <div class="title">Monthly Recurring Revenue</div>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="icon bg-teal"><i class="fas fa-box-open"></i></div>
-                            <div class="info">
-                                <div class="title">Total Traders</div>
-                                <div class="value" id="total-traders">0</div>
-                            </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card stat-card text-primary ">
+                            <div class="icon"><i class="fas fa-users"></i></div>
+                            <div class="value" id="kpi-followers">0</div>
+                            <div class="title">Total Customers</div>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="icon bg-orange"><i class="fas fa-shopping-cart"></i></div>
-                            <div class="info">
-                                <div class="title">Total Products</div>
-                                <div class="value" id="total-products">0</div>
-                            </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card stat-card text-success">
+                            <div class="icon"><i class="fas fa-user-tie"></i></div>
+                            <div class="value" id="kpi-traders">0</div>
+                            <div class="title">Approved Traders</div>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="icon bg-blue"><i class="fas fa-wallet"></i></div>
-                            <div class="info">
-                                <div class="title">Total Orders</div>
-                                <div class="value" id="total-orders">0</div>
-                            </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card stat-card text-warning">
+                            <div class="icon"><i class="fas fa-sync-alt"></i></div>
+                            <div class="value" id="kpi-sessions">0</div>
+                            <div class="title">Live Copying Sessions</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts Row -->
+                <!-- Charts Row - CORRECTED -->
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title">Monthly Orders</h5>
-                                <div class="dropdown">
-                                    <select class="form-select form-select-sm">
-                                        <option selected>2025</option>
-                                        <option value="1">2024</option>
-                                    </select>
-                                </div>
-                            </div>
+                            <div class="card-header">User Growth (Last 6 Months)</div>
                             <div class="card-body">
-                                <canvas id="monthlyOrdersChart" height="120"></canvas>
+                                <canvas id="userGrowthChart"></canvas>
                             </div>
                         </div>
                     </div>
                     <div class="col-lg-4">
                         <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Product Categories</h5>
-                            </div>
-                            <div class="card-body d-flex justify-content-center align-items-center">
-                                <canvas id="productCategoriesChart" height="250"></canvas>
+                            <div class="card-header">User Distribution</div>
+                            <div class="card-body">
+                                <canvas id="userDistributionChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bottom Cards Row -->
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Overall Sales Value</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- You can place more detailed sales data here -->
-                                <p class="card-text">Current performing customers...</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Orders Status</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- You can place a small chart or list of order statuses -->
-                                <p class="card-text">Current order distribution...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Recent Activity Tables could go here -->
             </div>
         </div>
-    </div>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-
-            // --- 1. DYNAMIC STAT CARDS (with auto-refresh) ---
-            function fetchStatsCards() {
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // --- RENDER KPI CARDS ---
+            function renderKpis() {
                 fetch('/admin/dashboard/stats')
-                    .then(response => response.ok ? response.json() : Promise.reject('Failed to load stats'))
-                    .then(data => {
-                        document.getElementById('total-customers').textContent = data.CustomerCount || 0;
-                        document.getElementById('total-traders').textContent = data.TraderCount || 0;
-                        document.getElementById('total-products').textContent = data.ProductCount || 0;
-                        document.getElementById('total-orders').textContent = data.OrderCount || 0;
+                    .then(res => {
+                        if (!res.ok) throw new Error('Failed to load dashboard stats');
+                        return res.json();
                     })
-                    .catch(error => console.error('Error fetching stat cards:', error));
+                    .then(data => {
+                        document.getElementById('kpi-mrr').textContent = `$${data.mrr.toLocaleString()}`;
+                        document.getElementById('kpi-followers').textContent = data.followers.toLocaleString();
+                        document.getElementById('kpi-traders').textContent = data.traders.toLocaleString();
+                        document.getElementById('kpi-sessions').textContent = data.sessions.toLocaleString();
+                    })
+                    .catch(error => console.error('Error fetching KPIs:', error));
             }
 
-            fetchStatsCards(); // Load once immediately
-            setInterval(fetchStatsCards, 5000); // Refresh every 5 seconds
+            // --- RENDER CHARTS ---
+            function renderCharts() {
+                fetch('/admin/dashboard/charts')
+                    .then(res => {
+                        if (!res.ok) throw new Error('Failed to load chart data');
+                        return res.json();
+                    })
+                    .then(data => {
+                        // User Growth Chart (Line Chart)
+                        const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
+                        new Chart(growthCtx, {
+                            type: 'line',
+                            data: {
+                                labels: data.growth.labels,
+                                datasets: [
+                                    { label: 'Followers', data: data.growth.followers, borderColor: '#1a73e8', backgroundColor: 'rgba(26, 115, 232, 0.1)', fill: true, tension: 0.4 },
+                                    { label: 'Traders', data: data.growth.traders, borderColor: '#198754', backgroundColor: 'rgba(25, 135, 84, 0.1)', fill: true, tension: 0.4 }
+                                ]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false }
+                        });
 
-
-            // --- 2. DYNAMIC MONTHLY ORDERS CHART ---
-            const yearSelector = document.getElementById('year-selector'); // Add id="year-selector" to your <select> tag!
-            const monthlyOrdersCtx = document.getElementById('monthlyOrdersChart').getContext('2d');
-
-            // Create the chart with an initial empty state.
-            const monthlyOrdersChart = new Chart(monthlyOrdersCtx, {
-                type: 'bar',
-                data: {
-                    labels: [], // Will be filled by API
-                    datasets: [{
-                        label: 'Orders',
-                        data: [], // Will be filled by API
-                        backgroundColor: 'rgba(2, 117, 216, 0.7)',
-                        borderColor: 'rgba(2, 117, 216, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    scales: { y: { beginAtZero: true } },
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-            // This function fetches data and updates the chart.
-            function updateMonthlyChart(year) {
-                fetch(`/admin/api/monthly-orders?year=${year}`)
-                    .then(response => response.ok ? response.json() : Promise.reject('Failed to load chart data'))
-                    .then(chartData => {
-                        // Update the chart object with the new data from the API
-                        monthlyOrdersChart.data.labels = chartData.labels;
-                        monthlyOrdersChart.data.datasets[0].data = chartData.data;
-                        monthlyOrdersChart.update(); // Redraw the chart
+                        // User Distribution Chart (Doughnut Chart)
+                        const distCtx = document.getElementById('userDistributionChart').getContext('2d');
+                        new Chart(distCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: data.distribution.labels,
+                                datasets: [{ data: data.distribution.data, backgroundColor: ['#1a73e8', '#198754'] }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                        });
                     })
                     .catch(error => console.error('Error fetching chart data:', error));
             }
-
-            // Add an event listener to the dropdown. When it changes, update the chart.
-            yearSelector.addEventListener('change', function () {
-                const selectedYear = this.value;
-                updateMonthlyChart(selectedYear);
-            });
-
-            // Load the chart data for the initially selected year when the page first loads.
-            updateMonthlyChart(yearSelector.value);
-
-
-            // --- 3. DOUGHNUT CHART (can also be made dynamic later) ---
-            // (Your existing doughnut chart code can stay here)
-            const productCategoriesCtx = document.getElementById('productCategoriesChart').getContext('2d');
-            new Chart(productCategoriesCtx, {
-                type: 'doughnut',
-                data: { /* ... static data ... */ }
-            });
+            
+            // --- INITIALIZE DASHBOARD ---
+            renderKpis();
+            renderCharts();
+            
+            // Auto-refresh KPIs every 30 seconds
+            setInterval(renderKpis, 30000);
         });
-
-        // --- Fetch and Display Dashboard Stats ---
-        document.addEventListener('DOMContentLoaded', function () {
-            // This function fetches the latest stats from your backend.
-            function fetchDashboardStats() {
-                fetch('/admin/dashboard/stats')
-                    .then(response => {
-                        if (!response.ok) { throw new Error('Network response was not ok'); }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Stats updated:', data); // For debugging
-                        // Update the HTML. The keys (e.g., data.CustomerCount) are case-sensitive and must match the Go JSON tags.
-                        document.getElementById('total-customers').textContent = data.CustomerCount || 0;
-                        document.getElementById('total-traders').textContent = data.TraderCount || 0;
-                        document.getElementById('total-products').textContent = data.ProductCount || 0;
-                        document.getElementById('total-orders').textContent = data.OrderCount || 0;
-                    })
-                    .catch(error => {
-                        console.error('Failed to fetch dashboard stats:', error);
-                    });
-            }
-            // 1. Load the stats as soon as the page is ready.
-            fetchDashboardStats();
-            // 2. Then, set an interval to automatically call the function again every 5 seconds (5000 milliseconds).
-            setInterval(fetchDashboardStats, 5000);
-        });
-    </script>
-
-</body>
-
-</html>
+        </script>
+    </body>
+    </html>

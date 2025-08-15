@@ -16,6 +16,28 @@ func (ctrl *UserController) ShowTradersPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "manage_traders.html", nil)
 }
 
+func (ctrl *UserController) ShowAddTraderPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "add_trader.html", nil)
+}
+
+func (ctrl *UserController) CreateTrader(c *gin.Context) {
+	var user models.User
+	var profile models.TraderProfile
+
+	user.Name = c.PostForm("Name")
+	user.Email = c.PostForm("Email")
+	user.Password = c.PostForm("Password")
+
+	profile.CompanyName = c.PostForm("CompanyName")
+	profile.Bio = c.PostForm("Bio")
+
+	if err := ctrl.UserSvc.CreateTraderByAdmin(user, profile); err != nil {
+		c.HTML(http.StatusBadRequest, "add_trader.html", gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/admin/users/traders")
+}
 func (ctrl *UserController) GetCustomers(c *gin.Context) {
 	customers, err := ctrl.UserSvc.GetUsersByRole(models.RoleCustomer)
 	if err != nil {
@@ -44,7 +66,6 @@ func (ctrl *UserController) ShowTraderApprovalPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "trader_approval.html", nil)
 }
 
-// GetPendingTraders is the API to fetch traders awaiting approval.
 func (ctrl *UserController) GetPendingTraders(c *gin.Context) {
 	traders, err := ctrl.UserSvc.GetTradersByStatus(models.StatusPending)
 	if err != nil {
@@ -57,7 +78,6 @@ func (ctrl *UserController) GetPendingTraders(c *gin.Context) {
 	c.JSON(http.StatusOK, traders)
 }
 
-// GetApprovedTraders is the API to fetch approved traders.
 func (ctrl *UserController) GetApprovedTraders(c *gin.Context) {
 	traders, err := ctrl.UserSvc.GetTradersByStatus(models.StatusApproved)
 	if err != nil {
@@ -70,7 +90,6 @@ func (ctrl *UserController) GetApprovedTraders(c *gin.Context) {
 	c.JSON(http.StatusOK, traders)
 }
 
-// ApproveTrader is the API to approve a trader.
 func (ctrl *UserController) ApproveTrader(c *gin.Context) {
 	traderID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	if traderID == 0 {
@@ -84,7 +103,6 @@ func (ctrl *UserController) ApproveTrader(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Trader approved successfully"})
 }
 
-// RejectTrader is the API to reject a trader.
 func (ctrl *UserController) RejectTrader(c *gin.Context) {
 	traderID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	if traderID == 0 {

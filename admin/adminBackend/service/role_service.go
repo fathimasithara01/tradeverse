@@ -15,7 +15,7 @@ func NewRoleService(repo *repository.RoleRepository, permRepo *repository.Permis
 }
 
 func (s *RoleService) CreateRole(role *models.Role, loggedInUserID uint) error {
-	role.CreatedByID = loggedInUserID
+	// role.CreatedByID = loggedInUserID
 	return s.Repo.Create(role)
 }
 

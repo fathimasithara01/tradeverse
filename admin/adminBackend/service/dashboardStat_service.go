@@ -1,16 +1,31 @@
 package service
 
 import (
-	"github.com/fathimasithara01/tradeverse/repository" // Make sure this import path is correct
+	"sync"
+	"time"
+
+	"github.com/fathimasithara01/tradeverse/models"
+	"github.com/fathimasithara01/tradeverse/repository"
 )
 
-// DashboardStats defines the structure for our API response.
-// The `json` tags are critical and must match what the JavaScript expects.
+type GrowthData struct {
+	Labels    []string `json:"labels"`
+	Followers []int    `json:"followers"`
+	Traders   []int    `json:"traders"`
+}
+type DistributionData struct {
+	Labels []string `json:"labels"`
+	Data   []int64  `json:"data"`
+}
+type ChartData struct {
+	Growth       GrowthData       `json:"growth"`
+	Distribution DistributionData `json:"distribution"`
+}
 type DashboardStats struct {
-	CustomerCount int64 `json:"CustomerCount"`
-	TraderCount   int64 `json:"TraderCount"`
-	ProductCount  int64 `json:"ProductCount"`
-	OrderCount    int64 `json:"OrderCount"`
+	MRR       int64 `json:"mrr"`
+	Followers int64 `json:"followers"`
+	Traders   int64 `json:"traders"`
+	Sessions  int64 `json:"sessions"`
 }
 
 type DashboardService struct {
@@ -21,61 +36,120 @@ func NewDashboardService(repo *repository.DashboardRepository) *DashboardService
 	return &DashboardService{Repo: repo}
 }
 
-// GetDashboardStats calls the repository to fetch all required counts.
 func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 	var stats DashboardStats
 	var err error
+	var wg sync.WaitGroup
+	var errChan = make(chan error, 4)
 
-	stats.CustomerCount, err = s.Repo.GetCustomerCount()
-	if err != nil {
-		return DashboardStats{}, err
-	}
+	wg.Add(4)
 
-	stats.TraderCount, err = s.Repo.GetTraderCount()
-	if err != nil {
-		return DashboardStats{}, err
-	}
+	// This goroutine is for the mock revenue data
+	go func() {
+		defer wg.Done()
+		stats.MRR, _ = s.Repo.GetMonthlyRecurringRevenue() // Ignoring error for mock data
+	}()
 
-	stats.ProductCount, err = s.Repo.GetProductCount()
-	if err != nil {
-		return DashboardStats{}, err
-	}
+	// --- THIS IS THE FIX ---
+	// This goroutine now calls GetCustomerCount to get the total number of customers.
+	go func() {
+		defer wg.Done()
+		stats.Followers, err = s.Repo.GetCustomerCount() // Corrected function call
+		if err != nil {
+			errChan <- err
+		}
+	}()
 
-	stats.OrderCount, err = s.Repo.GetOrderCount()
-	if err != nil {
-		return DashboardStats{}, err
+	// This goroutine correctly gets the approved trader count
+	go func() {
+		defer wg.Done()
+		stats.Traders, err = s.Repo.GetApprovedTraderCount()
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// This goroutine correctly gets the active session count
+	go func() {
+		defer wg.Done()
+		stats.Sessions, err = s.Repo.GetActiveSessionCount()
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	wg.Wait()
+	close(errChan)
+
+	// Check if any of the concurrent functions returned an error
+	for e := range errChan {
+		if e != nil {
+			return DashboardStats{}, e // Return on the first error
+		}
 	}
 
 	return stats, nil
 }
 
-type MonthlyOrdersStats struct {
-	Labels []string `json:"labels"`
-	Data   []int    `json:"data"`
+func (s *DashboardService) GetChartData() (ChartData, error) {
+	var chartData ChartData
+
+	followerCount, err := s.Repo.GetCustomerCount()
+	if err != nil {
+		return ChartData{}, err
+	}
+	traderCount, err := s.Repo.GetApprovedTraderCount()
+	if err != nil {
+		return ChartData{}, err
+	}
+	chartData.Distribution.Labels = []string{"Followers", "Traders"}
+	chartData.Distribution.Data = []int64{followerCount, traderCount}
+
+	followerSignups, err := s.Repo.GetMonthlySignups(models.RoleCustomer)
+	if err != nil {
+		return ChartData{}, err
+	}
+	traderSignups, err := s.Repo.GetMonthlySignups(models.RoleTrader)
+	if err != nil {
+		return ChartData{}, err
+	}
+
+	labels, followerData := processSignupStats(followerSignups)
+	_, traderData := processSignupStats(traderSignups)
+
+	chartData.Growth.Labels = labels
+	chartData.Growth.Followers = followerData
+	chartData.Growth.Traders = traderData
+
+	return chartData, nil
 }
 
-// GetMonthlyOrderStats processes the raw data from the repository into a chart-friendly format.
-func (s *DashboardService) GetMonthlyOrderStats(year int) (MonthlyOrdersStats, error) {
-	// Get the raw counts from the repository
-	monthlyCounts, err := s.Repo.GetMonthlyOrderCounts(year)
-	if err != nil {
-		return MonthlyOrdersStats{}, err
+func processSignupStats(stats []repository.SignupStat) ([]string, []int) {
+	labels := make([]string, 6)
+	data := make([]int, 6)
+	now := time.Now()
+
+	statsMap := make(map[time.Month]int)
+	for _, s := range stats {
+		statsMap[s.Month.Month()] = s.Count
 	}
 
-	// Initialize a full year of data with zeros. This ensures all 12 months are present.
-	labels := []string{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
-	data := make([]int, 12)
-
-	// Populate the data array with the counts from the database.
-	// The month from the DB is 1-based (January=1), so we subtract 1 for the 0-based array index.
-	for _, result := range monthlyCounts {
-		if result.Month >= 1 && result.Month <= 12 {
-			data[result.Month-1] = result.Count
+	for i := 5; i >= 0; i-- {
+		month := now.AddDate(0, -i, 0)
+		labels[5-i] = month.Format("Jan")
+		if count, ok := statsMap[month.Month()]; ok {
+			data[5-i] = count
+		} else {
+			data[5-i] = 0
 		}
 	}
+	return labels, data
+}
 
-	return MonthlyOrdersStats{
-		Labels: labels,
-		Data:   data,
-	}, nil
+func (s *DashboardService) GetTopTraders() ([]models.User, error) {
+	return s.Repo.GetTopTraders()
+}
+
+func (s *DashboardService) GetLatestSignups() ([]models.User, error) {
+	return s.Repo.GetLatestSignups()
 }

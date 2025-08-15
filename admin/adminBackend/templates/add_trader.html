@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Add Trader</title>
+    <!-- Paste your standard CSS (Bootstrap, Font Awesome, Custom Styles) here -->
+</head>
+
+<body>
+    <div class="wrapper d-flex">
+        <!-- Paste your standard Sidebar HTML here -->
+        <nav id="sidebar"> <!-- ... full sidebar content ... --> </nav>
+
+        <div id="content" class="container-fluid p-4">
+            <h2 class="mb-4">Add New Trader (Master)</h2>
+            <div class="card">
+                <div class="card-body">
+                    {{ if .error }}
+                    <div class="alert alert-danger">{{ .error }}</div>
+                    {{ end }}
+                    <!-- The form action MUST point to the new /admin/users/traders/add route -->
+                    <form action="/admin/users/traders/add" method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h5 class="mb-3">Trader Profile Information</h5>
+
+                                <label class="form-label fw-bold">Full Name</label>
+                                <input type="text" class="form-control" name="Name" required>
+                            </div>
+                            <hr class="my-4">
+
+                            <div class=" mb-3">
+                                <label class="form-label fw-bold">Email</label>
+                                <input type="email" class="form-control" name="Email" required>
+                            </div>
+                            <hr class="my-4">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Password</label>
+                                <input type="password" class="form-control" name="Password" required
+                                    placeholder="A strong temporary password">
+                            </div>
+                            <hr class="my-4">
+                            <div class="mb-3">
+                                <label class="form-label">Company Name (Optional)</label>
+                                <input type="text" class="form-control" name="CompanyName">
+                            </div>
+                            <hr class="my-4">
+
+                            <div class="mb-3">
+                                <label class="form-label">Bio / Strategy Description</label>
+                                <textarea class="form-control" name="Bio" rows="3"
+                                    placeholder="Describe the trading strategy..."></textarea>
+                            </div>
+
+                        </div>
+                            <hr class="my-4">
+
+                        <button type="submit" class="btn btn-primary">Save Trader</button>
+                        <a href="/admin/users/traders" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

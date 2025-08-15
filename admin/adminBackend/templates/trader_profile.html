@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trader Profile</title>
+    <!-- Add your standard CSS (Bootstrap, etc.) -->
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-body text-center">
+                <h2 id="trader-name">Trader Name</h2>
+                <p>Total Return: <span id="trader-return" class="text-success fw-bold">+0%</span></p>
+                
+                <hr>
+                
+                <button id="copy-action-btn" class="btn btn-lg"></button>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyBtn = document.getElementById('copy-action-btn');
+    const traderNameEl = document.getElementById('trader-name');
+    const traderReturnEl = document.getElementById('trader-return');
+    
+    const MASTER_TRADER_ID = 3; // IMPORTANT: Change this to a real trader ID from your DB.
+
+    function setButtonState(isCopying) {
+        if (isCopying) {
+            copyBtn.textContent = 'Stop Copying';
+            copyBtn.className = 'btn btn-lg btn-danger';
+        } else {
+            copyBtn.textContent = 'Start Copying';
+            copyBtn.className = 'btn btn-lg btn-primary';
+        }
+    }
+    
+    function loadTraderData() {
+       
+        traderNameEl.textContent = 'Expert Trader';
+        traderReturnEl.textContent = '+35%';
+
+        fetch(`/api/copy/status/${MASTER_TRADER_ID}`)
+            .then(res => res.json())
+            .then(data => {
+                setButtonState(data.is_copying);
+            });
+    }
+
+    copyBtn.addEventListener('click', function() {
+        const isCurrentlyCopying = this.classList.contains('btn-danger');
+        const action = isCurrentlyCopying ? 'stop' : 'start';
+        
+        this.disabled = true;
+        this.textContent = 'Processing...';
+
+        fetch(`/api/copy/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ master_id: MASTER_TRADER_ID })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            setButtonState(!isCurrentlyCopying);
+        })
+        .catch(error => {
+            alert(`Error: ${error.message}`);
+            setButtonState(isCurrentlyCopying);
+        })
+        .finally(() => {
+            this.disabled = false;
+        });
+    });
+
+    loadTraderData();
+});
+</script>
+</body>
+</html>

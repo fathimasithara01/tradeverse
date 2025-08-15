@@ -13,25 +13,28 @@ func WireAdminRoutes(
 	userCtrl *controllers.UserController,
 	roleCtrl *controllers.RoleController,
 	permCtrl *controllers.PermissionController,
+	activityCtrl *controllers.ActivityController,
 ) {
 	admin := r.Group("/admin")
 	{
-		// Public route for creating the first admin
 		admin.GET("/register", authCtrl.ShowAdminRegisterPage)
 		admin.POST("/register", authCtrl.RegisterAdmin)
 
-		// Protected routes that require admin login
 		protected := admin.Group("")
 		protected.Use(middleware.JWTMiddleware())
 		{
-			// Dashboard Routes -> DashboardController
 			protected.GET("/dashboard", dashCtrl.ShowDashboardPage)
+
 			protected.GET("/dashboard/stats", dashCtrl.GetDashboardStats)
+			protected.GET("/dashboard/charts", dashCtrl.GetChartData)
+			protected.GET("/dashboard/top-traders", dashCtrl.GetTopTraders)
+			protected.GET("/dashboard/latest-signups", dashCtrl.GetLatestSignups)
 
 			// User Management Routes -> UserController
 			protected.GET("/users", userCtrl.ShowUsersPage)
 			protected.GET("/users/add", userCtrl.ShowAddUserPage)
 			protected.GET("/users/edit/:id", userCtrl.ShowEditUserPage)
+
 			protected.POST("/users/add", userCtrl.CreateCustomer)
 			protected.POST("/users/edit/:id", userCtrl.UpdateUser)
 			protected.GET("/api/users", userCtrl.GetUsers)
@@ -57,6 +60,9 @@ func WireAdminRoutes(
 			protected.GET("/api/users/customers", userCtrl.GetCustomers)
 			protected.GET("/api/users/traders", userCtrl.GetTraders)
 
+			protected.GET("/users/traders/add", userCtrl.ShowAddTraderPage)
+			protected.POST("/users/traders/add", userCtrl.CreateTrader)
+
 			protected.GET("/users/traders/approval", userCtrl.ShowTraderApprovalPage)
 
 			// API routes for the frontend
@@ -64,6 +70,13 @@ func WireAdminRoutes(
 			protected.GET("/api/users/traders/approved", userCtrl.GetApprovedTraders) // For the 'Approved' tab
 			protected.POST("/api/users/traders/:id/approve", userCtrl.ApproveTrader)
 			protected.POST("/api/users/traders/:id/reject", userCtrl.RejectTrader)
+
+			protected.GET("/activity/live", activityCtrl.ShowLiveCopyingPage)
+			protected.GET("/activity/errors", activityCtrl.ShowTradeErrorsPage)
+
+			// API routes for the frontend
+			protected.GET("/api/activity/live", activityCtrl.GetActiveSessions)
+			protected.GET("/api/activity/logs", activityCtrl.GetTradeLogs)
 		}
 	}
 }

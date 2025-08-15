@@ -1,79 +1,80 @@
 package repository
 
 import (
-	"github.com/fathimasithara01/tradeverse/models" // Make sure this import path is correct
+	"time"
+
+	"github.com/fathimasithara01/tradeverse/models"
 	"gorm.io/gorm"
 )
 
-type DashboardRepository struct {
-	DB *gorm.DB
-}
+type DashboardRepository struct{ DB *gorm.DB }
 
-func NewDashboardRepository(db *gorm.DB) *DashboardRepository {
-	return &DashboardRepository{DB: db}
-}
+func NewDashboardRepository(db *gorm.DB) *DashboardRepository { return &DashboardRepository{DB: db} }
 
-// GetCustomerCount counts all records in the 'customers' table.
+// --- KPI Card Queries ---
 func (r *DashboardRepository) GetCustomerCount() (int64, error) {
 	var count int64
-	// Assumes you have a models.Customer struct
-	if err := r.DB.Model(&models.CustomerProfile{}).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return count, nil
+	err := r.DB.Model(&models.User{}).Where("role = ?", models.RoleCustomer).Count(&count).Error
+	return count, err
 }
 
-// GetTraderCount counts all records in the 'traders' table.
-func (r *DashboardRepository) GetTraderCount() (int64, error) {
+func (r *DashboardRepository) GetApprovedTraderCount() (int64, error) {
 	var count int64
-	// Assumes you have a models.Trader struct
-	if err := r.DB.Model(&models.TraderProfile{}).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return count, nil
+	err := r.DB.Model(&models.User{}).
+		Joins("JOIN trader_profiles ON users.id = trader_profiles.user_id").
+		Where("users.role = ? AND trader_profiles.status = ?", models.RoleTrader, models.StatusApproved).
+		Count(&count).Error
+	return count, err
 }
 
-// GetProductCount counts all records in the 'products' table.
-func (r *DashboardRepository) GetProductCount() (int64, error) {
+func (r *DashboardRepository) GetActiveSessionCount() (int64, error) {
 	var count int64
-	// Assumes you have a models.Product struct
-	if err := r.DB.Model(&models.Product{}).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return count, nil
+	err := r.DB.Model(&models.CopySession{}).Where("is_active = ?", true).Count(&count).Error
+	return count, err
 }
 
-// GetOrderCount counts all records in the 'orders' table.
-func (r *DashboardRepository) GetOrderCount() (int64, error) {
-	var count int64
-	// Uses the models.Order struct you asked for
-	if err := r.DB.Model(&models.Order{}).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return count, nil
+func (r *DashboardRepository) GetMonthlyRecurringRevenue() (int64, error) {
+	// MOCK DATA: Replace with a real query when you have a subscriptions table.
+	// Example real query:
+	// var total int64
+	// r.DB.Table("subscriptions").Where("status = ?", "active").Select("SUM(price)").Row().Scan(&total)
+	return 12450, nil
 }
 
-type MonthlyCountResult struct {
-	Month int `json:"month"`
-	Count int `json:"count"`
+// --- Chart & Table Queries ---
+
+type SignupStat struct {
+	Month time.Time
+	Count int
 }
 
-// GetMonthlyOrderCounts retrieves the count of orders for each month of a given year.
-func (r *DashboardRepository) GetMonthlyOrderCounts(year int) ([]MonthlyCountResult, error) {
-	var results []MonthlyCountResult
+func (r *DashboardRepository) GetMonthlySignups(role models.UserRole) ([]SignupStat, error) {
+	var results []SignupStat
+	sixMonthsAgo := time.Now().AddDate(0, -6, 0)
 
-	// This query groups orders by the month they were created and counts them.
-	// It's designed to work with PostgreSQL. See note below for MySQL.
-	err := r.DB.Model(&models.Order{}).
-		Select("EXTRACT(MONTH FROM created_at) as month, COUNT(id) as count").
-		Where("EXTRACT(YEAR FROM created_at) = ?", year).
+	err := r.DB.Model(&models.User{}).
+		Select("DATE_TRUNC('month', created_at) as month, COUNT(id) as count").
+		Where("role = ? AND created_at >= ?", role, sixMonthsAgo).
 		Group("month").
-		Order("month asc").
+		Order("month ASC").
 		Scan(&results).Error
 
-	if err != nil {
-		return nil, err
-	}
+	return results, err
+}
 
-	return results, nil
+func (r *DashboardRepository) GetTopTraders() ([]models.User, error) {
+	var users []models.User
+	err := r.DB.Joins("JOIN trader_profiles ON users.id = trader_profiles.user_id").
+		Where("users.role = ? AND trader_profiles.status = ?", models.RoleTrader, models.StatusApproved).
+		Order("trader_profiles.total_pnl DESC").
+		Limit(5).
+		Preload("TraderProfile").
+		Find(&users).Error
+	return users, err
+}
+
+func (r *DashboardRepository) GetLatestSignups() ([]models.User, error) {
+	var users []models.User
+	err := r.DB.Order("created_at DESC").Limit(5).Find(&users).Error
+	return users, err
 }

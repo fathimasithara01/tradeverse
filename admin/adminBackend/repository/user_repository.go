@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/fathimasithara01/tradeverse/models"
+	"gorm.io/gorm"
 )
 
 func (r *UserRepository) Create(user *models.User) error {
@@ -13,7 +14,10 @@ func (r *UserRepository) Create(user *models.User) error {
 func (r *UserRepository) FindByID(id uint) (models.User, error) {
 	var user models.User
 	if err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").First(&user, id).Error; err != nil {
-		return models.User{}, errors.New("user not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.User{}, errors.New("user not found")
+		}
+		return models.User{}, err
 	}
 	return user, nil
 }
