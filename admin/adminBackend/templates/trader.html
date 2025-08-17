@@ -1,198 +1,624 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Use the dynamic title passed from the Gin controller -->
-    <title>{{ .title }} - Admin View</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f4f7f9;
-            margin: 0;
-            padding: 2rem;
-        }
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Use the dynamic title passed from the Gin controller -->
+        <title>{{ .title }} - Admin View</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                background-color: #f4f7f9;
+                margin: 0;
+                padding: 2rem;
+            }
 
-        .page-header {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 3rem;
-        }
+            .page-header {
+                text-align: center;
+                color: #2c3e50;
+                margin-bottom: 3rem;
+            }
 
-        .trader-list-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 2rem;
-        }
+            .trader-list-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 2rem;
+            }
 
-        .trader-profile-card {
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        
-        .trader-profile-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-        }
+            .trader-profile-card {
+                background-color: #ffffff;
+                border-radius: 10px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                width: 100%;
+                max-width: 500px;
+                display: flex;
+                flex-direction: column;
+                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            }
+            
+            .trader-profile-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            }
 
-        .card-header {
-            background-color: #2c3e50;
-            color: #ffffff;
-            padding: 1rem;
-            text-align: center;
-        }
+            .card-header {
+                background-color: #2c3e50;
+                color: #ffffff;
+                padding: 1rem;
+                text-align: center;
+            }
 
-        .card-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
+            .card-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+            }
 
-        .card-body {
-            padding: 1.5rem;
-        }
+            .card-body {
+                padding: 1.5rem;
+            }
 
-        .profile-section {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
+            .profile-section {
+                display: flex;
+                align-items: center;
+                margin-bottom: 1.5rem;
+            }
 
-        .profile-picture {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 1.5rem;
-            border: 3px solid #ecf0f1;
-        }
+            .profile-picture {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-right: 1.5rem;
+                border: 3px solid #ecf0f1;
+            }
 
-        .profile-info h3 {
-            margin: 0 0 0.25rem 0;
-            font-size: 1.25rem;
-            color: #2c3e50;
-        }
+            .profile-info h3 {
+                margin: 0 0 0.25rem 0;
+                font-size: 1.25rem;
+                color: #2c3e50;
+            }
 
-        .profile-info p {
-            margin: 0;
-            color: #7f8c8d;
-        }
+            .profile-info p {
+                margin: 0;
+                color: #7f8c8d;
+            }
 
-        .bio-section h4 {
-            color: #2c3e50;
-            border-bottom: 2px solid #ecf0f1;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-        }
+            .bio-section h4 {
+                color: #2c3e50;
+                border-bottom: 2px solid #ecf0f1;
+                padding-bottom: 0.5rem;
+                margin-bottom: 1rem;
+            }
 
-        .bio-section p {
-            line-height: 1.6;
-            color: #34495e;
-            font-size: 0.95rem;
-        }
+            .bio-section p {
+                line-height: 1.6;
+                color: #34495e;
+                font-size: 0.95rem;
+            }
 
-        .stats-section {
-            display: flex;
-            justify-content: space-around;
-            background-color: #f8f9fa;
-            padding: 1rem;
-            margin: 1.5rem -1.5rem -1.5rem -1.5rem; /* Extend to card edges */
-        }
+            .stats-section {
+                display: flex;
+                justify-content: space-around;
+                background-color: #f8f9fa;
+                padding: 1rem;
+                margin: 1.5rem -1.5rem -1.5rem -1.5rem; /* Extend to card edges */
+            }
 
-        .stat {
-            text-align: center;
-        }
+            .stat {
+                text-align: center;
+            }
 
-        .stat h5 {
-            margin: 0 0 0.25rem 0;
-            font-size: 1rem;
-            color: #2c3e50;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+            .stat h5 {
+                margin: 0 0 0.25rem 0;
+                font-size: 1rem;
+                color: #2c3e50;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
 
-        .stat p {
-            margin: 0;
-            color: #7f8c8d;
-            font-size: 1.1rem;
-            font-weight: 500;
-        }
+            .stat p {
+                margin: 0;
+                color: #7f8c8d;
+                font-size: 1.1rem;
+                font-weight: 500;
+            }
 
-        .status {
-            display: inline-block;
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.8rem;
-            color: #ffffff;
-        }
+            .status {
+                display: inline-block;
+                padding: 0.4rem 0.8rem;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 0.8rem;
+                color: #ffffff;
+            }
 
-        .status.active {
-            background-color: #27ae60; /* Green */
-        }
+            .status.active {
+                background-color: #27ae60; /* Green */
+            }
 
-        .status.banned {
-            background-color: #c0392b; /* Red */
-        }
-    </style>
-</head>
-<body>
+            .status.banned {
+                background-color: #c0392b; /* Red */
+            }
+        </style>
+    </head>
+    <body>
 
-    <div class="page-header">
-        <h1>{{ .title }}</h1>
-    </div>
+        <div class="page-header">
+            <h1>{{ .title }}</h1>
+        </div>
 
-    <div class="trader-list-container">
-        <!-- Loop through each trader passed from the controller -->
-        {{range .traders}}
-        <div class="trader-profile-card">
-            <div class="card-body">
-                <div class="profile-section">
-                    <!-- Placeholder image, as model does not contain a picture URL -->
-                    <img src="https://via.placeholder.com/150" alt="Trader Profile Picture" class="profile-picture">
-                    <div class="profile-info">
-                        <!-- Display Trader's Name and Email -->
-                        <h3>{{ .Name }}</h3>
-                        <p>{{ .Email }}</p>
+        <div class="trader-list-container">
+            <!-- Loop through each trader passed from the controller -->
+            {{range .traders}}
+            <div class="trader-profile-card">
+                <div class="card-body">
+                    <div class="profile-section">
+                        <!-- Placeholder image, as model does not contain a picture URL -->
+                        <img src="https://via.placeholder.com/150" alt="Trader Profile Picture" class="profile-picture">
+                        <div class="profile-info">
+                            <!-- Display Trader's Name and Email -->
+                            <h3>{{ .Name }}</h3>
+                            <p>{{ .Email }}</p>
+                        </div>
+                    </div>
+
+                    <div class="bio-section">
+                        <h4>Bio</h4>
+                        <!-- Display Trader's Bio -->
+                        <p>{{ if .Bio }}{{ .Bio }}{{ else }}No bio provided.{{ end }}</p>
                     </div>
                 </div>
-
-                <div class="bio-section">
-                    <h4>Bio</h4>
-                    <!-- Display Trader's Bio -->
-                    <p>{{ if .Bio }}{{ .Bio }}{{ else }}No bio provided.{{ end }}</p>
+                
+                <div class="stats-section">
+                    <div class="stat">
+                        <h5>Followers</h5>
+                        <!-- Display the count of followers -->
+                        <p>{{ len .Followers }}</p>
+                    </div>
+                    <div class="stat">
+                        <h5>Status</h5>
+                        <!-- Conditionally display status based on IsBanned field -->
+                        {{if .IsBanned}}
+                            <p class="status banned">Banned</p>
+                        {{else}}
+                            <p class="status active">Active</p>
+                        {{end}}
+                    </div>
                 </div>
             </div>
-            
-            <div class="stats-section">
-                <div class="stat">
-                    <h5>Followers</h5>
-                    <!-- Display the count of followers -->
-                    <p>{{ len .Followers }}</p>
+            {{else}}
+            <!-- This part is shown if the .traders slice is empty -->
+            <p>No traders found in the database.</p>
+            {{end}}
+        </div>
+
+    </body>
+    </html>
+
+
+
+
+
+
+
+
+
+
+
+
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Dashboard</title>
+        <!-- Your CSS Links -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
+        <style>
+            :root {
+                --sidebar-bg: #ffffff;
+                --sidebar-width: 280px;
+                --main-bg: #f7f9fc;
+                --brand-color: #1a73e8;
+                --text-color: #343a40;
+                --link-color: #5f6368;
+                --link-hover-bg: #f1f3f4;
+                --link-active-bg: #e8f0fe;
+                --link-active-color: #1967d2;
+                --border-color: #e9ecef;
+                --shadow-color: rgba(0, 0, 0, 0.08);
+            }
+
+            body {
+                background-color: var(--main-bg);
+                font-family: 'Inter', sans-serif;
+            }
+
+            .wrapper {
+                display: flex;
+                width: 100%;
+                min-height: 100vh;
+            }
+
+            #content {
+                flex-grow: 1;
+                padding: 2.5rem;
+            }
+
+            #sidebar {
+                width: var(--sidebar-width);
+                min-width: var(--sidebar-width);
+                background: var(--sidebar-bg);
+                transition: all 0.3s;
+                box-shadow: 0 0 25px var(--shadow-color);
+                z-index: 1000;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .sidebar-header {
+                padding: 1.25rem 1.5rem;
+                text-align: center;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .sidebar-header h3 {
+                color: var(--brand-color);
+                font-weight: 700;
+                margin-bottom: 0;
+                font-size: 1.5rem;
+            }
+
+            #sidebar-nav {
+                flex-grow: 1;
+                padding: 1rem 0;
+            }
+
+            #sidebar-nav .nav-heading {
+                padding: 0.5rem 1.5rem;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: #adb5bd;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+            }
+
+            #sidebar-nav .nav-item a {
+                padding: 0.8rem 1.5rem;
+                font-size: 0.95rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                color: var(--link-color);
+                text-decoration: none;
+                transition: all 0.2s;
+                border-left: 4px solid transparent;
+            }
+
+            #sidebar-nav .nav-item a:hover {
+                background: var(--link-hover-bg);
+                color: var(--text-color);
+            }
+
+            #sidebar-nav .nav-item.active>a,
+            #sidebar-nav .nav-item a[aria-expanded="true"] {
+                background: var(--link-active-bg);
+                color: var(--link-active-color);
+                border-left-color: var(--link-active-color);
+            }
+
+            #sidebar-nav .nav-item a i {
+                margin-right: 1rem;
+                width: 20px;
+                text-align: center;
+                font-size: 1.1rem;
+            }
+
+            .collapse-arrow {
+                margin-left: auto;
+                transition: transform 0.2s ease-in-out;
+            }
+
+            a[aria-expanded="true"] .collapse-arrow {
+                transform: rotate(90deg);
+            }
+
+            .nav-collapse .nav-item a {
+                padding-left: 3.8rem !important;
+                font-size: 0.9rem;
+                border-left: none;
+                position: relative;
+                color: #6c757d;
+            }
+
+            .nav-collapse .nav-item.active a {
+                color: var(--link-active-color);
+                font-weight: 600;
+            }
+
+            .sidebar-footer {
+                border-top: 1px solid var(--border-color);
+                padding: 1rem 1.5rem;
+            }
+
+            #content {
+                flex-grow: 1;
+                padding: 2.5rem;
+            }
+
+            .card {
+                border: none;
+                border-radius: 0.75rem;
+                box-shadow: 0 2px 10px var(--shadow-color);
+                margin-bottom: 1.5rem;
+            }
+
+            .card-header {
+                background-color: #fff;
+                border-bottom: 1px solid var(--border-color);
+                font-weight: 600;
+            }
+
+            .stat-card {
+                text-align: center;
+                padding: 1.5rem;
+            }
+
+            .stat-card .icon {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-card .value {
+                font-size: 2rem;
+                font-weight: 700;
+            }
+
+            .stat-card .title {
+                font-size: 0.9rem;
+                color: #6c757d;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="wrapper">
+            <nav id="sidebar">
+                <div class="sidebar-header">
+                    <h3>TradeVerse</h3>
                 </div>
-                <div class="stat">
-                    <h5>Status</h5>
-                    <!-- Conditionally display status based on IsBanned field -->
-                    {{if .IsBanned}}
-                        <p class="status banned">Banned</p>
-                    {{else}}
-                        <p class="status active">Active</p>
-                    {{end}}
+
+                <ul id="sidebar-nav" class="list-unstyled">
+
+                    <li class="nav-heading">Main</li>
+
+                    <li class="nav-item active">
+                        <a href="/admin/dashboard"><i class="fas fa-tachometer-alt "></i> Dashboard</a>
+                    </li>
+
+                    <li class="nav-heading">Core Management</li>
+                    <!-- <li class="nav-item">
+                        <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-users"></i>
+                            <span>User Management</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
+                            <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
+                        </ul>
+                    </li> -->
+
+                    <li class="nav-item">
+                        <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-shield-alt"></i>
+                            <span> Users & Permissions</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
+                            <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
+                            <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
+                            <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
+                            <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
+                        </ul>
+                    </li>
+
+
+                    <li class="nav-item">
+                        <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Platform Activity</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
+                            <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
+                            <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#financialsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-wallet"></i>
+                            <span>Financials</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="financialsSubmenu">
+                            <li class="nav-item"><a href="#">Subscriptions</a></li>
+                            <li class="nav-item"><a href="#">Trader Payouts</a></li>
+                            <li class="nav-item"><a href="#">Transactions</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-heading">Growth & Support</li>
+                    <li class="nav-item">
+                        <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Marketing</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="marketingSubmenu">
+                            <li class="nav-item"><a href="#">Announcements</a></li>
+                            <li class="nav-item"><a href="#">Email Campaigns</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#"><i class="fas fa-headset"></i> Support Tickets</a>
+                    </li>
+
+                    <li class="nav-heading">System</li>
+                    <li class="nav-item">
+                        <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-cogs"></i>
+                            <span>System Settings</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="settingsSubmenu">
+                            <li class="nav-item"><a href="#">General</a></li>
+                            <li class="nav-item"><a href="#">Roles & Permissions</a></li>
+                            <li class="nav-item"><a href="#">Risk Management</a></li>
+                            <li class="nav-item"><a href="#">Broker Integrations</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <div class="sidebar-footer">
+                    <a href="#" class="d-flex align-items-center text-decoration-none text-dark">
+                        <img src="https://i.pravatar.cc/40?u=admin" alt="Admin" class="rounded-circle me-3" width="40"
+                            height="40">
+                        <div>
+                            <div class="fw-bold">Admin Name</div>
+                            <small>Logout</small>
+                        </div>
+                    </a>
+                </div>
+
+
+            </nav>
+            <!-- Main Page Content -->
+            <div id="content" class="container-fluid p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">Roles</h2>
+                    <a href="/admin/roles/add" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Role
+                    </a>
+                </div>
+
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">ID</th>
+                                        <th>Name</th>
+                                        <th>Created By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="roles-table-body">
+                                    <!-- Data will be loaded here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        {{else}}
-        <!-- This part is shown if the .traders slice is empty -->
-        <p>No traders found in the database.</p>
-        {{end}}
-    </div>
 
-</body>
-</html>
+        <!-- Bootstrap JS Bundle -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const tableBody = document.getElementById('roles-table-body');
+
+                function loadRoles() {
+                    // Show a loading state
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Loading roles...</td></tr>';
+
+                    // Fetch roles from your API endpoint
+                    fetch('/admin/api/roles')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(roles => {
+                            // Clear the loading state
+                            tableBody.innerHTML = '';
+
+                            if (!roles || roles.length === 0) {
+                                tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">No roles have been created yet.</td></tr>';
+                                return;
+                            }
+
+                            // Loop through the roles and build the table rows
+                            roles.forEach(role => {
+                                const row = document.createElement('tr');
+
+                                // --- THIS IS THE KEY FIX ---
+                                // Check if CreatedBy exists and has a name, otherwise show 'N/A'
+                                const createdByName = role.CreatedBy && role.CreatedBy.name ? role.CreatedBy.name : '<span class="text-muted">N/A</span>';
+
+                                row.innerHTML = `
+                                    <td class="ps-4">${role.ID}</td>
+                                    <td><strong>${role.name}</strong></td>
+                                    <td>${createdByName}</td>
+                                    <td>
+                                        <a href="/admin/roles/edit/${role.ID}" class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="fas fa-pencil-alt"></i> Edit
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRole(${role.ID})">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    </td>
+                                `;
+                                tableBody.appendChild(row);
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error fetching roles:', error);
+                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-danger">Failed to load roles. Please try again.</td></tr>';
+                        });
+                }
+
+                // Initial load of roles when the page is ready
+                loadRoles();
+            });
+
+            // Function to handle deleting a role
+            function deleteRole(roleId) {
+                if (confirm('Are you sure you want to delete this role?')) {
+                    fetch(`/admin/api/roles/${roleId}`, {
+                        method: 'DELETE',
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        alert('Role deleted successfully!');
+                        // Reload the table to show the change
+                        location.reload(); 
+                    })
+                    .catch(error => {
+                        console.error('Error deleting role:', error);
+                        alert(`Failed to delete role: ${error.message}`);
+                    });
+                }
+            }
+        </script>
+    </body>
+
+    </html>

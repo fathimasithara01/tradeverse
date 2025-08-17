@@ -11,7 +11,6 @@ type DashboardRepository struct{ DB *gorm.DB }
 
 func NewDashboardRepository(db *gorm.DB) *DashboardRepository { return &DashboardRepository{DB: db} }
 
-// --- KPI Card Queries ---
 func (r *DashboardRepository) GetCustomerCount() (int64, error) {
 	var count int64
 	err := r.DB.Model(&models.User{}).Where("role = ?", models.RoleCustomer).Count(&count).Error

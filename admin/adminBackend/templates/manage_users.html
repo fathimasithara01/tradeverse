@@ -2,34 +2,26 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-T">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Manage Users</title>
+    <title>Admin - User Management</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- Google Fonts: Inter is a popular, modern choice for dashboards -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- Modern CSS Variables for Easy Theming --- */
+        /* Your complete, correct CSS from the sidebar file goes here */
         :root {
             --sidebar-bg: #ffffff;
             --sidebar-width: 280px;
             --main-bg: #f7f9fc;
-
             --brand-color: #1a73e8;
             --text-color: #343a40;
             --link-color: #5f6368;
-
             --link-hover-bg: #f1f3f4;
             --link-active-bg: #e8f0fe;
             --link-active-color: #1967d2;
-
             --border-color: #e9ecef;
             --shadow-color: rgba(0, 0, 0, 0.08);
         }
@@ -37,17 +29,14 @@
         body {
             background-color: var(--main-bg);
             font-family: 'Inter', sans-serif;
-            color: var(--text-color);
         }
 
         .wrapper {
             display: flex;
             width: 100%;
             min-height: 100vh;
-            align-items: stretch;
         }
 
-        /* --- Sidebar --- */
         #sidebar {
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
@@ -59,7 +48,6 @@
             flex-direction: column;
         }
 
-        /* --- Sidebar Header (Logo) --- */
         .sidebar-header {
             padding: 1.25rem 1.5rem;
             text-align: center;
@@ -73,11 +61,9 @@
             font-size: 1.5rem;
         }
 
-        /* --- Sidebar Links --- */
         #sidebar-nav {
             flex-grow: 1;
             padding: 1rem 0;
-            overflow-y: auto;
         }
 
         #sidebar-nav .nav-heading {
@@ -113,7 +99,136 @@
             border-left-color: var(--link-active-color);
         }
 
-        /* --- Icons --- */
+        #content {
+            flex-grow: 1;
+            padding: 2.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .action-btn {
+            width: 35px;
+            height: 35px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            color: #fff;
+            text-decoration: none;
+            margin: 0 2px;
+            border: none;
+        }
+
+        .action-btn.edit {
+            background-color: #0dcaf0;
+        }
+
+        .action-btn.delete {
+            background-color: #dc3545;
+        }
+
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+
+        :root {
+            --sidebar-bg: #ffffff;
+            --sidebar-width: 280px;
+            --main-bg: #f7f9fc;
+            --brand-color: #1a73e8;
+            --text-color: #343a40;
+            --link-color: #5f6368;
+            --link-hover-bg: #f1f3f4;
+            --link-active-bg: #e8f0fe;
+            --link-active-color: #1967d2;
+            --border-color: #e9ecef;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background-color: var(--main-bg);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            transition: all 0.3s;
+            box-shadow: 0 0 25px var(--shadow-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h3 {
+            color: var(--brand-color);
+            font-weight: 700;
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
+
+        #sidebar-nav {
+            flex-grow: 1;
+            padding: 1rem 0;
+        }
+
+        #sidebar-nav .nav-heading {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #adb5bd;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        #sidebar-nav .nav-item a {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            color: var(--link-color);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        #sidebar-nav .nav-item a:hover {
+            background: var(--link-hover-bg);
+            color: var(--text-color);
+        }
+
+        #sidebar-nav .nav-item.active>a,
+        #sidebar-nav .nav-item a[aria-expanded="true"] {
+            background: var(--link-active-bg);
+            color: var(--link-active-color);
+            border-left-color: var(--link-active-color);
+        }
+
         #sidebar-nav .nav-item a i {
             margin-right: 1rem;
             width: 20px;
@@ -121,7 +236,6 @@
             font-size: 1.1rem;
         }
 
-        /* --- Dropdowns --- */
         .collapse-arrow {
             margin-left: auto;
             transition: transform 0.2s ease-in-out;
@@ -139,49 +253,58 @@
             color: #6c757d;
         }
 
-        .nav-collapse .nav-item a:hover {
-            color: var(--text-color);
-        }
-
-        .nav-collapse .nav-item a::before {
-            content: '';
-            position: absolute;
-            left: 2.1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 4px;
-            background-color: #adb5bd;
-            border-radius: 50%;
-        }
-
         .nav-collapse .nav-item.active a {
             color: var(--link-active-color);
             font-weight: 600;
         }
 
-        .nav-collapse .nav-item.active a::before {
-            background-color: var(--link-active-color);
-        }
-
-        /* --- Sidebar Footer --- */
         .sidebar-footer {
             border-top: 1px solid var(--border-color);
             padding: 1rem 1.5rem;
         }
 
-        /* --- Main Content Area --- */
         #content {
             flex-grow: 1;
             padding: 2.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #6c757d;
         }
     </style>
 </head>
 
 <body>
-
     <div class="wrapper">
-        <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3>TradeVerse</h3>
@@ -190,12 +313,13 @@
             <ul id="sidebar-nav" class="list-unstyled">
 
                 <li class="nav-heading">Main</li>
+
                 <li class="nav-item active">
-                    <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a href="/admin/dashboard"><i class="fas fa-tachometer-alt "></i> Dashboard</a>
                 </li>
 
                 <li class="nav-heading">Core Management</li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-users"></i>
                         <span>User Management</span>
@@ -206,18 +330,20 @@
                         <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
                         <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                     </ul>
-                </li>
-                <!-- Roles & Permissions Dropdown -->
+                </li> -->
+
                 <li class="nav-item">
                     <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-shield-alt"></i>
-                        <span>Roles & Permissions</span>
+                        <span> Users & Permissions</span>
                         <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
-                        <li class="nav-item"><a href="/admin/users">Manage User</a></li>
+                        <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
+                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                         <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions</a></li>
+                       <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
+                        <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
                     </ul>
                 </li>
 
@@ -229,8 +355,8 @@
                         <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
-                        <li class="nav-item"><a href="/admin/api/activity/live">Live Copying</a></li>
-                        <li class="nav-item"><a href="/admin/api/activity/logs">Trade Log & Errors</a></li>
+                        <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
+                        <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
                     </ul>
                 </li>
 
@@ -290,101 +416,176 @@
                     </div>
                 </a>
             </div>
+
+
         </nav>
-        <div id="content">
-            <div class="container-fluid">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">Manage Users</h4>
-                        <a href="/admin/users/add" class="btn btn-primary"><i class="fas fa-plus"></i> Add User</a>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>User Type</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="user-table-body">
-                                    <!-- Data will be inserted here -->
-                                </tbody>
-                            </table>
+        <!-- Page Content -->
+        <div id="content" class="container-fluid p-4">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">User Management</h2>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fas fa-plus me-2"></i>Add New User
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/admin/users/add"><i class="fas fa-user-friends me-2"></i>
+                                Create Customer</a></li>
+                        <li><a class="dropdown-item" href="/admin/users/traders/add"><i
+                                    class="fas fa-user-tie me-2"></i> Create Trader</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-5"><input type="text" id="search-input" class="form-control"
+                                placeholder="Search by name or email..."></div>
+                        <div class="col-md-3">
+                            <select id="role-filter" class="form-select">
+                                <option value="">All Roles</option>
+                                <option value="customer">Customer</option>
+                                <option value="trader">Trader</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="period-filter" class="form-select">
+                                <option value="">All Time</option>
+                                <option value="monthly">Last 30 Days</option>
+                                <option value="yearly">Last Year</option>
+                            </select>
                         </div>
                     </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th class="ps-4">Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Joined On</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-center">
+                    <nav id="pagination-nav"></nav>
                 </div>
             </div>
         </div>
     </div>
-    </div>
 
+    <!-- Bootstrap JS Bundle (includes Popper.js) - CRITICAL for dropdowns and other components -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- === CORRECTED JAVASCRIPT SECTION === -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const tableBody = document.getElementById('user-table-body');
+            const searchInput = document.getElementById('search-input');
+            const roleFilter = document.getElementById('role-filter');
+            const periodFilter = document.getElementById('period-filter');
+            const paginationNav = document.getElementById('pagination-nav');
+            let currentPage = 1;
+            let debounceTimer;
 
-            function fetchAndDisplayUsers() {
-                fetch('/admin/api/users')
-                    .then(response => response.json())
-                    .then(users => {
-                        tableBody.innerHTML = '';
-
-                        if (!users || users.length === 0) {
-                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No users found.</td></tr>';
-                            return;
-                        }
-
-                        users.forEach(user => {
-                            const row = document.createElement('tr');
-                            row.setAttribute('data-user-id', user.ID);
-
-                            // --- THESE ARE THE CORRECTED LINES ---
-                            row.innerHTML = `
-                            <td>${user.name || 'N/A'}</td>      <!-- FIX 1: Use lowercase 'user.name' -->
-                            <td>${user.email || 'N/A'}</td>     <!-- FIX 2: Use lowercase 'user.email' -->
-                            <td>${user.role || 'N/A'}</td>      <!-- FIX 3: Use the actual role from the data -->
-                            <td>
-                                <a href="/admin/users/edit/${user.ID}" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                                <button class="btn btn-sm btn-danger delete-btn" title="Delete"><i class="fas fa-trash"></i></button>
-                            </td>
-                        `;
-                            tableBody.appendChild(row);
-                        });
+            function fetchData(page = 1) {
+                currentPage = page;
+                const search = searchInput.value;
+                const role = roleFilter.value;
+                const period = periodFilter.value;
+                const url = `/admin/api/users/advanced?page=${page}&search=${search}&role=${role}&period=${period}`;
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading...</td></tr>';
+                paginationNav.innerHTML = '';
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) { throw new Error(data.error); }
+                        renderTable(data.users || []);
+                        renderPagination(data.total_pages || 0, data.page || 1);
                     })
                     .catch(error => {
-                        console.error('Error fetching users:', error);
-                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load user data.</td></tr>';
+                        console.error("Fetch Error:", error);
+                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger p-4">Failed to load users: ${error.message}</td></tr>`;
                     });
+            }
+
+            function renderTable(users) {
+                tableBody.innerHTML = '';
+                if (users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center p-4">No users found.</td></tr>';
+                    return;
+                }
+                users.forEach(user => {
+                    const joinedDate = new Date(user.CreatedAt).toLocaleDateString();
+                    const row = document.createElement('tr');
+                    row.setAttribute('data-user-id', user.ID);
+                    row.innerHTML = `
+                    <td>${user.ID}</td>
+                    <td class="ps-4">${user.name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge bg-secondary text-capitalize">${user.role}</span></td>
+                    <td>${joinedDate}</td>
+                    <td class="text-end pe-3">
+                        <a href="/admin/users/edit/${user.ID}" class="action-btn edit" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                        <button class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            // --- THIS IS THE FIX FOR PAGINATION ---
+            // This function was missing before.
+            function renderPagination(totalPages, currentPage) {
+                paginationNav.innerHTML = '';
+                if (totalPages <= 1) return;
+
+                let html = '<ul class="pagination">';
+                const prevDisabled = currentPage === 1 ? 'disabled' : '';
+                html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const activeClass = i === currentPage ? 'active' : '';
+                    html += `<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+
+                const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+                html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
+
+                html += '</ul>';
+                paginationNav.innerHTML = html;
             }
 
             function deleteUser(userId, rowElement) {
-                if (!confirm(`Are you sure you want to delete this user?`)) {
-                    return;
-                }
+                if (!confirm('Are you sure you want to delete this user?')) return;
                 fetch(`/admin/api/users/${userId}`, { method: 'DELETE' })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => { throw new Error(err.error || 'Failed to delete user.') });
-                        }
-                        return response.json();
-                    })
+                    .then(res => res.json())
                     .then(data => {
-                        console.log(data.message);
+                        if (data.error) { throw new Error(data.error); }
                         rowElement.remove();
+                        if (tableBody.rows.length === 0) { fetchData(currentPage); }
                     })
-                    .catch(error => {
-                        console.error('Error deleting user:', error);
-                        alert(error.message);
-                    });
+                    .catch(error => alert(`Error: ${error.message}`));
             }
 
+            // --- Event Listeners ---
+            searchInput.addEventListener('keyup', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => fetchData(1), 500);
+            });
+            roleFilter.addEventListener('change', () => fetchData(1));
+            periodFilter.addEventListener('change', () => fetchData(1));
+
             tableBody.addEventListener('click', function (event) {
-                const deleteButton = event.target.closest('.delete-btn');
+                const deleteButton = event.target.closest('.delete');
                 if (deleteButton) {
                     const row = deleteButton.closest('tr');
                     const userId = row.getAttribute('data-user-id');
@@ -392,7 +593,16 @@
                 }
             });
 
-            fetchAndDisplayUsers();
+            paginationNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageLink = e.target.closest('.page-link');
+                if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
+                    const page = parseInt(pageLink.getAttribute('data-page'));
+                    fetchData(page);
+                }
+            });
+
+            fetchData(); // Initial load
         });
     </script>
 </body>

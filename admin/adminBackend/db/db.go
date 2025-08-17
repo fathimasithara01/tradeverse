@@ -12,7 +12,7 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDatabase() {
+func ConnectDB() {
 	cfg := config.AppConfig
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
@@ -26,18 +26,17 @@ func ConnectDatabase() {
 
 	log.Println("Migrating parent tables (users, permissions)...")
 	err = DB.AutoMigrate(
-		&models.User{},
-		&models.Role{},
 		&models.Permission{},
-
+		&models.Role{},
+		&models.User{},
 		&models.CustomerProfile{},
 		&models.TraderProfile{},
-
-		// &models.Product{},
-		// &models.Order{},
-
 		&models.CopySession{},
 		&models.TradeLog{},
+		&models.Order{},
+		&models.OrderItem{},
+		&models.Address{},
+		&models.Product{},
 	)
 	if err != nil {
 		log.Printf("DATABASE MIGRATION ERROR (Step 1): %v", err)

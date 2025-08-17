@@ -16,13 +16,13 @@ import (
 
 func main() {
 	config.LoadConfig()
-	db.ConnectDatabase()
+	db.ConnectDB()
+	db.CreateAdminSeeder(db.DB)
 
 	r := gin.Default()
-
-	r.Static("/static", "./static")
-
 	r.LoadHTMLGlob("templates/*.html")
+
+	// r.Static("	/static", "./static")
 
 	userRepo := repository.NewUserRepository(db.DB)
 	roleRepo := repository.NewRoleRepository(db.DB)
@@ -31,8 +31,8 @@ func main() {
 	activityRepo := repository.NewActivityRepository(db.DB)
 	copyRepo := repository.NewCopyRepository(db.DB)
 
-	userService := service.NewUserService(userRepo)
-	roleService := service.NewRoleService(roleRepo, permissionRepo)
+	userService := service.NewUserService(userRepo, roleRepo)
+	roleService := service.NewRoleService(roleRepo, permissionRepo, userRepo)
 	dashboardService := service.NewDashboardService(dashboardRepo)
 	permissionService := service.NewPermissionService(permissionRepo)
 	activityService := service.NewActivityService(activityRepo)
@@ -48,7 +48,6 @@ func main() {
 
 	routes.WirePublicRoutes(r, authController)
 	routes.WireFollowerRoutes(r, copyController)
-
 	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController, permissionController, activityController)
 
 	port := config.AppConfig.Port

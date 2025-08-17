@@ -14,7 +14,6 @@ func NewActivityController(activitySvc *service.ActivityService) *ActivityContro
 	return &ActivityController{ActivitySvc: activitySvc}
 }
 
-// --- Page Rendering ---
 func (ctrl *ActivityController) ShowLiveCopyingPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "live_copying.html", nil)
 }
@@ -22,7 +21,6 @@ func (ctrl *ActivityController) ShowTradeErrorsPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "trade_errors.html", nil)
 }
 
-// --- API Endpoints ---
 func (ctrl *ActivityController) GetActiveSessions(c *gin.Context) {
 	sessions, err := ctrl.ActivitySvc.GetActiveSessions()
 	if err != nil {

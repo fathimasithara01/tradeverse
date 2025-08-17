@@ -5,447 +5,450 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Assign Permissions</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- Google Fonts: Inter is a popular, modern choice for dashboards -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+   <style>
+            /* --- CORRECTED AND CLEANED CSS --- */
+            :root {
+                --sidebar-bg: #ffffff;
+                --sidebar-width: 280px;
+                --main-bg: #f7f9fc;
+                --brand-color: #1a73e8;
+                --text-color: #343a40;
+                --link-color: #5f6368;
+                --link-hover-bg: #f1f3f4;
+                --link-active-bg: #e8f0fe;
+                --link-active-color: #1967d2;
+                --border-color: #e9ecef;
+                --shadow-color: rgba(0, 0, 0, 0.08);
+            }
 
-    <style>
-        /* --- Modern CSS Variables for Easy Theming --- */
-        :root {
-            --sidebar-bg: #ffffff;
-            --sidebar-width: 280px;
-            --main-bg: #f7f9fc;
+            body {
+                background-color: var(--main-bg);
+                font-family: 'Inter', sans-serif;
+            }
 
-            --brand-color: #1a73e8;
-            --text-color: #343a40;
-            --link-color: #5f6368;
+            .wrapper {
+                display: flex;
+                width: 100%;
+                min-height: 100vh;
+            }
 
-            --link-hover-bg: #f1f3f4;
-            --link-active-bg: #e8f0fe;
-            --link-active-color: #1967d2;
+            #sidebar {
+                width: var(--sidebar-width);
+                min-width: var(--sidebar-width);
+                background: var(--sidebar-bg);
+                transition: all 0.3s;
+                box-shadow: 0 0 25px var(--shadow-color);
+                z-index: 1000;
+                display: flex;
+                flex-direction: column;
+            }
 
-            --border-color: #e9ecef;
-            --shadow-color: rgba(0, 0, 0, 0.08);
-        }
+            .sidebar-header {
+                padding: 1.25rem 1.5rem;
+                text-align: center;
+                border-bottom: 1px solid var(--border-color);
+            }
 
-        body {
-            background-color: var(--main-bg);
-            font-family: 'Inter', sans-serif;
-            color: var(--text-color);
-        }
+            .sidebar-header h3 {
+                color: var(--brand-color);
+                font-weight: 700;
+                margin-bottom: 0;
+                font-size: 1.5rem;
+            }
 
-        .wrapper {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-            align-items: stretch;
-        }
+            #sidebar-nav {
+                flex-grow: 1;
+                padding: 1rem 0;
+            }
 
-        /* --- Sidebar --- */
-        #sidebar {
-            width: var(--sidebar-width);
-            min-width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            transition: all 0.3s;
-            box-shadow: 0 0 25px var(--shadow-color);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-        }
+            #sidebar-nav .nav-heading {
+                padding: 0.5rem 1.5rem;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: #adb5bd;
+                text-transform: uppercase;
+                letter-spacing: .5px;
+            }
 
-        /* --- Sidebar Header (Logo) --- */
-        .sidebar-header {
-            padding: 1.25rem 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-        }
+            #sidebar-nav .nav-item a {
+                padding: 0.8rem 1.5rem;
+                font-size: 0.95rem;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                color: var(--link-color);
+                text-decoration: none;
+                transition: all 0.2s;
+                border-left: 4px solid transparent;
+            }
 
-        .sidebar-header h3 {
-            color: var(--brand-color);
-            font-weight: 700;
-            margin-bottom: 0;
-            font-size: 1.5rem;
-        }
+            #sidebar-nav .nav-item a:hover {
+                background: var(--link-hover-bg);
+                color: var(--text-color);
+            }
 
-        /* --- Sidebar Links --- */
-        #sidebar-nav {
-            flex-grow: 1;
-            padding: 1rem 0;
-            overflow-y: auto;
-        }
+            #sidebar-nav .nav-item.active>a,
+            #sidebar-nav .nav-item a[aria-expanded="true"] {
+                background: var(--link-active-bg);
+                color: var(--link-active-color);
+                border-left-color: var(--link-active-color);
+            }
 
-        #sidebar-nav .nav-heading {
-            padding: 0.5rem 1.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #adb5bd;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
+            #sidebar-nav .nav-item a i {
+                margin-right: 1rem;
+                width: 20px;
+                text-align: center;
+                font-size: 1.1rem;
+            }
 
-        #sidebar-nav .nav-item a {
-            padding: 0.8rem 1.5rem;
-            font-size: 0.95rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            color: var(--link-color);
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
-        }
+            .collapse-arrow {
+                margin-left: auto;
+                transition: transform 0.2s ease-in-out;
+            }
 
-        #sidebar-nav .nav-item a:hover {
-            background: var(--link-hover-bg);
-            color: var(--text-color);
-        }
+            a[aria-expanded="true"] .collapse-arrow {
+                transform: rotate(90deg);
+            }
 
-        #sidebar-nav .nav-item.active>a,
-        #sidebar-nav .nav-item a[aria-expanded="true"] {
-            background: var(--link-active-bg);
-            color: var(--link-active-color);
-            border-left-color: var(--link-active-color);
-        }
+            .nav-collapse .nav-item a {
+                padding-left: 3.8rem !important;
+                font-size: 0.9rem;
+                border-left: none;
+                position: relative;
+                color: #6c757d;
+            }
 
-        /* --- Icons --- */
-        #sidebar-nav .nav-item a i {
-            margin-right: 1rem;
-            width: 20px;
-            text-align: center;
-            font-size: 1.1rem;
-        }
+            .nav-collapse .nav-item.active a {
+                color: var(--link-active-color);
+                font-weight: 600;
+            }
 
-        /* --- Dropdowns --- */
-        .collapse-arrow {
-            margin-left: auto;
-            transition: transform 0.2s ease-in-out;
-        }
+            .sidebar-footer {
+                border-top: 1px solid var(--border-color);
+                padding: 1rem 1.5rem;
+            }
 
-        a[aria-expanded="true"] .collapse-arrow {
-            transform: rotate(90deg);
-        }
+            #content {
+                flex-grow: 1;
+                padding: 2.5rem;
+            }
 
-        .nav-collapse .nav-item a {
-            padding-left: 3.8rem !important;
-            font-size: 0.9rem;
-            border-left: none;
-            position: relative;
-            color: #6c757d;
-        }
+            .card {
+                border: none;
+                border-radius: 0.75rem;
+                box-shadow: 0 2px 10px var(--shadow-color);
+                margin-bottom: 1.5rem;
+            }
 
-        .nav-collapse .nav-item a:hover {
-            color: var(--text-color);
-        }
+            .card-header {
+                background-color: #fff;
+                border-bottom: 1px solid var(--border-color);
+                font-weight: 600;
+            }
 
-        .nav-collapse .nav-item a::before {
-            content: '';
-            position: absolute;
-            left: 2.1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 4px;
-            background-color: #adb5bd;
-            border-radius: 50%;
-        }
+            .stat-card {
+                text-align: center;
+                padding: 1.5rem;
+            }
 
-        .nav-collapse .nav-item.active a {
-            color: var(--link-active-color);
-            font-weight: 600;
-        }
+            .stat-card .icon {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+            }
 
-        .nav-collapse .nav-item.active a::before {
-            background-color: var(--link-active-color);
-        }
+            .stat-card .value {
+                font-size: 2rem;
+                font-weight: 700;
+            }
 
-        /* --- Sidebar Footer --- */
-        .sidebar-footer {
-            border-top: 1px solid var(--border-color);
-            padding: 1rem 1.5rem;
-        }
+            .stat-card .title {
+                font-size: 0.9rem;
+                color: #6c757d;
+            }
+        </style>
+    </head>
 
-        /* --- Main Content Area --- */
-        #content {
-            flex-grow: 1;
-            padding: 2.5rem;
-        }
-    </style>
-</head>
+    <body>
+        <div class="wrapper">
+            <nav id="sidebar">
+                <div class="sidebar-header">
+                    <h3>TradeVerse</h3>
+                </div>
 
-<body>
+                <ul id="sidebar-nav" class="list-unstyled">
 
-    <div class="wrapper">
-        <!-- Sidebar -->
-        <nav id="sidebar">
-            <div class="sidebar-header">
-                <h3>TradeVerse</h3>
-            </div>
+                    <li class="nav-heading">Main</li>
 
-            <ul id="sidebar-nav" class="list-unstyled">
+                    <li class="nav-item active">
+                        <a href="/admin/dashboard"><i class="fas fa-tachometer-alt "></i> Dashboard</a>
+                    </li>
 
-                <li class="nav-heading">Main</li>
-                <li class="nav-item active">
-                    <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                </li>
+                    <li class="nav-heading">Core Management</li>
+                    <!-- <li class="nav-item">
+                        <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-users"></i>
+                            <span>User Management</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
+                            <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
+                        </ul>
+                    </li> -->
 
-                <li class="nav-heading">Core Management</li>
-                <li class="nav-item">
-                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-users"></i>
-                        <span>User Management</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    <li class="nav-item">
+                        <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-shield-alt"></i>
+                            <span> Users & Permissions</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
+                            <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
+                            <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
+                            <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
+                            <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
+                            <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
+
+                            </ul>
+                    </li>
+
+
+                    <li class="nav-item">
+                        <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Platform Activity</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
+                            <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
+                            <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#financialsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-wallet"></i>
+                            <span>Financials</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="financialsSubmenu">
+                            <li class="nav-item"><a href="#">Subscriptions</a></li>
+                            <li class="nav-item"><a href="#">Trader Payouts</a></li>
+                            <li class="nav-item"><a href="#">Transactions</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-heading">Growth & Support</li>
+                    <li class="nav-item">
+                        <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Marketing</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="marketingSubmenu">
+                            <li class="nav-item"><a href="#">Announcements</a></li>
+                            <li class="nav-item"><a href="#">Email Campaigns</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="#"><i class="fas fa-headset"></i> Support Tickets</a>
+                    </li>
+
+                    <li class="nav-heading">System</li>
+                    <li class="nav-item">
+                        <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                            <i class="fas fa-cogs"></i>
+                            <span>System Settings</span>
+                            <i class="fas fa-chevron-right collapse-arrow"></i>
+                        </a>
+                        <ul class="collapse list-unstyled nav-collapse" id="settingsSubmenu">
+                            <li class="nav-item"><a href="#">General</a></li>
+                            <li class="nav-item"><a href="#">Roles & Permissions</a></li>
+                            <li class="nav-item"><a href="#">Risk Management</a></li>
+                            <li class="nav-item"><a href="#">Broker Integrations</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <div class="sidebar-footer">
+                    <a href="#" class="d-flex align-items-center text-decoration-none text-dark">
+                        <img src="https://i.pravatar.cc/40?u=admin" alt="Admin" class="rounded-circle me-3" width="40"
+                            height="40">
+                        <div>
+                            <div class="fw-bold">Admin Name</div>
+                            <small>Logout</small>
+                        </div>
                     </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
-                        <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
-                    </ul>
-                </li>
-                <!-- Roles & Permissions Dropdown -->
-                <li class="nav-item">
-                    <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Roles & Permissions</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
-                        <li class="nav-item"><a href="/admin/users">Manage User</a></li>
-                        <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions</a></li>
-                    </ul>
-                </li>
+                </div>
 
 
-                <li class="nav-item">
-                    <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>Platform Activity</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
-                         <li class="nav-item"><a href="/admin/api/activity/live">Live Copying</a></li>
-                        <li class="nav-item"><a href="/admin/api/activity/logs">Trade Log & Errors</a></li>
-                    </ul>
-                </li>
+            </nav>
 
-                <li class="nav-item">
-                    <a href="#financialsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-wallet"></i>
-                        <span>Financials</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="financialsSubmenu">
-                        <li class="nav-item"><a href="#">Subscriptions</a></li>
-                        <li class="nav-item"><a href="#">Trader Payouts</a></li>
-                        <li class="nav-item"><a href="#">Transactions</a></li>
-                    </ul>
-                </li>
+        <!-- Main Content -->
+        <div id="content" class="container-fluid p-4">
+            <h2 class="mb-4">Assign Resource Access to Role</h2>
 
-                <li class="nav-heading">Growth & Support</li>
-                <li class="nav-item">
-                    <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-bullhorn"></i>
-                        <span>Marketing</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="marketingSubmenu">
-                        <li class="nav-item"><a href="#">Announcements</a></li>
-                        <li class="nav-item"><a href="#">Email Campaigns</a></li>
-                    </ul>
-                </li>
-
-                <li class="nav-item">
-                    <a href="#"><i class="fas fa-headset"></i> Support Tickets</a>
-                </li>
-
-                <li class="nav-heading">System</li>
-                <li class="nav-item">
-                    <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-cogs"></i>
-                        <span>System Settings</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="settingsSubmenu">
-                        <li class="nav-item"><a href="#">General</a></li>
-                        <li class="nav-item"><a href="#">Roles & Permissions</a></li>
-                        <li class="nav-item"><a href="#">Risk Management</a></li>
-                        <li class="nav-item"><a href="#">Broker Integrations</a></li>
-                    </ul>
-                </li>
-            </ul>
-
-            <div class="sidebar-footer">
-                <a href="#" class="d-flex align-items-center text-decoration-none text-dark">
-                    <img src="https://i.pravatar.cc/40?u=admin" alt="Admin" class="rounded-circle me-3" width="40"
-                        height="40">
-                    <div>
-                        <div class="fw-bold">Admin Name</div>
-                        <small>Logout</small>
+            <div class="card">
+                <div class="card-body p-4">
+                    <!-- Role Selection -->
+                    <div class="row mb-4 align-items-center">
+                        <div class="col-md-5">
+                            <label for="role-select" class="form-label fw-bold">Select Role</label>
+                            <select class="form-select" id="role-select">
+                                <option selected disabled value="">Loading roles...</option>
+                            </select>
+                        </div>
                     </div>
-                </a>
-            </div>
-        </nav>
-        <!-- Page Content -->
-        <div id="content">
-            <div class="container-fluid">
-                <h2 class="mb-4">Assign Resource Access to Role</h2>
-                <div class="card">
-                    <div class="card-body p-4">
-                        <div class="row mb-4 align-items-center">
-                            <div class="col-md-4">
-                                <label for="role-select" class="form-label fw-bold">Select Role</label>
-                                <select class="form-select" id="role-select">
-                                    <option selected disabled>Select a role to begin...</option>
-                                </select>
-                            </div>
-                            <div class="col-md-8 d-flex justify-content-end align-items-center">
-                                <div class="form-check form-switch fs-5">
-                                    <input class="form-check-input" type="checkbox" role="switch"
-                                        id="select-all-permissions">
-                                    <label class="form-check-label" for="select-all-permissions">
-                                        Select All
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+                    <hr>
 
-                        <!-- Permissions container will be hidden until a role is selected -->
-                        <div id="permissions-container" class="mt-3" style="display: none;">
-                            <!-- Dynamic content will be loaded here -->
-                            <p class="text-center text-muted">Loading permissions...</p>
-                        </div>
+                    <!-- Permissions Container -->
+                    <div id="permissions-wrapper">
+                        <!-- This container will be dynamically filled -->
+                    </div>
 
-                        <div class="mt-4 border-top pt-3">
-                            <button class="btn btn-primary" id="save-permissions-btn" disabled>
-                                <i class="fas fa-save me-2"></i>Save Changes
-                            </button>
-                            <div id="success-alert" class="alert alert-success mt-3" style="display: none;"
-                                role="alert"></div>
-                        </div>
+                    <!-- Action Buttons & Alerts -->
+                    <div id="actions-container" class="mt-4 border-top pt-3" style="display: none;">
+                        <button class="btn btn-primary" id="save-permissions-btn">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                        <div id="alert-container" class="mt-3"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // --- Element References ---
             const roleSelect = document.getElementById('role-select');
-            const permissionsContainer = document.getElementById('permissions-container');
+            const permissionsWrapper = document.getElementById('permissions-wrapper');
+            const actionsContainer = document.getElementById('actions-container');
             const saveBtn = document.getElementById('save-permissions-btn');
-            const selectAllCheckbox = document.getElementById('select-all-permissions');
-            const successAlert = document.getElementById('success-alert');
+            const alertContainer = document.getElementById('alert-container');
 
-            // --- 1. Fetch Roles for the Dropdown on Page Load ---
-            fetch('/admin/api/roles')
-                .then(res => res.ok ? res.json() : Promise.reject('Failed to load roles'))
-                .then(roles => {
+            // --- 1. Load Roles into Dropdown ---
+            async function loadRoles() {
+                try {
+                    const response = await fetch('/admin/api/roles');
+                    const roles = await response.json();
+                    roleSelect.innerHTML = '<option selected disabled value="">Select a role to begin...</option>';
                     roles.forEach(role => {
-                        const option = document.createElement('option');
-                        option.value = role.ID;
-                        option.textContent = role.name;
-                        roleSelect.appendChild(option);
+                        roleSelect.innerHTML += `<option value="${role.ID}">${role.name}</option>`;
                     });
-                })
-                .catch(err => console.error(err));
-
-            // --- 2. Main Handler for Role Selection ---
-            roleSelect.addEventListener('change', function () {
-                const roleId = this.value;
-                if (!roleId) return;
-
-                // Show loading state and disable save button until data is loaded
-                permissionsContainer.innerHTML = `<p class="text-center text-muted">Loading permissions...</p>`;
-                permissionsContainer.style.display = 'block';
+                } catch (error) {
+                    roleSelect.innerHTML = '<option selected disabled value="">Error loading roles</option>';
+                    console.error('Failed to load roles:', error);
+                }
+            }
+            
+            // --- 2. Display Permissions for Selected Role ---
+            async function displayPermissions(roleId) {
+                permissionsWrapper.innerHTML = `
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading permissions...</p>
+                    </div>`;
+                actionsContainer.style.display = 'block';
                 saveBtn.disabled = true;
 
-                // Fetch all available permissions first
-                const allPermissionsPromise = fetch('/admin/api/permissions').then(res => res.json());
-
-                // Fetch the permissions already assigned to the selected role
-                const rolePermissionsPromise = fetch(`/admin/api/roles/${roleId}/permissions`).then(res => res.json());
-
-                // Wait for both API calls to complete
-                Promise.all([allPermissionsPromise, rolePermissionsPromise])
-                    .then(([groupedPermissions, roleData]) => {
-                        renderPermissionGroups(groupedPermissions, roleData.permission_ids || []);
-                        saveBtn.disabled = false;
-                    })
-                    .catch(err => {
-                        console.error("Error fetching permissions:", err);
-                        permissionsContainer.innerHTML = `<div class="alert alert-danger">Could not load permissions.</div>`;
-                    });
-            });
-
-            // --- 3. Function to Render the Permission Groups ---
-            function renderPermissionGroups(groupedPermissions, assignedIds) {
-                let html = '<div class="row">';
-                for (const category in groupedPermissions) {
-                    html += `
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="permission-group h-100">
-                            <h6>${category}</h6>
-                            <div class="d-flex flex-column">
-                `;
-                    groupedPermissions[category].forEach(p => {
-                        const isChecked = assignedIds.includes(p.ID) ? 'checked' : '';
-                        html += `
-                        <div class="form-check">
-                            <input class="form-check-input permission-checkbox" type="checkbox" value="${p.ID}" id="perm-${p.ID}" ${isChecked}>
-                            <label class="form-check-label" for="perm-${p.ID}">${p.name}</label>
-                        </div>
-                    `;
-                    });
-                    html += `</div></div></div>`;
+                try {
+                    const allPermsPromise = fetch('/admin/api/permissions').then(res => res.json());
+                    const rolePermsPromise = fetch(`/admin/api/roles/${roleId}/permissions`).then(res => res.json());
+                    const [groupedPermissions, roleData] = await Promise.all([allPermsPromise, rolePermsPromise]);
+                    
+                    let headerHtml = `
+                        <div class="d-flex justify-content-end align-items-center mb-3">
+                            <div class="form-check form-switch fs-5">
+                                <input class="form-check-input" type="checkbox" role="switch" id="select-all-permissions">
+                                <label class="form-check-label" for="select-all-permissions">Select All</label>
+                            </div>
+                        </div>`;
+                    
+                    let bodyHtml = '<div class="row g-4">'; // Using Bootstrap Grid
+                    for (const category in groupedPermissions) {
+                        bodyHtml += '<div class="col-lg-4 col-md-6">'; // 3 columns on large, 2 on medium
+                        bodyHtml += '<div class="permission-group">';
+                        bodyHtml += `<h6>${category}</h6>`;
+                        groupedPermissions[category].forEach(p => {
+                            const isChecked = roleData.permission_ids.includes(p.ID) ? 'checked' : '';
+                            bodyHtml += `
+                                <div class="form-check">
+                                    <input class="form-check-input permission-checkbox" type="checkbox" value="${p.ID}" id="perm-${p.ID}" ${isChecked}>
+                                    <label class="form-check-label" for="perm-${p.ID}">${p.name}</label>
+                                </div>`;
+                        });
+                        bodyHtml += '</div></div>';
+                    }
+                    bodyHtml += '</div>';
+                    permissionsWrapper.innerHTML = headerHtml + bodyHtml;
+                    saveBtn.disabled = false;
+                } catch (error) {
+                    permissionsWrapper.innerHTML = `<p class="text-center text-danger">Failed to load permissions.</p>`;
+                    console.error('Permission load error:', error);
                 }
-                html += '</div>';
-                permissionsContainer.innerHTML = html;
             }
-
-            // --- 4. "Select All" Functionality ---
-            selectAllCheckbox.addEventListener('change', function () {
-                document.querySelectorAll('.permission-checkbox').forEach(cb => {
-                    cb.checked = this.checked;
-                });
+            
+            // --- Event Listeners ---
+            roleSelect.addEventListener('change', function () {
+                if (this.value) {
+                    displayPermissions(this.value);
+                }
             });
 
-            // --- 5. Save Changes Functionality ---
-            saveBtn.addEventListener('click', function () {
-                const roleId = roleSelect.value;
-                const selectedPermissionIds = Array.from(document.querySelectorAll('.permission-checkbox:checked'))
-                    .map(cb => parseInt(cb.value));
+            // Using event delegation for 'Select All' as it's created dynamically
+            permissionsWrapper.addEventListener('change', function(event) {
+                if (event.target.id === 'select-all-permissions') {
+                    document.querySelectorAll('.permission-checkbox').forEach(cb => {
+                        cb.checked = event.target.checked;
+                    });
+                }
+            });
 
-                this.textContent = 'Saving...';
+            saveBtn.addEventListener('click', async function () {
+                const roleId = roleSelect.value;
+                const selectedIds = Array.from(document.querySelectorAll('.permission-checkbox:checked')).map(cb => parseInt(cb.value));
+                
+                const originalHtml = this.innerHTML;
+                this.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...`;
                 this.disabled = true;
 
-                fetch(`/admin/api/roles/${roleId}/permissions`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ permission_ids: selectedPermissionIds })
-                })
-                    .then(res => res.ok ? res.json() : Promise.reject('Failed to save permissions'))
-                    .then(data => {
-                        successAlert.textContent = data.message;
-                        successAlert.style.display = 'block';
-                        setTimeout(() => successAlert.style.display = 'none', 3000);
-                    })
-                    .catch(err => alert(err.toString()))
-                    .finally(() => {
-                        this.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
-                        this.disabled = false;
+                try {
+                    const response = await fetch(`/admin/api/roles/${roleId}/permissions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ permission_ids: selectedIds })
                     });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'Unknown error occurred');
+                    
+                    showAlert(data.message, 'success');
+                } catch (err) {
+                    showAlert(`Error: ${err.message}`, 'danger');
+                } finally {
+                    this.innerHTML = originalHtml;
+                    this.disabled = false;
+                }
             });
+
+            function showAlert(message, type = 'success') {
+                alertContainer.innerHTML = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+            }
+
+            // --- Initial Load ---
+            loadRoles();
+            permissionsWrapper.innerHTML = `<p class="text-center text-muted p-5">Please select a role to view and assign permissions.</p>`;
         });
     </script>
 </body>

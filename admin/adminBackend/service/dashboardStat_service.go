@@ -81,10 +81,9 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 	wg.Wait()
 	close(errChan)
 
-	// Check if any of the concurrent functions returned an error
 	for e := range errChan {
 		if e != nil {
-			return DashboardStats{}, e // Return on the first error
+			return DashboardStats{}, e
 		}
 	}
 

@@ -9,13 +9,12 @@ func NewCopyService(repo *repository.CopyRepository) *CopyService { return &Copy
 func (s *CopyService) GetCopyStatus(followerID, masterID uint) (bool, error) {
 	session, err := s.Repo.GetSessionStatus(followerID, masterID)
 	if err != nil {
-		return false, nil // If not found, they are not copying. Not an error.
+		return false, nil
 	}
 	return session.IsActive, nil
 }
 
 func (s *CopyService) StartCopying(followerID, masterID uint) error {
-	// You could add more logic here, like checking if the user has an active subscription.
 	return s.Repo.StartOrUpdateSession(followerID, masterID)
 }
 

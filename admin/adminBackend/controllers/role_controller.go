@@ -1,13 +1,15 @@
 package controllers
 
 import (
-	"log"
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/fathimasithara01/tradeverse/models"
 	"github.com/fathimasithara01/tradeverse/service"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type RoleController struct {
@@ -40,28 +42,42 @@ func (ctrl *RoleController) CreateRole(c *gin.Context) {
 	var role models.Role
 	role.Name = c.PostForm("Name")
 
-	loggedInUserID, exists := c.Get("userID")
+	if role.Name == "" {
+		c.HTML(http.StatusBadRequest, "add_role.html", gin.H{"error": "Role name cannot be empty."})
+		return
+	}
+
+	userIDVal, exists := c.Get("userID")
 	if !exists {
-		log.Println("[ERROR] 'userID' not found in Gin context.")
-		c.HTML(http.StatusUnauthorized, "add_role.html", gin.H{"error": "User ID could not be determined from token."})
+		c.HTML(http.StatusUnauthorized, "error.html", gin.H{"error": "Authentication error: User ID not found."})
 		return
 	}
 
-	userID, ok := loggedInUserID.(uint)
-	if !ok || userID == 0 {
-		log.Printf("[ERROR] 'userID' in context has wrong type or is zero. Value: %v", loggedInUserID)
-		c.HTML(http.StatusInternalServerError, "add_role.html", gin.H{"error": "User ID has an invalid format."})
+	loggedInUserID, ok := userIDVal.(uint)
+	if !ok || loggedInUserID == 0 {
+		c.HTML(http.StatusUnauthorized, "error.html", gin.H{"error": "Authentication error: Invalid User ID."})
 		return
 	}
 
-	log.Printf("[INFO] Attempting to create role with CreatedByID: %d\n", userID)
-	if err := ctrl.RoleSvc.CreateRole(&role, userID); err != nil {
-		log.Printf("[ERROR] Service failed to create role: %s\n", err.Error())
-		c.HTML(http.StatusBadRequest, "add_role.html", gin.H{"error": "Failed to create role: " + err.Error()})
+	if err := ctrl.RoleSvc.CreateRole(&role, loggedInUserID); err != nil {
+		var pgErr *pgconn.PgError
+		if ok := errors.As(err, &pgErr); ok && pgErr.Code == "23505" {
+			if strings.Contains(pgErr.Message, "uni_roles_name") {
+				c.HTML(http.StatusBadRequest, "add_role.html", gin.H{
+					"error": "Failed to create role: A role with this name already exists.",
+					"Name":  role.Name,
+				})
+				return
+			}
+		}
+
+		c.HTML(http.StatusInternalServerError, "add_role.html", gin.H{
+			"error": "An unexpected error occurred. Please try again.",
+			"Name":  role.Name,
+		})
 		return
 	}
 
-	log.Println("[SUCCESS] Role created successfully.")
 	c.Redirect(http.StatusFound, "/admin/roles")
 }
 
@@ -87,20 +103,14 @@ func (ctrl *RoleController) GetRoles(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve roles"})
 		return
 	}
-	if roles == nil {
-		roles = make([]models.Role, 0)
-	}
+
 	c.JSON(http.StatusOK, roles)
 }
 
 func (ctrl *RoleController) DeleteRole(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid role ID."})
-		return
-	}
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err := ctrl.RoleSvc.DeleteRole(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete role."})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete role"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Role deleted successfully"})

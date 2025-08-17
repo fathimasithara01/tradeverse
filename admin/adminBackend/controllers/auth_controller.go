@@ -27,9 +27,6 @@ func (ctrl *AuthController) ShowCustomerRegisterPage(c *gin.Context) {
 func (ctrl *AuthController) ShowTraderRegisterPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "register_trader.html", nil)
 }
-func (ctrl *AuthController) ShowAdminRegisterPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "register_admin.html", nil)
-}
 
 func (ctrl *AuthController) LoginUser(c *gin.Context) {
 	email, password := c.PostForm("email"), c.PostForm("password")
@@ -78,20 +75,6 @@ func (ctrl *AuthController) RegisterTrader(c *gin.Context) {
 	}
 	if err := ctrl.UserSvc.RegisterTrader(user, profile); err != nil {
 		c.HTML(http.StatusBadRequest, "register_trader.html", gin.H{"error": err.Error()})
-		return
-	}
-	c.Redirect(http.StatusFound, "/login")
-}
-
-func (ctrl *AuthController) RegisterAdmin(c *gin.Context) {
-	var user models.User
-	user.Name, user.Email, user.Password = c.PostForm("Name"), c.PostForm("Email"), c.PostForm("Password")
-	if c.PostForm("Password") != c.PostForm("ConfirmPassword") {
-		c.HTML(http.StatusBadRequest, "register_admin.html", gin.H{"error": "Passwords do not match."})
-		return
-	}
-	if _, err := ctrl.UserSvc.RegisterAdmin(user); err != nil {
-		c.HTML(http.StatusBadRequest, "register_admin.html", gin.H{"error": err.Error()})
 		return
 	}
 	c.Redirect(http.StatusFound, "/login")

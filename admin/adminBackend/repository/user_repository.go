@@ -2,10 +2,20 @@ package repository
 
 import (
 	"errors"
+	"math"
+	"time"
 
 	"github.com/fathimasithara01/tradeverse/models"
 	"gorm.io/gorm"
 )
+
+type UserRepository struct {
+	DB *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) *UserRepository {
+	return &UserRepository{DB: db}
+}
 
 func (r *UserRepository) Create(user *models.User) error {
 	return r.DB.Create(user).Error
@@ -22,12 +32,35 @@ func (r *UserRepository) FindByID(id uint) (models.User, error) {
 	return user, nil
 }
 
+// func (r *UserRepository) FindByRole(role models.UserRole) ([]models.User, error) {
+// 	var users []models.User
+// 	if err := r.DB.Where("role = ?", role).Find(&users).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return users, nil
+// }
+
 func (r *UserRepository) FindByRole(role models.UserRole) ([]models.User, error) {
 	var users []models.User
-	if err := r.DB.Where("role = ?", role).Find(&users).Error; err != nil {
+	if err := r.DB.
+		Preload("CustomerProfile").
+		Preload("TraderProfile").
+		Where("role = ?", role).
+		Order("id asc").
+		Find(&users).Error; err != nil {
 		return nil, err
 	}
+
 	return users, nil
+}
+
+func (r *UserRepository) FindAllNonAdmins() ([]models.User, error) {
+	var users []models.User
+	err := r.DB.
+		Where("role <> ?", models.RoleAdmin).
+		Order("id asc").
+		Find(&users).Error
+	return users, err
 }
 
 func (r *UserRepository) FindByEmail(email string) (models.User, error) {
@@ -49,6 +82,118 @@ func (r *UserRepository) FindTradersByStatus(status models.TraderStatus) ([]mode
 	return users, err
 }
 
+func (r *UserRepository) FindByIDs(ids []uint) ([]models.User, error) {
+	var users []models.User
+	if len(ids) == 0 {
+		return users, nil // Return empty slice if no IDs are provided
+	}
+	if err := r.DB.Where("id IN ?", ids).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (r *UserRepository) UpdateTraderStatus(userID uint, newStatus models.TraderStatus) error {
 	return r.DB.Model(&models.TraderProfile{}).Where("user_id = ?", userID).Update("status", newStatus).Error
+}
+
+func (r *UserRepository) Update(user *models.User) error {
+	return r.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(user).Error
+}
+
+func (r *UserRepository) Delete(id uint) error {
+	return r.DB.Delete(&models.User{}, id).Error
+}
+
+type UserQueryOptions struct {
+	Search string          `form:"search"`
+	Role   models.UserRole `form:"role"`
+	Period string          `form:"period"`
+	Page   int             `form:"page"`
+	Limit  int             `form:"limit"`
+}
+
+type PaginatedUsers struct {
+	Users      []models.User `json:"users"`
+	TotalPages int           `json:"total_pages"`
+	Page       int           `json:"page"`
+}
+
+func (r *UserRepository) FindAllAdvanced(options UserQueryOptions) (PaginatedUsers, error) {
+	var users []models.User
+	var totalUsers int64
+
+	query := r.DB.Model(&models.User{})
+
+	if options.Search != "" {
+		searchQuery := "%" + options.Search + "%"
+		query = query.Where("name ILIKE ? OR email ILIKE ?", searchQuery, searchQuery)
+	}
+
+	if options.Role != "" {
+		query = query.Where("role = ?", options.Role)
+	}
+
+	if options.Period != "" {
+		now := time.Now()
+		var startTime time.Time
+		if options.Period == "monthly" {
+			startTime = now.AddDate(0, -1, 0)
+		} else if options.Period == "yearly" {
+			startTime = now.AddDate(-1, 0, 0)
+		}
+		if !startTime.IsZero() {
+			query = query.Where("created_at >= ?", startTime)
+		}
+	}
+
+	if err := query.Count(&totalUsers).Error; err != nil {
+		return PaginatedUsers{}, err
+	}
+
+	if options.Page <= 0 {
+		options.Page = 1
+	}
+	if options.Limit <= 0 {
+		options.Limit = 10
+	}
+
+	offset := (options.Page - 1) * options.Limit
+
+	err := query.Order("id asc").Limit(options.Limit).Offset(offset).Find(&users).Error
+	if err != nil {
+		return PaginatedUsers{}, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalUsers) / float64(options.Limit)))
+
+	return PaginatedUsers{
+		Users:      users,
+		TotalPages: totalPages,
+		Page:       options.Page,
+	}, nil
+}
+
+func (r *UserRepository) FindAllWithRole() ([]models.User, error) {
+	var users []models.User
+	err := r.DB.
+		Preload("Role").
+		Where("role <> ?", models.RoleAdmin).
+		Order("id asc").
+		Find(&users).Error
+	return users, err
+}
+
+// func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint) error {
+
+// 	return r.DB.Model(&models.User{}).Where("id = ?", userID).Update("role_id", roleID).Error
+// }
+
+func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint, roleName models.UserRole) error {
+	updates := map[string]interface{}{
+		"role_id": roleID,
+		"role":    roleName,
+	}
+
+	return r.DB.Model(&models.User{}).Where("id = ?", userID).UpdateColumns(updates).Error
 }

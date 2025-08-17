@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"log"
+	"fmt"
 
 	"github.com/fathimasithara01/tradeverse/auth"
 	"github.com/fathimasithara01/tradeverse/models"
@@ -11,124 +11,98 @@ import (
 )
 
 type UserService struct {
-	Repo *repository.UserRepository
+	UserRepo *repository.UserRepository
+	RoleRepo *repository.RoleRepository // Add this line
+
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{Repo: repo}
+func NewUserService(userRepo *repository.UserRepository, roleRepo *repository.RoleRepository) *UserService {
+	return &UserService{UserRepo: userRepo, RoleRepo: roleRepo}
+}
+
+type UserWithRoleName struct {
+	models.User
+	RoleName string `json:"role_name"`
 }
 
 func (s *UserService) Login(email, password string) (string, models.User, error) {
-	log.Printf("[SERVICE-LOGIN] Attempting to find user by email: %s", email)
-	user, err := s.Repo.FindByEmail(email)
+	user, err := s.UserRepo.FindByEmail(email)
 	if err != nil {
-		log.Printf("[SERVICE-LOGIN-ERROR] User not found or DB error for email '%s': %v\n", email, err)
 		return "", models.User{}, errors.New("invalid credentials")
 	}
-
-	log.Printf("[SERVICE-LOGIN-SUCCESS] Found user in database. UserID: %d, Email: %s\n", user.ID, user.Email)
-
-	if user.ID == 0 {
-		return "", models.User{}, errors.New("internal error: user record found but ID is zero")
-	}
-
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		log.Printf("[SERVICE-LOGIN-ERROR] Password mismatch for user '%s'\n", email)
 		return "", models.User{}, errors.New("invalid credentials")
 	}
-
 	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role))
-	if err != nil {
-		log.Printf("[SERVICE-LOGIN-ERROR] Failed to generate JWT for user '%s': %v\n", email, err)
-		return "", models.User{}, errors.New("failed to generate token")
-	}
-
-	return token, user, nil
+	return token, user, err
 }
 
 func (s *UserService) RegisterCustomer(user models.User, profile models.CustomerProfile) error {
-	_, err := s.Repo.FindByEmail(user.Email)
+	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return errors.New("email already registered")
 	}
-
 	user.Role = models.RoleCustomer
 	user.CustomerProfile = profile
-	return s.Repo.Create(&user)
+	return s.UserRepo.Create(&user)
 }
+
 func (s *UserService) RegisterTrader(user models.User, profile models.TraderProfile) error {
-	_, err := s.Repo.FindByEmail(user.Email)
+	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return errors.New("email already registered")
 	}
-
 	user.Role = models.RoleTrader
 	user.TraderProfile = profile
-	return s.Repo.Create(&user)
-}
-
-func (s *UserService) RegisterAdmin(user models.User) (models.User, error) {
-	_, err := s.Repo.FindByEmail(user.Email)
-	if err == nil {
-		return models.User{}, errors.New("email already registered")
-	}
-
-	user.Role = models.RoleAdmin
-	err = s.Repo.Create(&user)
-	return user, err
-}
-
-func (s *UserService) CreateTrader(user models.User, profile models.TraderProfile) error {
-	_, err := s.Repo.FindByEmail(user.Email)
-	if err == nil {
-		return errors.New("email is already registered")
-	}
-
-	user.Role = models.RoleTrader
-	user.TraderProfile = profile
-
-	return s.Repo.Create(&user)
+	return s.UserRepo.Create(&user)
 }
 
 func (s *UserService) CreateTraderByAdmin(user models.User, profile models.TraderProfile) error {
-	_, err := s.Repo.FindByEmail(user.Email)
+	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return errors.New("email is already registered")
 	}
-
-	user.Role = models.RoleTrader // Set the role to 'trader'
-
+	user.Role = models.RoleTrader
 	profile.Status = models.StatusApproved
-
-	user.TraderProfile = profile // Attach the trader-specific profile
-
-	return s.Repo.Create(&user)
+	user.TraderProfile = profile
+	return s.UserRepo.Create(&user)
 }
 
-func (s *UserService) CreateCustomer(user models.User, profile models.CustomerProfile) error {
-	user.Role = models.RoleCustomer
-	user.CustomerProfile = profile
-
-	_, err := s.Repo.FindByEmail(user.Email)
-	if err == nil {
-		return errors.New("email already registered")
-	}
-
-	return s.Repo.Create(&user)
-}
-
+func (s *UserService) GetUserByID(id uint) (models.User, error) { return s.UserRepo.FindByID(id) }
 func (s *UserService) GetUsersByRole(role models.UserRole) ([]models.User, error) {
-	return s.Repo.FindByRole(role)
+	return s.UserRepo.FindByRole(role)
+}
+func (s *UserService) GetAllUsers() ([]models.User, error) { return s.UserRepo.FindAllNonAdmins() }
+func (s *UserService) DeleteUser(id uint) error            { return s.UserRepo.Delete(id) }
+func (s *UserService) UpdateUser(userToUpdate *models.User) error {
+	return s.UserRepo.Update(userToUpdate)
+}
+func (s *UserService) GetAllUsersAdvanced(options repository.UserQueryOptions) (repository.PaginatedUsers, error) {
+	return s.UserRepo.FindAllAdvanced(options)
 }
 
 func (s *UserService) GetTradersByStatus(status models.TraderStatus) ([]models.User, error) {
-	return s.Repo.FindTradersByStatus(status)
+	return s.UserRepo.FindTradersByStatus(status)
 }
-
 func (s *UserService) ApproveTrader(traderID uint) error {
-	return s.Repo.UpdateTraderStatus(traderID, models.StatusApproved)
+	return s.UserRepo.UpdateTraderStatus(traderID, models.StatusApproved)
+}
+func (s *UserService) RejectTrader(traderID uint) error {
+	return s.UserRepo.UpdateTraderStatus(traderID, models.StatusRejected)
+
 }
 
-func (s *UserService) RejectTrader(traderID uint) error {
-	return s.Repo.UpdateTraderStatus(traderID, models.StatusRejected)
+func (s *UserService) GetAllUsersWithRole() ([]models.User, error) {
+	return s.UserRepo.FindAllNonAdmins()
+}
+
+func (s *UserService) AssignRoleToUser(userID, roleID uint) error {
+	role, err := s.RoleRepo.FindByID(roleID)
+	if err != nil {
+		return errors.New("invalid role selected: role not found in database")
+	}
+
+	fmt.Printf("==> ATTEMPTING TO ASSIGN ROLE: UserID=%d, RoleID=%d, RoleName='%s'\n", userID, roleID, role.Name)
+
+	return s.UserRepo.AssignRoleToUser(userID, roleID, models.UserRole(role.Name))
 }

@@ -8,42 +8,38 @@ import (
 
 type Order struct {
 	gorm.Model
-	CustomerID uint            `json:"customerId"`
-	Customer   CustomerProfile `gorm:"foreignKey:CustomerID"`
-	OrderItems []OrderItem     `gorm:"foreignKey:OrderID" json:"orderItems"` // Has Many relationship
+	// CORRECTED: The foreign key must be to the 'users' table.
+	CustomerID uint `json:"customer_id"`
+	Customer   User `gorm:"foreignKey:CustomerID"` // An Order "Belongs To" a User
 
-	ShippingAddressID uint    `json:"shippingAddressId"`
-	ShippingAddress   Address `gorm:"foreignKey:ShippingAddressID"` // Has One relationship
+	OrderItems []OrderItem `gorm:"foreignKey:OrderID" json:"order_items"`
 
-	OrderDate   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"orderDate"`
-	TotalAmount float64   `gorm:"type:decimal(10,2)" json:"totalAmount"`
+	ShippingAddressID uint    `json:"shipping_address_id"`
+	ShippingAddress   Address `gorm:"foreignKey:ShippingAddressID"`
 
-	Status string `gorm:"default:'Pending'" json:"status"`
-
-	PaymentMethod string `json:"paymentMethod"`                          // e.g., "COD", "Stripe"
-	PaymentStatus string `gorm:"default:'Pending'" json:"paymentStatus"` // e.g., "Pending", "Paid", "Failed"
-	PaymentID     string `json:"paymentId,omitempty"`                    // Optional: To store the transaction ID from a payment gateway
+	OrderDate     time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"order_date"`
+	TotalAmount   float64   `gorm:"type:decimal(10,2)" json:"total_amount"`
+	Status        string    `gorm:"default:'Pending'" json:"status"`
+	PaymentMethod string    `json:"payment_method"`
+	PaymentStatus string    `gorm:"default:'Pending'" json:"payment_status"`
+	PaymentID     string    `json:"payment_id,omitempty"`
 }
 
 type OrderItem struct {
 	gorm.Model
-
-	OrderID uint `json:"orderId"`
-
-	ProductID uint    `json:"productId"`
-	Product   Product `gorm:"foreignKey:ProductID"`
-
-	Quantity int `json:"quantity"`
-
-	PriceAtPurchase float64 `gorm:"type:decimal(10,2)" json:"priceAtPurchase"`
+	OrderID         uint    `json:"order_id"`
+	ProductID       uint    `json:"product_id"`
+	Product         Product `gorm:"foreignKey:ProductID"`
+	Quantity        int     `json:"quantity"`
+	PriceAtPurchase float64 `gorm:"type:decimal(10,2)" json:"price_at_purchase"`
 }
 
 type Address struct {
 	gorm.Model
-	CustomerID uint
-	Street     string
-	City       string
-	State      string
-	PostalCode string
-	Country    string
+	UserID     uint   `json:"user_id"`
+	Street     string `json:"street"`
+	City       string `json:"city"`
+	State      string `json:"state"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
 }

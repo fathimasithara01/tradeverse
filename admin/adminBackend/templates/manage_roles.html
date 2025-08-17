@@ -177,9 +177,7 @@
 </head>
 
 <body>
-
     <div class="wrapper">
-        <!-- Sidebar -->
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3>TradeVerse</h3>
@@ -188,12 +186,13 @@
             <ul id="sidebar-nav" class="list-unstyled">
 
                 <li class="nav-heading">Main</li>
+
                 <li class="nav-item active">
-                    <a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a href="/admin/dashboard"><i class="fas fa-tachometer-alt "></i> Dashboard</a>
                 </li>
 
                 <li class="nav-heading">Core Management</li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-users"></i>
                         <span>User Management</span>
@@ -204,18 +203,20 @@
                         <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
                         <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                     </ul>
-                </li>
-                <!-- Roles & Permissions Dropdown -->
+                </li> -->
+
                 <li class="nav-item">
                     <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-shield-alt"></i>
-                        <span>Roles & Permissions</span>
+                        <span> Users & Permissions</span>
                         <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
-                        <li class="nav-item"><a href="/admin/users">Manage User</a></li>
+                        <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
+                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                         <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions</a></li>
+                        <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
+                        <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
                     </ul>
                 </li>
 
@@ -227,8 +228,8 @@
                         <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
-                        <li class="nav-item"><a href="/admin/api/activity/live">Live Copying</a></li>
-                        <li class="nav-item"><a href="/admin/api/activity/logs">Trade Log & Errors</a></li>
+                        <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
+                        <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
                     </ul>
                 </li>
 
@@ -288,28 +289,27 @@
                     </div>
                 </a>
             </div>
+
+
         </nav>
         <div id="content" class="container-fluid p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Roles</h2>
+                <a href="/admin/roles/add" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Create Role</a>
+            </div>
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0">Roles</h4>
-                    <a href="/admin/roles/add" class="btn btn-primary"><i class="fas fa-plus"></i> Create Role</a>
-                </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th class="ps-4">ID</th>
                                     <th>Name</th>
                                     <th>Created By</th>
-                                    <th>Actions</th>
+                                    <th class="text-end pe-4">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="role-table-body">
-                                <tr>
-                                    <td colspan="4" class="text-center">Loading...</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -319,58 +319,87 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // This is the correct ID for the table body on THIS page.
             const tableBody = document.getElementById('role-table-body');
 
-            function fetchAndDisplayRoles() {
+            // This function is the only one needed for this page.
+            function loadRoles() {
+                // Check if the tableBody element actually exists before using it.
+                if (!tableBody) {
+                    console.error("Fatal Error: Table body with ID 'role-table-body' not found.");
+                    return;
+                }
+
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Loading roles...</td></tr>';
+
                 fetch('/admin/api/roles')
                     .then(response => {
-                        if (!response.ok) { return response.json().then(err => { throw new Error(err.error || 'Network error') }); }
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
                         return response.json();
                     })
                     .then(roles => {
-                        tableBody.innerHTML = '';
+                        tableBody.innerHTML = ''; // Clear loading message
                         if (!roles || roles.length === 0) {
-                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No roles found.</td></tr>';
+                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">No roles have been created yet.</td></tr>';
                             return;
                         }
+
                         roles.forEach(role => {
-                            const createdByName = (role.CreatedBy && role.CreatedBy.name) ? role.CreatedBy.name : 'N/A';
                             const row = document.createElement('tr');
+                            
+                            // Use the 'createdByName' field from our corrected API response.
+                            const createdByName = role.createdByName || '<span class="text-muted fst-italic">N/A</span>';
+
                             row.innerHTML = `
-                            <td>${role.ID}</td>
-                            <td>${role.name}</td>
-                            <td>${createdByName}</td>
-                            <td>
-                                <a href="/admin/roles/edit/${role.ID}" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                                <button class="btn btn-sm btn-danger delete-btn" data-id="${role.ID}" title="Delete"><i class="fas fa-trash"></i></button>
-                            </td>
-                        `;
+                                <td class="ps-4">${role.ID}</td>
+                                <td><strong>${role.name}</strong></td>
+                                <td>${createdByName}</td>
+                                <td class="text-end pe-4">
+                                    <a href="/admin/roles/edit/${role.ID}" class="btn btn-sm btn-outline-primary me-2" title="Edit Role">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRole(${role.ID})" title="Delete Role">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            `;
                             tableBody.appendChild(row);
                         });
                     })
                     .catch(error => {
-                        console.error('Fetch error:', error);
-                        tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger"><strong>Error:</strong> ${error.message}</td></tr>`;
+                        console.error('Error fetching roles:', error);
+                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-danger">Failed to load roles. Check browser console for details.</td></tr>';
                     });
             }
 
-            tableBody.addEventListener('click', function (event) {
-                const deleteButton = event.target.closest('.delete-btn');
-                if (deleteButton) {
-                    const roleId = deleteButton.getAttribute('data-id');
-                    if (confirm('Are you sure you want to delete this role?')) {
-                        fetch(`/admin/api/roles/${roleId}`, { method: 'DELETE' })
-                            .then(response => {
-                                if (!response.ok) { return response.json().then(err => { throw new Error(err.error) }); }
-                                deleteButton.closest('tr').remove();
-                            })
-                            .catch(error => alert(`Error: ${error.message}`));
-                    }
-                }
-            });
-
-            fetchAndDisplayRoles();
+            // Initial call to load the roles table.
+            loadRoles();
         });
+
+        // This function needs to be outside the DOMContentLoaded listener
+        // so it's globally accessible to the onclick attribute.
+        function deleteRole(roleId) {
+            if (confirm('Are you sure you want to delete this role? This cannot be undone.')) {
+                fetch(`/admin/api/roles/${roleId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    // Instead of a full reload, just refresh the table data.
+                    document.getElementById('role-table-body').innerHTML = '';
+                    document.dispatchEvent(new Event('DOMContentLoaded')); // Re-run the loadRoles function
+                })
+                .catch(error => {
+                    console.error('Error deleting role:', error);
+                    alert(`Failed to delete role: ${error.message}`);
+                });
+            }
+        }
     </script>
 </body>
 
