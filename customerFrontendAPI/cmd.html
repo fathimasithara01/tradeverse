@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Customer Portal - TradeVerse</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Modern CSS Variables for Easy Theming --- */
+        :root {
+            --sidebar-bg: #ffffff;
+            --main-bg: #f7f9fc;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --text-muted-color: #6c757d;
+            --border-color: #e9ecef;
+            --brand-color: #0d6efd;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --sidebar-width: 260px;
+        }
+
+        /* --- Dark Mode Theme --- */
+        body.dark-mode {
+            --sidebar-bg: #1e293b;
+            --main-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted-color: #94a3b8;
+            --border-color: #334155;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            background-color: var(--main-bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .wrapper { display: flex; width: 100%; min-height: 100vh; }
+        
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            box-shadow: 0 0 25px var(--shadow-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+        
+        .sidebar-header { padding: 1.25rem 1.5rem; text-align: center; border-bottom: 1px solid var(--border-color); }
+        .sidebar-header h3 { color: var(--brand-color); font-weight: 700; font-size: 1.5rem; margin: 0; }
+        
+        #sidebar-nav .nav-item a { color: var(--text-muted-color); border-left: 4px solid transparent; }
+        #sidebar-nav .nav-item a:hover { background: var(--main-bg); color: var(--text-color); }
+        #sidebar-nav .nav-item.active a { background: rgba(13, 110, 253, 0.1); color: var(--brand-color); border-left-color: var(--brand-color); }
+
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: 0 2px 10px var(--shadow-color); transition: background-color 0.3s, border-color 0.3s; }
+        .card-header { background-color: transparent; border-bottom: 1px solid var(--border-color); }
+        .nav-tabs .nav-link { font-weight: 600; color: var(--text-muted-color); border-color: transparent; }
+        .nav-tabs .nav-link.active { color: var(--brand-color); background-color: transparent; border-color: var(--border-color) var(--border-color) var(--card-bg); }
+
+        /* --- Loading Skeleton Animation --- */
+        .skeleton { animation: skeleton-loading 1s linear infinite alternate; }
+        @keyframes skeleton-loading { 0% { background-color: hsl(200, 20%, 80%); } 100% { background-color: hsl(200, 20%, 95%); } }
+        body.dark-mode .skeleton { animation: dark-skeleton-loading 1s linear infinite alternate; }
+        @keyframes dark-skeleton-loading { 0% { background-color: #334155; } 100% { background-color: #475569; } }
+        .skeleton-text { width: 100%; height: 0.75rem; margin-bottom: 0.5rem; border-radius: 0.25rem; }
+        .skeleton-title { width: 60%; height: 1.5rem; margin-bottom: 1rem; border-radius: 0.25rem; }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+             <div class="sidebar-header"><h3>TradeVerse</h3></div>
+             <ul id="sidebar-nav" class="nav nav-pills flex-column p-2">
+                <li class="nav-item"><a href="#" class="nav-link active" data-bs-toggle="tab" data-bs-target="#dashboard-tab-pane"><i class="fas fa-tachometer-alt fa-fw me-2"></i>Dashboard</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#traders-tab-pane"><i class="fas fa-users fa-fw me-2"></i>Find Traders</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#portfolio-tab-pane"><i class="fas fa-briefcase fa-fw me-2"></i>My Portfolio</a></li>
+                <li class="nav-item"><a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#settings-tab-pane"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+             </ul>
+             <div class="mt-auto p-3 border-top">
+                <div class="d-flex align-items-center text-decoration-none">
+                    <img src="https://i.pravatar.cc/40?u=customer" alt="Customer" class="rounded-circle me-3" width="40" height="40">
+                    <div><div class="fw-bold">Customer Name</div><a href="#" class="text-muted small">Logout</a></div>
+                </div>
+             </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-grow-1 p-4">
+            <!-- Header with Dark Mode Toggle & Notifications -->
+            <header class="d-flex justify-content-between align-items-center mb-4">
+                <h2 id="page-title">Dashboard</h2>
+                <div class="d-flex align-items-center">
+                    <div class="form-check form-switch me-3"><input class="form-check-input" type="checkbox" role="switch" id="darkModeToggle"><label class="form-check-label" for="darkModeToggle"><i class="fas fa-moon"></i></label></div>
+                    <div class="dropdown"><a href="#" class="text-muted" data-bs-toggle="dropdown"><i class="fas fa-bell fs-5"></i></a><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#">Notification 1</a></li></ul></div>
+                </div>
+            </header>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="mainTabContent">
+                <!-- =================================== -->
+                <!-- 1. DASHBOARD PANE                   -->
+                <!-- =================================== -->
+                <div class="tab-pane fade show active" id="dashboard-tab-pane" role="tabpanel">
+                    <div id="dashboard-content">
+                        <!-- Loading Skeleton will be injected here -->
+                    </div>
+                </div>
+
+                <!-- =================================== -->
+                <!-- 2. FIND TRADERS PANE                -->
+                <!-- =================================== -->
+                <div class="tab-pane fade" id="traders-tab-pane" role="tabpanel">
+                    <div class="card"><div class="card-body">
+                        <!-- Trader Filtering/Search (Static for Demo) -->
+                        <div class="row g-3 mb-4"><div class="col-md-4"><input type="text" class="form-control" placeholder="Search by name..."></div><div class="col-md-3"><select class="form-select"><option selected>Sort by Profit</option><option>Sort by Risk</option></select></div><div class="col-md-2"><button class="btn btn-primary w-100">Filter</button></div></div>
+                        <!-- Trader Cards -->
+                        <div class="row g-4" id="trader-list-container">
+                             <!-- Trader cards will be injected here -->
+                        </div>
+                    </div></div>
+                </div>
+
+                <!-- =================================== -->
+                <!-- 3. MY PORTFOLIO PANE                -->
+                <!-- =================================== -->
+                <div class="tab-pane fade" id="portfolio-tab-pane" role="tabpanel">
+                     <div class="card"><div class="card-body">
+                        <ul class="nav nav-pills mb-3" role="tablist"><li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pills-open">Open Positions</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-history">Trade History</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-analytics">Analytics</button></li></ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="pills-open"><div class="table-responsive"><table class="table"><thead><tr><th>Symbol</th><th>Size</th><th>Entry Price</th><th>Live P&L</th></tr></thead><tbody><tr><td>EUR/USD</td><td>0.10</td><td>1.08500</td><td class="text-success">$35.25</td></tr></tbody></table></div></div>
+                            <div class="tab-pane fade" id="pills-history"><div class="table-responsive"><table class="table"><thead><tr><th>Symbol</th><th>Close Time</th><th>P&L</th></tr></thead><tbody><tr><td>GBP/USD</td><td>2024-05-10 14:30</td><td class="text-success">$112.50</td></tr></tbody></table></div></div>
+                            <div class="tab-pane fade" id="pills-analytics">
+                                <h6>Monthly Performance</h6>
+                                <div style="height: 250px;"><canvas id="monthlyPerfChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div></div>
+                </div>
+
+                <!-- =================================== -->
+                <!-- 4. SETTINGS PANE                    -->
+                <!-- =================================== -->
+                <div class="tab-pane fade" id="settings-tab-pane" role="tabpanel">
+                     <div class="accordion" id="settingsAccordion">
+                        <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#c1">Broker Connection</button></h2><div id="c1" class="accordion-collapse collapse show"><div class="accordion-body"><h6>Connected Account</h6><p><strong>MetaTrader 5 (Account: 123456)</strong> <span class="badge bg-success">Active</span></p></div></div></div>
+                        <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c2">Security</button></h2><div id="c2" class="accordion-collapse collapse"><div class="accordion-body"><h6>Two-Factor Authentication (2FA)</h6><div class="form-check form-switch fs-5"><input class="form-check-input" type="checkbox" role="switch" checked><label class="form-check-label">Enable 2FA</label></div></div></div></div>
+                        <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c3">Billing & Subscription</button></h2><div id="c3" class="accordion-collapse collapse"><div class="accordion-body"><h6>My Plan</h6><p>You are on the <strong>Pro Plan ($49/month)</strong>.</p><button class="btn btn-primary">Manage Subscription</button></div></div></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Copy Trader Modal -->
+    <div class="modal fade" id="copyTraderModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content"><div class="modal-header"><h5 class="modal-title">Advanced Copy Settings</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6"><h6>Sizing Method</h6><select class="form-select"><option>Proportional to Master's Equity</option><option selected>Fixed Lot Size</option><option>By Percentage of my Equity</option></select><input type="number" class="form-control mt-2" value="0.05"></div>
+                        <div class="col-md-6"><h6>Risk Management (Safety Net)</h6><div class="input-group"><span class="input-group-text">Stop copying if my total equity drops by</span><input type="number" class="form-control" value="20"><span class="input-group-text">%</span></div></div>
+                    </div>
+                    <hr>
+                    <h6>Overrides (Optional)</h6>
+                    <div class="row">
+                        <div class="col-md-6"><div class="input-group"><span class="input-group-text">Force Stop Loss (pips)</span><input type="number" class="form-control" placeholder="Leave blank to use Master's SL"></div></div>
+                        <div class="col-md-6"><div class="input-group"><span class="input-group-text">Force Take Profit (pips)</span><input type="number" class="form-control" placeholder="Leave blank to use Master's TP"></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="confirmCopyBtn">Start Copying</button></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- CORE UI & UX LOGIC ---
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const pageTitle = document.getElementById('page-title');
+            const sidebarNav = document.getElementById('sidebar-nav');
+
+            // Dark Mode
+            darkModeToggle.addEventListener('change', () => {
+                document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            });
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                darkModeToggle.checked = true;
+            }
+
+            // Tab / Page Title Updater
+            document.querySelectorAll('#sidebar-nav .nav-link, #mainTabContent .nav-link').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', event => {
+                    pageTitle.textContent = event.target.textContent.trim();
+                    sidebarNav.querySelector('.active').classList.remove('active');
+                    sidebarNav.querySelector(`[data-bs-target="${event.target.dataset.bsTarget}"]`).classList.add('active');
+                });
+            });
+
+            // --- DATA LOADING & RENDERING LOGIC ---
+            const dashboardContent = document.getElementById('dashboard-content');
+            const traderListContainer = document.getElementById('trader-list-container');
+
+            function showDashboardSkeleton() {
+                dashboardContent.innerHTML = `
+                    <div class="row g-4"><div class="col-md-3"><div class="card"><div class="card-body"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div></div></div></div><div class="col-md-3"><div class="card"><div class="card-body"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div></div></div></div><div class="col-md-3"><div class="card"><div class="card-body"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div></div></div></div><div class="col-md-3"><div class="card"><div class="card-body"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div></div></div></div></div>
+                    <div class="card mt-4"><div class="card-body"><div class="skeleton" style="height: 300px;"></div></div></div>`;
+            }
+
+            // TODO: In a real app, you would fetch this data from your backend API.
+            async function loadDashboardData() {
+                showDashboardSkeleton();
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                dashboardContent.innerHTML = `
+                    <div class="row g-4">
+                        <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><p class="text-muted mb-1">Total P&L</p><h3 class="fw-bold text-success m-0">$1,250.75</h3></div></div></div>
+                        <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><p class="text-muted mb-1">Win Rate (30d)</p><h3 class="fw-bold m-0">72%</h3></div></div></div>
+                        <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><p class="text-muted mb-1">Profit Factor</p><h3 class="fw-bold m-0">1.82</h3></div></div></div>
+                        <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><p class="text-muted mb-1">Max Drawdown</p><h3 class="fw-bold text-danger m-0">12.5%</h3></div></div></div>
+                    </div>
+                    <div class="row g-4 mt-1">
+                        <div class="col-xl-8"><div class="card"><div class="card-header"><h5 class="mb-0">Equity Curve</h5></div><div class="card-body"><div style="height: 300px;"><canvas id="equityChart"></canvas></div></div></div></div>
+                        <div class="col-xl-4"><div class="card"><div class="card-header"><h5 class="mb-0">Asset Allocation</h5></div><div class="card-body"><div style="height: 300px;"><canvas id="assetChart"></canvas></div></div></div></div>
+                    </div>`;
+                
+                renderCharts(); // Render charts after the canvas elements are in the DOM
+            }
+
+            function renderCharts() {
+                // Equity Chart
+                const eqCtx = document.getElementById('equityChart').getContext('2d');
+                new Chart(eqCtx, { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'], datasets: [{ data: [10000, 10200, 10500, 10800, 11250], borderColor: 'var(--brand-color)', tension: 0.3, pointRadius: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+
+                // Asset Allocation Chart
+                const asCtx = document.getElementById('assetChart').getContext('2d');
+                new Chart(asCtx, { type: 'doughnut', data: { labels: ['Forex', 'Crypto', 'Stocks'], datasets: [{ data: [60, 30, 10], backgroundColor: ['#0d6efd', '#6f42c1', '#fd7e14'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
+            
+                 // Monthly Performance Chart
+                const mpCtx = document.getElementById('monthlyPerfChart').getContext('2d');
+                new Chart(mpCtx, { type: 'bar', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr'], datasets: [{ label: 'Monthly P&L ($)', data: [500, -150, 450, 600], backgroundColor: (ctx) => ctx.raw >= 0 ? 'rgba(25, 135, 84, 0.7)' : 'rgba(220, 53, 69, 0.7)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            }
+            
+            // TODO: Fetch traders from API
+            function loadTraders() {
+                traderListContainer.innerHTML = `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3"><img src="https://i.pravatar.cc/40?u=trader1" class="rounded-circle me-3" alt="T1"><h5 class="card-title mb-0">Pro Trader FX</h5></div>
+                                <p class="card-text text-muted small">Specializes in major Forex pairs with a focus on risk management. Low drawdown strategy.</p>
+                                <div class="d-flex justify-content-between border-top pt-3"><div><div class="small text-muted">ROI (90d)</div><div class="fw-bold fs-5 text-success">+35.2%</div></div><div><div class="small text-muted">Risk</div><div class="fw-bold fs-5">Low</div></div><div><div class="small text-muted">Copiers</div><div class="fw-bold fs-5">1,204</div></div></div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pb-3"><button class="btn btn-primary w-100 copy-btn">Copy Trader</button></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                         <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3"><img src="https://i.pravatar.cc/40?u=trader2" class="rounded-circle me-3" alt="T2"><h5 class="card-title mb-0">Crypto King</h5></div>
+                                <p class="card-text text-muted small">High-frequency strategy for BTC and ETH. High risk, high reward. Not for beginners.</p>
+                                <div class="d-flex justify-content-between border-top pt-3"><div><div class="small text-muted">ROI (90d)</div><div class="fw-bold fs-5 text-success">+78.5%</div></div><div><div class="small text-muted">Risk</div><div class="fw-bold fs-5 text-danger">High</div></div><div><div class="small text-muted">Copiers</div><div class="fw-bold fs-5">850</div></div></div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pb-3"><button class="btn btn-primary w-100 copy-btn">Copy Trader</button></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // --- INITIAL PAGE LOAD ---
+            loadDashboardData();
+            loadTraders();
+        });
+    </script>
+</body>
+
+</html>

@@ -30,10 +30,23 @@ func (s *UserService) Login(email, password string) (string, models.User, error)
 	if err != nil {
 		return "", models.User{}, errors.New("invalid credentials")
 	}
+
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return "", models.User{}, errors.New("invalid credentials")
 	}
-	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role))
+
+	// Get the RoleID from the user model. This is critical.
+	var roleID uint
+	if user.RoleID != nil {
+		roleID = *user.RoleID
+	} else {
+		fmt.Printf("[WARN] User '%s' (ID: %d) has a nil RoleID during login.\n", user.Email, user.ID)
+	}
+
+	fmt.Printf("[DEBUG-LOGIN] Generating JWT for UserID: %d, Role: %s, RoleID: %d\n", user.ID, user.Role, roleID)
+
+	// Pass the roleID to the token generation function.
+	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role), roleID)
 	return token, user, err
 }
 

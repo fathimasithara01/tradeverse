@@ -1,3 +1,5 @@
+// auth/jwt.go
+
 package auth
 
 import (
@@ -11,16 +13,18 @@ type AuthClaims struct {
 	UserID uint   `json:"user_id"`
 	Email  string `json:"email"`
 	Role   string `json:"role"`
+	RoleID uint   `json:"role_id"` // This field is essential for permission checks.
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID uint, email string, role string) (string, error) {
+func GenerateJWT(userID uint, email string, role string, roleID uint) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
 
 	claims := &AuthClaims{
 		UserID: userID,
 		Email:  email,
 		Role:   role,
+		RoleID: roleID, // Add the RoleID to the claims.
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},

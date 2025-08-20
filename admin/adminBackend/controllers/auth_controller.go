@@ -30,6 +30,8 @@ func (ctrl *AuthController) ShowTraderRegisterPage(c *gin.Context) {
 
 func (ctrl *AuthController) LoginUser(c *gin.Context) {
 	email, password := c.PostForm("email"), c.PostForm("password")
+
+	// The UserService.Login function correctly verifies the password and generates the token for ANY valid user.
 	token, user, err := ctrl.UserSvc.Login(email, password)
 	if err != nil {
 		log.Printf("[LOGIN FAILED] Attempt for user '%s' failed: %s\n", email, err.Error())
@@ -37,15 +39,13 @@ func (ctrl *AuthController) LoginUser(c *gin.Context) {
 		return
 	}
 
-	log.Printf("[LOGIN SUCCESS] User '%s' logged in. Generating token for UserID: %d with Role: %s\n", user.Email, user.ID, user.Role)
+	log.Printf("[LOGIN SUCCESS] User '%s' logged in successfully. Role: %s\n", user.Email, user.Role)
 
-	if user.Role == models.RoleAdmin {
-		c.SetCookie("admin_token", token, 3600*24, "/", config.AppConfig.CookieDomain, false, true)
-		c.Redirect(http.StatusFound, "/admin/dashboard")
-	} else {
-		c.SetCookie("user_token", token, 3600*24, "/", config.AppConfig.CookieDomain, false, true)
-		c.Redirect(http.StatusFound, "/dashboard")
-	}
+	// --- THE FIX ---
+	// All successfully logged-in users get the SAME cookie name and are redirected to the SAME starting page.
+	// The middleware will then check their permissions.
+	c.SetCookie("admin_token", token, 3600*24, "/", config.AppConfig.CookieDomain, false, true)
+	c.Redirect(http.StatusFound, "/admin/dashboard")
 }
 
 func (ctrl *AuthController) RegisterCustomer(c *gin.Context) {

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Portal - TradeVerse</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+    /* --- Base Variables & Login Page Styles --- */
+    :root {
+        --brand-color: #0d6efd;
+        --light-bg: #f7f9fc;
+        --light-card-bg: #ffffff;
+        --light-text-color: #212529;
+        --light-muted-color: #6c757d;
+        --light-border-color: #e9ecef;
+        --light-shadow-color: rgba(0, 0, 0, 0.08);
+
+        --dark-bg: #111827;
+        --dark-card-bg: #1F2937;
+        --dark-text-color: #E5E7EB;
+        --dark-muted-color: #9CA3AF;
+        --dark-border-color: #374151;
+
+        --sidebar-width: 260px;
+    }
+    .login-body { background-color: var(--light-bg); font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .auth-card { max-width: 450px; width: 100%; border:none; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .brand-logo { color: var(--brand-color); font-weight: 700; font-size: 1.75rem; text-decoration: none; }
+    
+    /* --- Main App Styles (Light Theme Default) --- */
+    .app-body { background-color: var(--light-bg); font-family: 'Inter', sans-serif; color: var(--light-text-color); }
+    .wrapper { display: flex; min-height: 100vh; }
+    #sidebar { background-color: var(--light-card-bg); min-width: var(--sidebar-width); max-width: var(--sidebar-width); box-shadow: 0 0 25px var(--light-shadow-color); }
+    #sidebar .nav-link { color: #5f6368; font-weight: 500; }
+    #sidebar .nav-link:hover { color: var(--brand-color); }
+    #sidebar .nav-link.active { color: #fff; background-color: var(--brand-color); border-radius: 0.5rem; }
+    .card { border: none; border-radius: 0.75rem; box-shadow: 0 2px 10px var(--light-shadow-color); }
+    .modal-content { border: none; }
+
+    /* --- SPECIFIC STYLES FOR THE DARK-THEMED "FIND TRADERS" PANE --- */
+    #traders-pane { 
+        background-color: var(--dark-bg); 
+        border-radius: 0.75rem; 
+        color: var(--dark-text-color);
+        padding: 1.5rem;
+    }
+    .signal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem; }
+    .signal-card { 
+        background-color: var(--dark-card-bg); 
+        border: 1px solid var(--dark-border-color); 
+        border-radius: 0.75rem; 
+        padding: 1.5rem; 
+        position: relative; 
+        overflow: hidden; 
+    }
+    .signal-card-blur { filter: blur(8px); }
+    .card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600; }
+    .status-target-hit .card-overlay { color: #4ADE80; }
+    .status-stop-loss-hit .card-overlay { color: #F87171; }
+    .status-no-status .card-overlay { color: #9CA3AF; }
+    .price-box { background-color: #374151; padding: 0.5rem 1rem; border-radius: 0.5rem; text-align: center; }
+    .price-box .label { font-size: 0.75rem; color: var(--dark-muted-color); }
+    .price-box .value { font-size: 1.125rem; font-weight: 600; }
+    .price-box .value.stop-loss { color: #F87171; }
+    .price-box .value.target { color: #4ADE80; }
+    .progress-bar-custom { height: 8px; background-color: #4B5563; border-radius: 4px; position: relative; }
+    .progress-custom { height: 100%; background: linear-gradient(90deg, #A78BFA, #F472B6); border-radius: 4px; position: absolute; transition: width 0.5s ease; }
+    .progress-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background: #fff; border-radius: 50%; border: 3px solid #F472B6; transition: left 0.5s ease; }
+    .button-copy { background-color: #4ADE80; color: #111827; border: none; font-weight: 600; }
+    .button-view { background-color: #374151; color: var(--dark-text-color); border: 1px solid #4B5563; }
+</style>
+</head>
+
+<body class="{{ if eq .page " login" }}login-body{{ else }}app-body{{ end }}">
+
+    {{ if eq .page "login" }}
+    <div class="text-center mb-4">
+        <a href="#" class="brand-logo">TradeVerse</a>
+        <h1 class="h3 my-3 fw-normal">Customer Login</h1>
+    </div>
+    <form action="/login" method="POST">
+        <div class="form-floating mb-3"><input type="email" class="form-control" name="email"
+                placeholder="name@example.com" required><label>Email</label></div>
+        <div class="form-floating mb-3"><input type="password" class="form-control" name="password"
+                placeholder="Password" required><label>Password</label></div>
+        <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+    </form>
+    </div>
+
+    {{ else }}
+    <div class="wrapper">
+        <nav id="sidebar" class="d-flex flex-column p-3">
+            <h3 class="text-primary text-center mb-4">TradeVerse</h3>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item mb-2"><a href="#" class="nav-link active" data-bs-toggle="tab"
+                        data-bs-target="#dashboard-pane"><i class="fas fa-tachometer-alt fa-fw me-2"></i>Dashboard</a>
+                </li>
+                <li class="nav-item mb-2"><a href="#" class="nav-link" data-bs-toggle="tab"
+                        data-bs-target="#traders-pane"><i class="fas fa-users fa-fw me-2"></i>Find Traders</a></li>
+                <li class="nav-item mb-2"><a href="#" class="nav-link" data-bs-toggle="tab"
+                        data-bs-target="#portfolio-pane"><i class="fas fa-briefcase fa-fw me-2"></i>My Portfolio</a>
+                </li>
+                <li class="nav-item"><a href="#" class="nav-link" data-bs-toggle="tab"
+                        data-bs-target="#settings-pane"><i class="fas fa-cog fa-fw me-2"></i>Settings</a></li>
+            </ul>
+            <hr>
+            <div class="dropdown"><a href="#"
+                    class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle"
+                    data-bs-toggle="dropdown"><img src="https://i.pravatar.cc/40?u=customer" width="32" height="32"
+                        class="rounded-circle me-2"><strong><span id="customer-name-display">...</span></strong></a>
+                <ul class="dropdown-menu text-small shadow">
+                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">My
+                            Profile</a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item" href="#">Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="flex-grow-1 p-4">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="dashboard-pane">
+                    <h2 id="page-title" class="fw-bold mb-4">Dashboard</h2>
+                    <div id="dashboard-content"></div>
+                </div>
+                <div class="tab-pane fade" id="traders-pane"
+                    style="background-color: #111827; padding: 1.5rem; border-radius: 0.75rem;">
+                    <h2 class="text-white mb-4">Live Trade Signals</h2>
+                    <div id="signal-grid" class="signal-grid"></div>
+                </div>
+                <div class="tab-pane fade" id="portfolio-pane">
+                    <h2 class="fw-bold mb-4">My Portfolio</h2>
+                    <div id="portfolio-content"></div>
+                </div>
+                <div class="tab-pane fade" id="settings-pane">
+                    <h2 class="fw-bold mb-4">Settings</h2>
+                    <div id="settings-content"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">My Profile</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="profile-modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- This is the complete and final script block for portal.html -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/graphql-ws/umd/graphql-ws.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        // --- CORE UI & UX LOGIC ---
+        const pageTitle = document.getElementById('page-title');
+        document.querySelectorAll('#sidebar .nav-link').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', event => {
+                pageTitle.textContent = event.target.textContent.trim();
+                const pane = document.querySelector(event.target.dataset.bsTarget);
+                if (!pane.classList.contains('loaded')) {
+                    if (pane.id === 'traders-pane') loadSignalsData();
+                    if (pane.id === 'portfolio-pane') loadPortfolioData();
+                    if (pane.id === 'settings-pane') loadSettingsData();
+                    pane.classList.add('loaded');
+                }
+            });
+        });
+
+        // --- API & UTILITY HELPERS ---
+        async function gqlFetch(query) {
+            const response = await fetch('/graphql', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+            if (!response.ok) throw new Error(`Network error`);
+            const json = await response.json();
+            if (json.errors) throw new Error(json.errors.map(e => e.message).join('\n'));
+            return json.data;
+        }
+
+       // --- THIS IS A NEW, DEFENSIVE HELPER FUNCTION ---
+        function formatCurrency(value) {
+            // If the value is null, undefined, or not a number, return a safe placeholder.
+            if (value === null || typeof value === 'undefined' || isNaN(value)) {
+                return '--';
+            }
+            return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+            // --- DASHBOARD LOGIC ---
+            const dashboardContent = document.getElementById('dashboard-content');
+            async function loadDashboardData() {
+                dashboardContent.innerHTML = `<div class="spinner-border text-primary" role="status"></div>`;
+                const query = `{ dashboard { metrics { totalPnl, winRate }, equityCurve { date, value } } }`;
+                try {
+                    const { dashboard } = await gqlFetch(query);
+                    dashboardContent.innerHTML = `
+                    <div class="row g-4"><div class="col-md-6"><div class="card"><div class="card-body">Total P&L <h3 class="text-success" id="live-pnl">$${dashboard.metrics.totalPnl.toFixed(2)}</h3></div></div></div><div class="col-md-6"><div class="card"><div class="card-body">Win Rate <h3 class="text-dark">${dashboard.metrics.winRate}%</h3></div></div></div></div>
+                    <div class="card mt-4"><div class="card-body"><canvas id="equityChart"></canvas></div></div>`;
+                    new Chart(document.getElementById('equityChart').getContext('2d'), { type: 'line', data: { labels: dashboard.equityCurve.map(p => p.date), datasets: [{ data: dashboard.equityCurve.map(p => p.value), borderColor: '#0d6efd', fill: true }] } });
+                } catch (e) { dashboardContent.innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+            }
+
+           // --- FIND TRADERS (LIVE SIGNALS) LOGIC ---
+        const signalGrid = document.getElementById('signal-grid');
+        let allSignalsData = [];
+        async function loadSignalsData() {
+            signalGrid.innerHTML = `<div class="spinner-border text-light" role="status"></div>`;
+            const query = `{ signals { id traderName status entryPrice stopLoss targetPrice currentPrice strategy riskLevel tradePeriodStart tradePeriodEnd createdAt } }`;
+            try {
+                const { signals } = await gqlFetch(query);
+                allSignalsData = signals;
+                signalGrid.innerHTML = allSignalsData.map(renderSignalCard).join('');
+            } catch (e) { signalGrid.innerHTML = `<div class="alert alert-danger text-white">${e.message}</div>`; }
+        }
+
+            // --- THIS IS THE COMPLETE, FULLY IMPLEMENTED FUNCTION ---
+            // --- THIS IS THE COMPLETE, FULLY IMPLEMENTED FUNCTION ---
+        // --- THIS IS THE ENHANCED AND FULLY IMPLEMENTED FUNCTION ---
+        function renderSignalCard(signal) {
+            const isInactive = signal.status !== 'ACTIVE';
+            
+            // --- 1. DEFENSIVE CALCULATIONS ---
+            const currentPrice = signal.currentPrice || 0;
+            const entryPrice = signal.entryPrice || 0;
+            const stopLoss = signal.stopLoss || 0;
+            const targetPrice = signal.targetPrice || 0;
+
+            const totalRange = targetPrice - stopLoss;
+            const progressPercent = !isNaN(totalRange) && totalRange !== 0
+                ? Math.max(0, Math.min(100, ((currentPrice - stopLoss) / totalRange) * 100))
+                : 0;
+            
+            // --- 2. DYNAMIC P&L CALCULATION ---
+            const pnl = currentPrice - entryPrice;
+            const pnlPercent = entryPrice !== 0 ? (pnl / entryPrice) * 100 : 0;
+            const pnlClass = pnl >= 0 ? 'text-success' : 'text-danger';
+            const pnlText = pnl >= 0 ? `+${pnl.toFixed(2)}` : pnl.toFixed(2);
+
+            // --- 3. DYNAMIC DURATION CALCULATION ---
+            let durationText = '...';
+            if (signal.createdAt) {
+                const start = new Date(signal.createdAt);
+                const now = new Date();
+                const diffMs = now - start;
+                const weeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
+                const days = Math.floor((diffMs % (1000 * 60 * 60 * 24 * 7)) / (1000 * 60 * 60 * 24));
+                durationText = `${weeks} weeks ${days} days`;
+            }
+
+            // --- 4. THE FINAL HTML STRUCTURE ---
+            const contentHtml = `
+                <div class="${isInactive ? 'signal-card-blur' : ''}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">${signal.traderName}</h5>
+                        <span class="small">Current Price: <strong class="text-white" id="price-${signal.id}">${currentPrice.toFixed(5)}</strong></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3 gap-2">
+                        <div class="price-box flex-fill"><div class="label">Stop Loss</div><div class="value stop-loss">$${formatCurrency(stopLoss)}</div></div>
+                        <div class="price-box flex-fill"><div class="label">Entry</div><div class="value">$${formatCurrency(entryPrice)}</div></div>
+                        <div class="price-box flex-fill"><div class="label">Target</div><div class="value target">$${formatCurrency(targetPrice)}</div></div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="progress-bar-custom">
+                            <div class="progress-custom" style="width: ${progressPercent}%;"></div>
+                            <div class="progress-dot" style="left: ${progressPercent}%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small mt-1 text-muted">
+                            <span>Stop Loss: ${formatCurrency(stopLoss)}</span>
+                            <span>Entry: ${formatCurrency(entryPrice)}</span>
+                            <span>Target: ${formatCurrency(targetPrice)}</span>
+                        </div>
+                        <div class="text-center small mt-1" id="pnl-${signal.id}">
+                            Current: ${currentPrice.toFixed(5)} <strong class="${pnlClass}">$${pnlText} (${pnlPercent.toFixed(2)}%)</strong>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted border-top border-secondary pt-3 mb-1"><span>Strategy:</span> <strong class="text-white">${signal.strategy || 'N/A'}</strong></div>
+                    <div class="d-flex justify-content-between small text-muted mb-1"><span>Risk:</span> <strong class="text-white">${signal.riskLevel || 'N/A'}</strong></div>
+                    <div class="d-flex justify-content-between small text-muted mb-1"><span>Trade Period:</span> <strong class="text-white">${signal.tradePeriodStart || 'N/A'} - ${signal.tradePeriodEnd || 'N/A'}</strong></div>
+                    <div class="d-flex justify-content-between small text-muted mb-3"><span>Total Duration:</span> <strong class="text-white">${durationText}</strong></div>
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button class="btn button-copy flex-grow-1" ${isInactive ? 'disabled' : ''}>Copy Trades</button>
+                        <button class="btn button-view flex-grow-1">View Profile</button>
+                    </div>
+                </div>`;
+            
+            const overlayHtml = isInactive 
+                ? `<div class="card-overlay status-${signal.status.toLowerCase().replace('_', '-')}">
+                       <i class="fas fa-check-circle me-2"></i> ${signal.status.replace('_', ' ')}!
+                   </div>` 
+                : '';
+            
+            return `<div class="signal-card" id="signal-card-${signal.id}">${contentHtml}${overlayHtml}</div>`;
+        }
+            // --- MY PORTFOLIO LOGIC ---
+            const portfolioContent = document.getElementById('portfolio-content');
+            async function loadPortfolioData() {
+                portfolioContent.innerHTML = `<div class="spinner-border text-primary" role="status"></div>`;
+                const query = `{ portfolio { openPositions { symbol, type, pnl }, closedPositions { symbol, closeTime, pnl } } }`;
+                try {
+                    const { portfolio } = await gqlFetch(query);
+                    portfolioContent.innerHTML = `
+                    <div class="card"><div class="card-header"><h5>Open Positions</h5></div><div class="card-body table-responsive"><table class="table"><tbody id="open-positions-body">${portfolio.openPositions.map(p => `<tr><td>${p.symbol}</td><td>${p.type}</td><td class="fw-bold ${p.pnl >= 0 ? 'text-success' : 'text-danger'}">$${p.pnl.toFixed(2)}</td></tr>`).join('')}</tbody></table></div></div>
+                    <div class="card mt-4"><div class="card-header"><h5>Closed Positions</h5></div><div class="card-body table-responsive"><table class="table"><tbody>${portfolio.closedPositions.map(p => `<tr><td>${p.symbol}</td><td>${p.closeTime}</td><td class="${p.pnl >= 0 ? 'text-success' : 'text-danger'}">$${p.pnl.toFixed(2)}</td></tr>`).join('')}</tbody></table></div></div>`;
+                } catch (e) { portfolioContent.innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+            }
+
+            // --- SETTINGS LOGIC ---
+            const settingsContent = document.getElementById('settings-content');
+            async function loadSettingsData() {
+                settingsContent.innerHTML = `<div class="spinner-border text-primary" role="status"></div>`;
+                const query = `{ settings { brokerConnection { accountId }, billing { planName } } }`;
+                try {
+                    const { settings } = await gqlFetch(query);
+                    settingsContent.innerHTML = `<div class="card"><div class="card-body"><h3>Settings</h3><p><strong>Account ID:</strong> ${settings.brokerConnection.accountId}</p><p><strong>Plan:</strong> ${settings.billing.planName}</p></div></div>`;
+                } catch (e) { settingsContent.innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+            }
+
+            // --- MY PROFILE LOGIC ---
+            const profileModalBody = document.getElementById('profile-modal-body');
+            document.querySelector('a[data-bs-target="#profileModal"]').addEventListener('click', async () => {
+                profileModalBody.innerHTML = `<div class="spinner-border" role="status"></div>`;
+                const query = `{ me { id name email } }`;
+                try {
+                    const { me } = await gqlFetch(query);
+                    profileModalBody.innerHTML = `<p><strong>User ID:</strong> ${me.id}</p><p><strong>Name:</strong> ${me.name}</p><p><strong>Email:</strong> ${me.email}</p>`;
+                    document.getElementById('customer-name-display').textContent = me.name;
+                } catch (e) { profileModalBody.innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+            });
+
+            // --- REAL-TIME SUBSCRIPTION LOGIC ---
+            function startPortfolioSubscription() {
+                const client = graphqlWs.createClient({ url: `ws://${window.location.host}/graphql` });
+                client.subscribe({ query: `subscription { portfolioUpdates { openPositions { symbol type pnl } } }` }, {
+                    next: (response) => {
+                        const openPositions = response.data.portfolioUpdates.openPositions;
+                        const openPositionsBody = document.getElementById('open-positions-body');
+                        const livePnlElement = document.getElementById('live-pnl');
+                        if (openPositionsBody) {
+                            openPositionsBody.innerHTML = openPositions.map(p => `<tr><td>${p.symbol}</td><td>${p.type}</td><td class="fw-bold ${p.pnl >= 0 ? 'text-success' : 'text-danger'}">$${p.pnl.toFixed(2)}</td></tr>`).join('');
+                        }
+                        if (livePnlElement) {
+                            const totalPnl = openPositions.reduce((sum, pos) => sum + pos.pnl, 0);
+                            livePnlElement.textContent = `$${totalPnl.toFixed(2)}`;
+                            livePnlElement.className = totalPnl >= 0 ? 'text-success' : 'text-danger';
+                        }
+                    },
+                    error: (err) => console.error(err),
+                });
+            }
+
+            // --- INITIAL APPLICATION LOAD ---
+            async function initializeApp() {
+                try {
+                    const { me } = await gqlFetch(`{ me { name } }`);
+                    document.getElementById('customer-name-display').textContent = me.name;
+                    await loadDashboardData();
+                    startPortfolioSubscription();
+                } catch (error) {
+                    window.location.href = '/login';
+                }
+            }
+            initializeApp();
+        });
+    </script>
+    {{ end }}
+</body>
+
+</html>

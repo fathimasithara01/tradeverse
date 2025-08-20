@@ -57,3 +57,16 @@ func (r *RoleRepository) FindByIDWithPermissions(id uint) (models.Role, error) {
 func (r *RoleRepository) UpdatePermissions(role *models.Role, permissions []models.Permission) error {
 	return r.DB.Model(role).Association("Permissions").Replace(permissions)
 }
+
+func (r *RoleRepository) RoleHasPermission(roleID uint, permissionName string) (bool, error) {
+	var count int64
+	err := r.DB.Table("role_permissions").
+		Joins("JOIN permissions ON permissions.id = role_permissions.permission_id").
+		Where("role_permissions.role_id = ? AND permissions.name = ?", roleID, permissionName).
+		Count(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

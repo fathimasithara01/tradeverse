@@ -99,3 +99,7 @@ func (s *RoleService) AssignPermissionsToRole(roleID uint, permissionIDs []uint)
 	}
 	return s.RoleRepo.UpdatePermissions(&role, permissions)
 }
+
+func (s *RoleService) RoleHasPermission(roleID uint, permissionName string) (bool, error) {
+	return s.RoleRepo.RoleHasPermission(roleID, permissionName)
+}

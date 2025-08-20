@@ -48,7 +48,7 @@ func main() {
 
 	routes.WirePublicRoutes(r, authController)
 	routes.WireFollowerRoutes(r, copyController)
-	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController, permissionController, activityController)
+	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController, permissionController, activityController, roleService)
 
 	port := config.AppConfig.Port
 	log.Printf("Server starting on port http://localhost:%s", port)

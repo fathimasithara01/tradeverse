@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/fathimasithara01/tradeverse/controllers"
 	"github.com/fathimasithara01/tradeverse/middleware"
+	"github.com/fathimasithara01/tradeverse/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,14 +15,17 @@ func WireAdminRoutes(
 	roleCtrl *controllers.RoleController,
 	permCtrl *controllers.PermissionController,
 	activityCtrl *controllers.ActivityController,
+	roleSvc *service.RoleService,
+
 ) {
+	authz := middleware.NewAuthzMiddleware(roleSvc)
+
 	admin := r.Group("/admin")
 	{
 		protected := admin.Group("")
 		protected.Use(middleware.JWTMiddleware())
 		{
-			protected.GET("/dashboard", dashCtrl.ShowDashboardPage)
-
+			protected.GET("/dashboard", authz.RequirePermission("view_dashboard"), dashCtrl.ShowDashboardPage)
 			protected.GET("/dashboard/stats", dashCtrl.GetDashboardStats)
 			protected.GET("/dashboard/charts", dashCtrl.GetChartData)
 			protected.GET("/dashboard/top-traders", dashCtrl.GetTopTraders)
@@ -29,20 +33,17 @@ func WireAdminRoutes(
 
 			protected.GET("/api/users/advanced", userCtrl.GetAllUsersAdvanced)
 
-			// User Management Routes -> UserController
 			protected.GET("/api/users/all", userCtrl.GetAllUsers)
-
-			protected.GET("/users/all", userCtrl.ShowUsersPage)
+			protected.GET("/users/all", authz.RequirePermission("manage_users"), userCtrl.ShowUsersPage)
 			protected.GET("/users/add", userCtrl.ShowAddUserPage)
 			protected.GET("/users/edit/:id", userCtrl.ShowEditUserPage)
 
 			protected.POST("/users/add", userCtrl.CreateCustomer)
 			protected.POST("/users/edit/:id", userCtrl.UpdateUser)
-			// protected.GET("/api/users", userCtrl.GetUsers)
-			protected.DELETE("/api/users/:id", userCtrl.DeleteUser)
+			// protected.DELETE("/api/users/:id", userCtrl.DeleteUser)
 
 			// Role Management Routes -> RoleController
-			protected.GET("/roles", roleCtrl.ShowRolesPage)
+			protected.GET("/roles", authz.RequirePermission("manage_roles"), roleCtrl.ShowRolesPage)
 			protected.GET("/roles/add", roleCtrl.ShowAddRolePage)
 			protected.GET("/roles/edit/:id", roleCtrl.ShowEditRolePage)
 			protected.POST("/roles/add", roleCtrl.CreateRole)
@@ -67,16 +68,16 @@ func WireAdminRoutes(
 
 			// API routes for the frontend
 			protected.GET("/api/users/traders/pending", userCtrl.GetPendingTraders)
-			protected.GET("/api/users/traders/approved", userCtrl.GetApprovedTraders) // For the 'Approved' tab
+			protected.GET("/api/users/traders/approved", userCtrl.GetApprovedTraders)
 			protected.POST("/api/users/traders/:id/approve", userCtrl.ApproveTrader)
 			protected.POST("/api/users/traders/:id/reject", userCtrl.RejectTrader)
 
 			// --- NEW: Assign Role to User Routes ---
-			protected.GET("/users/assign-role", userCtrl.ShowAssignRolePage)
-
+			protected.GET("/users/assign-role", authz.RequirePermission("manage_roles"), userCtrl.ShowAssignRolePage)
 			// API routes for the frontend
 			protected.GET("/api/users/for-role-assignment", userCtrl.GetUsersForRoleAssignment)
-			protected.POST("/api/users/assign-role", userCtrl.AssignRoleToUser)
+			protected.POST("/api/users/assign-role", authz.RequirePermission("manage_roles"), userCtrl.AssignRoleToUser)
+			protected.DELETE("/api/users/:id", authz.RequirePermission("delete_users"), userCtrl.DeleteUser)
 
 			protected.GET("/activity/live", activityCtrl.ShowLiveCopyingPage)
 			protected.GET("/activity/logs", activityCtrl.ShowTradeErrorsPage)

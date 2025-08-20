@@ -1,0 +1,29 @@
+schema {
+    query: Query
+    subscription: Subscription
+}
+
+type Query {
+    me: User!
+    dashboard: Dashboard!
+    signals: [TradeSignal!]!
+    portfolio: Portfolio!
+    settings: Settings!
+}
+
+type Subscription {
+    portfolioUpdates: Portfolio!
+}
+
+type User { id: ID!, name: String!, email: String!, createdAt: String! }
+type Dashboard { metrics: PerformanceMetrics!, equityCurve: [EquityPoint!]! }
+type Portfolio { openPositions: [Trade!]!, closedPositions: [Trade!]! }
+type TradeSignal { id: ID!, traderName: String!, status: String!, entryPrice: Float!, stopLoss: Float!, targetPrice: Float!, currentPrice: Float!, strategy: String!, riskLevel: String!, tradePeriodStart: String!, tradePeriodEnd: String!, createdAt: String! }
+type Trade { id: ID!, symbol: String!, type: String!, size: Float!, entryPrice: Float!, pnl: Float!, closeTime: String }
+type Settings { brokerConnection: BrokerConnection!, security: UserSecurity!, billing: Billing! }
+
+type PerformanceMetrics { totalPnl: Float!, winRate: Float! }
+type EquityPoint { date: String!, value: Float! }
+type BrokerConnection { accountId: String!, isConnected: Boolean! }
+type UserSecurity { twoFactorEnabled: Boolean! }
+type Billing { planName: String!, nextBillingDate: String! }
