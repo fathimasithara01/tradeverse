@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Trade Signals - TradeVerse</title>
+    <!-- Your standard CSS Includes (Bootstrap, Font Awesome, etc.) -->
+    <style>
+        /* Your standard dark theme CSS from the previous answer */
+        :root {
+            --dark-bg: #1a1c23; --card-bg: #252831; --border-color: #343741;
+            --text-primary: #ffffff; --text-secondary: #a9b1c7;
+            --accent-green: #2ecc71; --accent-red: #e74c3c;
+        }
+        body { background-color: var(--dark-bg); font-family: 'Inter', sans-serif; color: var(--text-primary); padding: 2rem; }
+        .signal-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
+        .trader-name { font-size: 1.25rem; font-weight: 600; }
+        .price-box { background-color: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.75rem; text-align: center; }
+        .price-box .label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; }
+        .price-box .price { font-size: 1.2rem; font-weight: 600; }
+        .price-box .price.stop-loss { color: var(--accent-red); }
+        .price-box .price.target { color: var(--accent-green); }
+        .progress-container { height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px; position: relative; }
+        .progress-dot { width: 16px; height: 16px; background-color: #fff; border-radius: 50%; position: absolute; top: 50%; transform: translate(-50%, -50%); border: 2px solid var(--border-color); }
+        .live-pnl { margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary); }
+        .pnl-value.positive { color: var(--accent-green); }
+        .pnl-value.negative { color: var(--accent-red); }
+        .btn-copy { background-color: var(--accent-green); border-color: var(--accent-green); font-weight: 600; }
+        .btn-profile { background-color: transparent; border-color: var(--border-color); font-weight: 600; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Live Trade Signals</h1>
+        <div id="signals-container" class="row">
+            <!-- JavaScript will populate this area -->
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('signals-container');
+
+    // --- THIS IS THE CORRECTED, DEFENSIVE RENDER FUNCTION ---
+    function renderSignalCard(signal) {
+        // Safety Checks: Ensure the nested objects and their properties exist before trying to use them.
+        // Provide default values if anything is missing.
+        const traderName = (signal.trader && signal.trader.name) ? signal.trader.name : 'Unknown Trader';
+        const traderId = (signal.trader && signal.trader.ID) ? signal.trader.ID : '#';
+        
+        const trade = signal.latest_trade || {}; // Use an empty object as a default
+        const stopLoss = trade.StopLossPrice || 0;
+        const entryPrice = trade.EntryPrice || 0;
+        const targetPrice = trade.TargetPrice || 0;
+        const symbol = trade.Symbol || 'N/A';
+
+        const currentPrice = signal.current_price || 0;
+        const pnlValue = signal.live_pnl || 0;
+        const pnlPct = signal.live_pnl_pct || 0;
+        
+        const pnlClass = pnlValue >= 0 ? 'positive' : 'negative';
+        const pnlSign = pnlValue >= 0 ? '+' : '';
+
+        // Calculate progress safely, preventing division by zero
+        let progressPercent = 50; // Default to the middle
+        const totalRange = targetPrice - stopLoss;
+        if (totalRange !== 0) {
+            const currentProgress = (currentPrice - stopLoss) / totalRange;
+            progressPercent = Math.max(0, Math.min(100, currentProgress * 100));
+        }
+
+        // The card's HTML is now built safely.
+        return `
+            <div class="col-lg-6">
+                <div class="signal-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="trader-name">${traderName}</div>
+                        <div class="text-secondary"><strong>${symbol}</strong>: ${currentPrice.toFixed(4)}</div>
+                    </div>
+                    <div class="d-flex justify-content-between text-center mb-2">
+                        <div class="price-box p-2 flex-fill mx-1"><div class="label">Stop Loss</div><div class="price stop-loss">$${stopLoss.toLocaleString()}</div></div>
+                        <div class="price-box p-2 flex-fill mx-1"><div class="label">Entry</div><div class="price">$${entryPrice.toLocaleString()}</div></div>
+                        <div class="price-box p-2 flex-fill mx-1"><div class="label">Target</div><div class="price target">$${targetPrice.toLocaleString()}</div></div>
+                    </div>
+                    <div class="progress-container"><div class="progress-dot" style="left: ${progressPercent}%;"></div></div>
+                    <div class="live-pnl text-center mt-2 mb-3">
+                        <span class="pnl-value ${pnlClass} fw-bold">
+                            ${pnlSign}$${pnlValue.toFixed(2)} (${pnlSign}${pnlPct.toFixed(2)}%)
+                        </span>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+                        <button class="btn btn-copy flex-grow-1" data-master-id="${traderId}">Copy Trades</button>
+                        <a href="/traders/${traderId}" class="btn btn-profile flex-grow-1">View Profile</a>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // --- THIS IS THE CORRECTED FETCH LOGIC WITH BETTER ERROR HANDLING ---
+    function loadLiveSignals() {
+        container.innerHTML = `<p class="text-secondary">Fetching live signals...</p>`;
+
+        fetch('/api/signals')
+            .then(res => {
+                if (!res.ok) {
+                    // If the server sends an error, try to read the message.
+                    return res.json().then(err => { throw new Error(err.error || 'Server responded with an error.') });
+                }
+                return res.json();
+            })
+            .then(signals => {
+                container.innerHTML = '';
+                if (!signals || signals.length === 0) {
+                    container.innerHTML = `<p class="text-secondary">No active trade signals at the moment.</p>`;
+                    return;
+                }
+                signals.forEach(signal => {
+                    // The += ensures we add one card after another.
+                    container.innerHTML += renderSignalCard(signal);
+                });
+            })
+            .catch(error => {
+                console.error("Fetch Error:", error);
+                // Display a user-friendly error message on the page.
+                container.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+            });
+    }
+    
+    // ... (Your event listener for the copy button is fine) ...
+
+    loadLiveSignals();
+    setInterval(loadLiveSignals, 60000); // Refresh every minute
+});
+</script>
+</body>
+</html>

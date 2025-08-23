@@ -37,6 +37,7 @@ func ConnectDB() {
 		&models.OrderItem{},
 		&models.Address{},
 		&models.Product{},
+		&models.Trade{},
 	)
 	if err != nil {
 		log.Printf("DATABASE MIGRATION ERROR (Step 1): %v", err)

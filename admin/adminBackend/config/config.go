@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Config struct matches the keys in your .env file
 type Config struct {
 	Port       string `mapstructure:"PORT"`
 	DBHost     string `mapstructure:"DB_HOST"`
@@ -20,6 +19,8 @@ type Config struct {
 
 	AdminEmail    string `mapstructure:"Admin_Email"`
 	AdminPassword string `mapstructure:"Admin_Password"`
+
+	PolygonApiKey string `mapstructure:"POLYGON_API_KEY"`
 }
 
 var AppConfig Config

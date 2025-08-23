@@ -1,0 +1,20 @@
+{{ define "content" }}
+<h2>Available Subscription Plans</h2>
+<div class="row">
+  {{ range .Traders }}
+  <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">{{ .Name }}</h5>
+        <p>Return: {{ .ROI }}%</p>
+        <p>Subscribers: {{ .Subscribers }}</p>
+        <form action="/subscribe" method="POST">
+          <input type="hidden" name="trader_id" value="{{ .ID }}">
+          <button class="btn btn-outline-primary">Subscribe - ₹{{ .Price }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {{ end }}
+</div>
+{{ end }}

@@ -16,6 +16,7 @@ func WireAdminRoutes(
 	permCtrl *controllers.PermissionController,
 	activityCtrl *controllers.ActivityController,
 	roleSvc *service.RoleService,
+	signalCtrl *controllers.SignalController,
 
 ) {
 	authz := middleware.NewAuthzMiddleware(roleSvc)
@@ -32,6 +33,9 @@ func WireAdminRoutes(
 			protected.GET("/dashboard/latest-signups", dashCtrl.GetLatestSignups)
 
 			protected.GET("/api/users/advanced", userCtrl.GetAllUsersAdvanced)
+
+			protected.GET("/signals", signalCtrl.ShowLiveSignalsPage)
+			protected.GET("/api/signals", signalCtrl.GetLiveSignals)
 
 			protected.GET("/api/users/all", userCtrl.GetAllUsers)
 			protected.GET("/users/all", authz.RequirePermission("manage_users"), userCtrl.ShowUsersPage)

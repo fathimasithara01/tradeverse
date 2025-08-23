@@ -101,7 +101,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 
 	userToUpdate.Name = c.PostForm("Name")
 	userToUpdate.Email = c.PostForm("Email")
-	userToUpdate.Password = c.PostForm("Password") // The service will handle hashing if not empty.
+	userToUpdate.Password = c.PostForm("Password")
 
 	if userToUpdate.Role == models.RoleCustomer {
 		userToUpdate.CustomerProfile.PhoneNumber = c.PostForm("PhoneNumber")
@@ -111,11 +111,10 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		userToUpdate.TraderProfile.Bio = c.PostForm("Bio")
 	}
 
-	// Call the service to perform the update.
 	if err := ctrl.UserSvc.UpdateUser(&userToUpdate); err != nil {
 		c.HTML(http.StatusInternalServerError, "edit_user.html", gin.H{
 			"error": "Failed to update user.",
-			"User":  userToUpdate, // Send the user back to re-populate the form
+			"User":  userToUpdate,
 		})
 		return
 	}

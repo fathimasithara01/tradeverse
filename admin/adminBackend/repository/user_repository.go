@@ -184,11 +184,6 @@ func (r *UserRepository) FindAllWithRole() ([]models.User, error) {
 	return users, err
 }
 
-// func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint) error {
-
-// 	return r.DB.Model(&models.User{}).Where("id = ?", userID).Update("role_id", roleID).Error
-// }
-
 func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint, roleName models.UserRole) error {
 	updates := map[string]interface{}{
 		"role_id": roleID,
@@ -196,4 +191,12 @@ func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint, roleName mod
 	}
 
 	return r.DB.Model(&models.User{}).Where("id = ?", userID).UpdateColumns(updates).Error
+}
+
+func (r *UserRepository) GetLatestOpenTradeForUser(userID uint) (models.Trade, error) {
+	var trade models.Trade
+	err := r.DB.Where("master_user_id = ? AND status = ?", userID, "open").
+		Order("opened_at desc").
+		First(&trade).Error
+	return trade, err
 }

@@ -22,8 +22,6 @@ func main() {
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*.html")
 
-	// r.Static("	/static", "./static")
-
 	userRepo := repository.NewUserRepository(db.DB)
 	roleRepo := repository.NewRoleRepository(db.DB)
 	dashboardRepo := repository.NewDashboardRepository(db.DB)
@@ -37,6 +35,7 @@ func main() {
 	permissionService := service.NewPermissionService(permissionRepo)
 	activityService := service.NewActivityService(activityRepo)
 	copyService := service.NewCopyService(copyRepo)
+	liveSignalService := service.NewLiveSignalService(userRepo)
 
 	authController := controllers.NewAuthController(userService)
 	userController := controllers.NewUserController(userService)
@@ -45,10 +44,11 @@ func main() {
 	permissionController := controllers.NewPermissionController(permissionService, roleService)
 	activityController := controllers.NewActivityController(activityService)
 	copyController := controllers.NewCopyController(copyService)
+	signalController := controllers.NewSignalController(liveSignalService)
 
-	routes.WirePublicRoutes(r, authController)
+	routes.WirePublicRoutes(r, authController, signalController)
 	routes.WireFollowerRoutes(r, copyController)
-	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController, permissionController, activityController, roleService)
+	routes.WireAdminRoutes(r, authController, dashboardController, userController, roleController, permissionController, activityController, roleService, signalController)
 
 	port := config.AppConfig.Port
 	log.Printf("Server starting on port http://localhost:%s", port)

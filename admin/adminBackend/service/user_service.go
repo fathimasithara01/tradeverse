@@ -35,7 +35,6 @@ func (s *UserService) Login(email, password string) (string, models.User, error)
 		return "", models.User{}, errors.New("invalid credentials")
 	}
 
-	// Get the RoleID from the user model. This is critical.
 	var roleID uint
 	if user.RoleID != nil {
 		roleID = *user.RoleID
@@ -45,7 +44,6 @@ func (s *UserService) Login(email, password string) (string, models.User, error)
 
 	fmt.Printf("[DEBUG-LOGIN] Generating JWT for UserID: %d, Role: %s, RoleID: %d\n", user.ID, user.Role, roleID)
 
-	// Pass the roleID to the token generation function.
 	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role), roleID)
 	return token, user, err
 }
