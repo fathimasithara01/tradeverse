@@ -8,8 +8,7 @@ import (
 type RoleService struct {
 	RoleRepo *repository.RoleRepository
 	PermRepo *repository.PermissionRepository
-	UserRepo *repository.UserRepository // Add this line
-
+	UserRepo *repository.UserRepository
 }
 
 func NewRoleService(roleRepo *repository.RoleRepository, permRepo *repository.PermissionRepository, userRepo *repository.UserRepository) *RoleService {
@@ -21,7 +20,7 @@ type RoleResponse struct {
 	ID            uint   `json:"ID"`
 	Name          string `json:"name"`
 	CreatedByID   uint   `json:"created_by_id"`
-	CreatedByName string `json:"createdByName"` // The new field for the creator's name
+	CreatedByName string `json:"createdByName"`
 }
 
 func (s *RoleService) GetAllRoles() ([]RoleResponse, error) {

@@ -19,15 +19,12 @@
             --sidebar-bg: #ffffff;
             --sidebar-width: 280px;
             --main-bg: #f7f9fc;
-
             --brand-color: #1a73e8;
             --text-color: #343a40;
             --link-color: #5f6368;
-
             --link-hover-bg: #f1f3f4;
             --link-active-bg: #e8f0fe;
             --link-active-color: #1967d2;
-
             --border-color: #e9ecef;
             --shadow-color: rgba(0, 0, 0, 0.08);
         }
@@ -35,17 +32,14 @@
         body {
             background-color: var(--main-bg);
             font-family: 'Inter', sans-serif;
-            color: var(--text-color);
         }
 
         .wrapper {
             display: flex;
             width: 100%;
             min-height: 100vh;
-            align-items: stretch;
         }
 
-        /* --- Sidebar --- */
         #sidebar {
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
@@ -57,7 +51,6 @@
             flex-direction: column;
         }
 
-        /* --- Sidebar Header (Logo) --- */
         .sidebar-header {
             padding: 1.25rem 1.5rem;
             text-align: center;
@@ -71,11 +64,9 @@
             font-size: 1.5rem;
         }
 
-        /* --- Sidebar Links --- */
         #sidebar-nav {
             flex-grow: 1;
             padding: 1rem 0;
-            overflow-y: auto;
         }
 
         #sidebar-nav .nav-heading {
@@ -111,7 +102,6 @@
             border-left-color: var(--link-active-color);
         }
 
-        /* --- Icons --- */
         #sidebar-nav .nav-item a i {
             margin-right: 1rem;
             width: 20px;
@@ -119,7 +109,6 @@
             font-size: 1.1rem;
         }
 
-        /* --- Dropdowns --- */
         .collapse-arrow {
             margin-left: auto;
             transition: transform 0.2s ease-in-out;
@@ -137,41 +126,52 @@
             color: #6c757d;
         }
 
-        .nav-collapse .nav-item a:hover {
-            color: var(--text-color);
-        }
-
-        .nav-collapse .nav-item a::before {
-            content: '';
-            position: absolute;
-            left: 2.1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 4px;
-            background-color: #adb5bd;
-            border-radius: 50%;
-        }
-
         .nav-collapse .nav-item.active a {
             color: var(--link-active-color);
             font-weight: 600;
         }
 
-        .nav-collapse .nav-item.active a::before {
-            background-color: var(--link-active-color);
-        }
-
-        /* --- Sidebar Footer --- */
         .sidebar-footer {
             border-top: 1px solid var(--border-color);
             padding: 1rem 1.5rem;
         }
 
-        /* --- Main Content Area --- */
         #content {
             flex-grow: 1;
             padding: 2.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -192,18 +192,6 @@
                 </li>
 
                 <li class="nav-heading">Core Management</li>
-                <!-- <li class="nav-item">
-                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-users"></i>
-                        <span>User Management</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
-                        <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
-                    </ul>
-                </li> -->
 
                 <li class="nav-item">
                     <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
@@ -213,23 +201,47 @@
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
                         <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                         <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                        <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
+                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions </a></li>
                         <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
+
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#customerSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Customer Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="customerSubmenu">
+                        <li class="nav-item"><a href="/admin/users/customers">Customers List</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#traderSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Trader Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="traderSubmenu">
+                        <li class="nav-item"><a href="/admin/users/traders">Traders List</a></li>
+                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                     </ul>
                 </li>
 
 
-                <li class="nav-item">
+                <li class="nav-item ">
                     <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-sync-alt"></i>
                         <span>Platform Activity</span>
                         <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
+                        <li class="nav-item "><a href="/admin/signals">Live Signals</a></li>
                         <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
-                        <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
+                        <li class="nav-item"><a href="/admin/activity/errors">Trade Log & Errors</a></li>
                     </ul>
                 </li>
 

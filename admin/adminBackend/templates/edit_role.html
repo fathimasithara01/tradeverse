@@ -8,8 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        /* --- CORRECTED AND CLEANED CSS --- */
+   <style>
         :root {
             --sidebar-bg: #ffffff;
             --sidebar-width: 280px;
@@ -187,18 +186,6 @@
                 </li>
 
                 <li class="nav-heading">Core Management</li>
-                <!-- <li class="nav-item">
-                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-users"></i>
-                        <span>User Management</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
-                        <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
-                    </ul>
-                </li> -->
 
                 <li class="nav-item">
                     <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
@@ -208,23 +195,47 @@
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
                         <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                         <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                       <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
+                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions </a></li>
                         <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
+
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#customerSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Customer Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="customerSubmenu">
+                        <li class="nav-item"><a href="/admin/users/customers">Customers List</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#traderSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Trader Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="traderSubmenu">
+                        <li class="nav-item"><a href="/admin/users/traders">Traders List</a></li>
+                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                     </ul>
                 </li>
 
 
-                <li class="nav-item">
+                <li class="nav-item ">
                     <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-sync-alt"></i>
                         <span>Platform Activity</span>
                         <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
+                        <li class="nav-item "><a href="/admin/signals">Live Signals</a></li>
                         <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
-                        <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
+                        <li class="nav-item"><a href="/admin/activity/errors">Trade Log & Errors</a></li>
                     </ul>
                 </li>
 
@@ -287,8 +298,6 @@
 
 
         </nav>
-
-
         <div id="content" class="container-fluid p-4">
 
             <!-- The page title, showing the name of the role being edited -->

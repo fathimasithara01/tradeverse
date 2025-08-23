@@ -39,14 +39,14 @@ func WireAdminRoutes(
 
 			protected.GET("/api/users/all", userCtrl.GetAllUsers)
 			protected.GET("/users/all", authz.RequirePermission("manage_users"), userCtrl.ShowUsersPage)
-			protected.GET("/users/add", userCtrl.ShowAddUserPage)
+			protected.GET("/users/internal/add", userCtrl.ShowAddInternalUserPage)
+			protected.POST("/users/internal/add", userCtrl.CreateInternalUser)
 			protected.GET("/users/edit/:id", userCtrl.ShowEditUserPage)
 
+			protected.GET("/users/add", userCtrl.ShowAddCustomerPage)
 			protected.POST("/users/add", userCtrl.CreateCustomer)
 			protected.POST("/users/edit/:id", userCtrl.UpdateUser)
-			// protected.DELETE("/api/users/:id", userCtrl.DeleteUser)
 
-			// Role Management Routes -> RoleController
 			protected.GET("/roles", authz.RequirePermission("manage_roles"), roleCtrl.ShowRolesPage)
 			protected.GET("/roles/add", roleCtrl.ShowAddRolePage)
 			protected.GET("/roles/edit/:id", roleCtrl.ShowEditRolePage)
@@ -70,15 +70,13 @@ func WireAdminRoutes(
 
 			protected.GET("/users/traders/approval", userCtrl.ShowTraderApprovalPage)
 
-			// API routes for the frontend
 			protected.GET("/api/users/traders/pending", userCtrl.GetPendingTraders)
 			protected.GET("/api/users/traders/approved", userCtrl.GetApprovedTraders)
 			protected.POST("/api/users/traders/:id/approve", userCtrl.ApproveTrader)
 			protected.POST("/api/users/traders/:id/reject", userCtrl.RejectTrader)
 
-			// --- NEW: Assign Role to User Routes ---
 			protected.GET("/users/assign-role", authz.RequirePermission("manage_roles"), userCtrl.ShowAssignRolePage)
-			// API routes for the frontend
+
 			protected.GET("/api/users/for-role-assignment", userCtrl.GetUsersForRoleAssignment)
 			protected.POST("/api/users/assign-role", authz.RequirePermission("manage_roles"), userCtrl.AssignRoleToUser)
 			protected.DELETE("/api/users/:id", authz.RequirePermission("delete_users"), userCtrl.DeleteUser)

@@ -11,285 +11,295 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-            /* --- CORRECTED AND CLEANED CSS --- */
-            :root {
-                --sidebar-bg: #ffffff;
-                --sidebar-width: 280px;
-                --main-bg: #f7f9fc;
-                --brand-color: #1a73e8;
-                --text-color: #343a40;
-                --link-color: #5f6368;
-                --link-hover-bg: #f1f3f4;
-                --link-active-bg: #e8f0fe;
-                --link-active-color: #1967d2;
-                --border-color: #e9ecef;
-                --shadow-color: rgba(0, 0, 0, 0.08);
-            }
+        :root {
+            --sidebar-bg: #ffffff;
+            --sidebar-width: 280px;
+            --main-bg: #f7f9fc;
+            --brand-color: #1a73e8;
+            --text-color: #343a40;
+            --link-color: #5f6368;
+            --link-hover-bg: #f1f3f4;
+            --link-active-bg: #e8f0fe;
+            --link-active-color: #1967d2;
+            --border-color: #e9ecef;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
 
-            body {
-                background-color: var(--main-bg);
-                font-family: 'Inter', sans-serif;
-            }
+        body {
+            background-color: var(--main-bg);
+            font-family: 'Inter', sans-serif;
+        }
 
-            .wrapper {
-                display: flex;
-                width: 100%;
-                min-height: 100vh;
-            }
+        .wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
 
-            #sidebar {
-                width: var(--sidebar-width);
-                min-width: var(--sidebar-width);
-                background: var(--sidebar-bg);
-                transition: all 0.3s;
-                box-shadow: 0 0 25px var(--shadow-color);
-                z-index: 1000;
-                display: flex;
-                flex-direction: column;
-            }
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            transition: all 0.3s;
+            box-shadow: 0 0 25px var(--shadow-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
 
-            .sidebar-header {
-                padding: 1.25rem 1.5rem;
-                text-align: center;
-                border-bottom: 1px solid var(--border-color);
-            }
+        .sidebar-header {
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-            .sidebar-header h3 {
-                color: var(--brand-color);
-                font-weight: 700;
-                margin-bottom: 0;
-                font-size: 1.5rem;
-            }
+        .sidebar-header h3 {
+            color: var(--brand-color);
+            font-weight: 700;
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
 
-            #sidebar-nav {
-                flex-grow: 1;
-                padding: 1rem 0;
-            }
+        #sidebar-nav {
+            flex-grow: 1;
+            padding: 1rem 0;
+        }
 
-            #sidebar-nav .nav-heading {
-                padding: 0.5rem 1.5rem;
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: #adb5bd;
-                text-transform: uppercase;
-                letter-spacing: .5px;
-            }
+        #sidebar-nav .nav-heading {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #adb5bd;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
 
-            #sidebar-nav .nav-item a {
-                padding: 0.8rem 1.5rem;
-                font-size: 0.95rem;
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                color: var(--link-color);
-                text-decoration: none;
-                transition: all 0.2s;
-                border-left: 4px solid transparent;
-            }
+        #sidebar-nav .nav-item a {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            color: var(--link-color);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
 
-            #sidebar-nav .nav-item a:hover {
-                background: var(--link-hover-bg);
-                color: var(--text-color);
-            }
+        #sidebar-nav .nav-item a:hover {
+            background: var(--link-hover-bg);
+            color: var(--text-color);
+        }
 
-            #sidebar-nav .nav-item.active>a,
-            #sidebar-nav .nav-item a[aria-expanded="true"] {
-                background: var(--link-active-bg);
-                color: var(--link-active-color);
-                border-left-color: var(--link-active-color);
-            }
+        #sidebar-nav .nav-item.active>a,
+        #sidebar-nav .nav-item a[aria-expanded="true"] {
+            background: var(--link-active-bg);
+            color: var(--link-active-color);
+            border-left-color: var(--link-active-color);
+        }
 
-            #sidebar-nav .nav-item a i {
-                margin-right: 1rem;
-                width: 20px;
-                text-align: center;
-                font-size: 1.1rem;
-            }
+        #sidebar-nav .nav-item a i {
+            margin-right: 1rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
 
-            .collapse-arrow {
-                margin-left: auto;
-                transition: transform 0.2s ease-in-out;
-            }
+        .collapse-arrow {
+            margin-left: auto;
+            transition: transform 0.2s ease-in-out;
+        }
 
-            a[aria-expanded="true"] .collapse-arrow {
-                transform: rotate(90deg);
-            }
+        a[aria-expanded="true"] .collapse-arrow {
+            transform: rotate(90deg);
+        }
 
-            .nav-collapse .nav-item a {
-                padding-left: 3.8rem !important;
-                font-size: 0.9rem;
-                border-left: none;
-                position: relative;
-                color: #6c757d;
-            }
+        .nav-collapse .nav-item a {
+            padding-left: 3.8rem !important;
+            font-size: 0.9rem;
+            border-left: none;
+            position: relative;
+            color: #6c757d;
+        }
 
-            .nav-collapse .nav-item.active a {
-                color: var(--link-active-color);
-                font-weight: 600;
-            }
+        .nav-collapse .nav-item.active a {
+            color: var(--link-active-color);
+            font-weight: 600;
+        }
 
-            .sidebar-footer {
-                border-top: 1px solid var(--border-color);
-                padding: 1rem 1.5rem;
-            }
+        .sidebar-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+        }
 
-            #content {
-                flex-grow: 1;
-                padding: 2.5rem;
-            }
+        #content {
+            flex-grow: 1;
+            padding: 2.5rem;
+        }
 
-            .card {
-                border: none;
-                border-radius: 0.75rem;
-                box-shadow: 0 2px 10px var(--shadow-color);
-                margin-bottom: 1.5rem;
-            }
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 1.5rem;
+        }
 
-            .card-header {
-                background-color: #fff;
-                border-bottom: 1px solid var(--border-color);
-                font-weight: 600;
-            }
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
 
-            .stat-card {
-                text-align: center;
-                padding: 1.5rem;
-            }
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
 
-            .stat-card .icon {
-                font-size: 2rem;
-                margin-bottom: 0.5rem;
-            }
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
 
-            .stat-card .value {
-                font-size: 2rem;
-                font-weight: 700;
-            }
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
 
-            .stat-card .title {
-                font-size: 0.9rem;
-                color: #6c757d;
-            }
-        </style>
-    </head>
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
 
-    <body>
-        <div class="wrapper">
-            <nav id="sidebar">
-                <div class="sidebar-header">
-                    <h3>TradeVerse</h3>
-                </div>
+<body>
+    <div class="wrapper">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>TradeVerse</h3>
+            </div>
 
-                <ul id="sidebar-nav" class="list-unstyled">
+            <ul id="sidebar-nav" class="list-unstyled">
 
-                    <li class="nav-heading">Main</li>
+                <li class="nav-heading">Main</li>
 
-                    <li class="nav-item active">
-                        <a href="/admin/dashboard"><i class="fas fa-tachometer-alt "></i> Dashboard</a>
-                    </li>
+                <li class="nav-item active">
+                    <a href="/admin/dashboard"><i class="fas fa-tachometer-alt "></i> Dashboard</a>
+                </li>
 
-                    <li class="nav-heading">Core Management</li>
-                    <!-- <li class="nav-item">
-                        <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                            <i class="fas fa-users"></i>
-                            <span>User Management</span>
-                            <i class="fas fa-chevron-right collapse-arrow"></i>
-                        </a>
-                        <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
-                            <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
-                            <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
-                            <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
-                        </ul>
-                    </li> -->
+                <li class="nav-heading">Core Management</li>
 
-                    <li class="nav-item">
-                        <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                            <i class="fas fa-shield-alt"></i>
-                            <span> Users & Permissions</span>
-                            <i class="fas fa-chevron-right collapse-arrow"></i>
-                        </a>
-                        <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
-                            <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
-                            <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
-                            <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                            <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
-                            <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
-
-                            </ul>
-                    </li>
-
-
-                    <li class="nav-item">
-                        <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                            <i class="fas fa-sync-alt"></i>
-                            <span>Platform Activity</span>
-                            <i class="fas fa-chevron-right collapse-arrow"></i>
-                        </a>
-                        <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
-                            <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
-                            <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
-                        </ul>
-                    </li>
-
-                    <li class="nav-item">
-                        <a href="#financialsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                            <i class="fas fa-wallet"></i>
-                            <span>Financials</span>
-                            <i class="fas fa-chevron-right collapse-arrow"></i>
-                        </a>
-                        <ul class="collapse list-unstyled nav-collapse" id="financialsSubmenu">
-                            <li class="nav-item"><a href="#">Subscriptions</a></li>
-                            <li class="nav-item"><a href="#">Trader Payouts</a></li>
-                            <li class="nav-item"><a href="#">Transactions</a></li>
-                        </ul>
-                    </li>
-
-                    <li class="nav-heading">Growth & Support</li>
-                    <li class="nav-item">
-                        <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                            <i class="fas fa-bullhorn"></i>
-                            <span>Marketing</span>
-                            <i class="fas fa-chevron-right collapse-arrow"></i>
-                        </a>
-                        <ul class="collapse list-unstyled nav-collapse" id="marketingSubmenu">
-                            <li class="nav-item"><a href="#">Announcements</a></li>
-                            <li class="nav-item"><a href="#">Email Campaigns</a></li>
-                        </ul>
-                    </li>
-
-                    <li class="nav-item">
-                        <a href="#"><i class="fas fa-headset"></i> Support Tickets</a>
-                    </li>
-
-                    <li class="nav-heading">System</li>
-                    <li class="nav-item">
-                        <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                            <i class="fas fa-cogs"></i>
-                            <span>System Settings</span>
-                            <i class="fas fa-chevron-right collapse-arrow"></i>
-                        </a>
-                        <ul class="collapse list-unstyled nav-collapse" id="settingsSubmenu">
-                            <li class="nav-item"><a href="#">General</a></li>
-                            <li class="nav-item"><a href="#">Roles & Permissions</a></li>
-                            <li class="nav-item"><a href="#">Risk Management</a></li>
-                            <li class="nav-item"><a href="#">Broker Integrations</a></li>
-                        </ul>
-                    </li>
-                </ul>
-
-                <div class="sidebar-footer">
-                    <a href="#" class="d-flex align-items-center text-decoration-none text-dark">
-                        <img src="https://i.pravatar.cc/40?u=admin" alt="Admin" class="rounded-circle me-3" width="40"
-                            height="40">
-                        <div>
-                            <div class="fw-bold">Admin Name</div>
-                            <small>Logout</small>
-                        </div>
+                <li class="nav-item">
+                    <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-shield-alt"></i>
+                        <span> Users & Permissions</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
-                </div>
+                    <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
+                        <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
+                        <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
+                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions </a></li>
+                        <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
+
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#customerSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Customer Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="customerSubmenu">
+                        <li class="nav-item"><a href="/admin/users/customers">Customers List</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#traderSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Trader Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="traderSubmenu">
+                        <li class="nav-item"><a href="/admin/users/traders">Traders List</a></li>
+                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
+                    </ul>
+                </li>
 
 
-            </nav>
+                <li class="nav-item ">
+                    <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Platform Activity</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
+                        <li class="nav-item "><a href="/admin/signals">Live Signals</a></li>
+                        <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
+                        <li class="nav-item"><a href="/admin/activity/errors">Trade Log & Errors</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#financialsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-wallet"></i>
+                        <span>Financials</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="financialsSubmenu">
+                        <li class="nav-item"><a href="#">Subscriptions</a></li>
+                        <li class="nav-item"><a href="#">Trader Payouts</a></li>
+                        <li class="nav-item"><a href="#">Transactions</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-heading">Growth & Support</li>
+                <li class="nav-item">
+                    <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Marketing</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="marketingSubmenu">
+                        <li class="nav-item"><a href="#">Announcements</a></li>
+                        <li class="nav-item"><a href="#">Email Campaigns</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#"><i class="fas fa-headset"></i> Support Tickets</a>
+                </li>
+
+                <li class="nav-heading">System</li>
+                <li class="nav-item">
+                    <a href="#settingsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-cogs"></i>
+                        <span>System Settings</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="settingsSubmenu">
+                        <li class="nav-item"><a href="#">General</a></li>
+                        <li class="nav-item"><a href="#">Roles & Permissions</a></li>
+                        <li class="nav-item"><a href="#">Risk Management</a></li>
+                        <li class="nav-item"><a href="#">Broker Integrations</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="#" class="d-flex align-items-center text-decoration-none text-dark">
+                    <img src="https://i.pravatar.cc/40?u=admin" alt="Admin" class="rounded-circle me-3" width="40"
+                        height="40">
+                    <div>
+                        <div class="fw-bold">Admin Name</div>
+                        <small>Logout</small>
+                    </div>
+                </a>
+            </div>
+
+
+        </nav>
 
         <div id="content">
             <div class="d-flex justify-content-between align-items-center mb-4">

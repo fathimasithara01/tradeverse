@@ -78,6 +78,15 @@ func (s *UserService) CreateTraderByAdmin(user models.User, profile models.Trade
 	user.TraderProfile = profile
 	return s.UserRepo.Create(&user)
 }
+func (s *UserService) CreateInternalUser(user models.User) (models.User, error) {
+	_, err := s.UserRepo.FindByEmail(user.Email)
+	if err == nil {
+		return models.User{}, errors.New("a user with this email already exists")
+	}
+
+	err = s.UserRepo.Create(&user)
+	return user, err
+}
 
 func (s *UserService) GetUserByID(id uint) (models.User, error) { return s.UserRepo.FindByID(id) }
 func (s *UserService) GetUsersByRole(role models.UserRole) ([]models.User, error) {

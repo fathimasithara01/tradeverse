@@ -25,11 +25,21 @@ func (ctrl *UserController) ShowCustomersPage(c *gin.Context) {
 func (ctrl *UserController) ShowTradersPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "manage_traders.html", nil)
 }
-func (ctrl *UserController) ShowAddUserPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "add_user.html", nil)
+func (ctrl *UserController) ShowAddCustomerPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "add_customer.html", nil)
 }
 func (ctrl *UserController) ShowAddTraderPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "add_trader.html", nil)
+}
+func (ctrl *UserController) ShowAddInternalUserPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "add_internal_user.html", nil)
+
+}
+func (ctrl *UserController) ShowTraderApprovalPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "trader_approval.html", nil)
+}
+func (ctrl *UserController) ShowAssignRolePage(c *gin.Context) {
+	c.HTML(http.StatusOK, "assign_role.html", nil)
 }
 
 func (ctrl *UserController) ShowEditUserPage(c *gin.Context) {
@@ -46,12 +56,6 @@ func (ctrl *UserController) ShowEditUserPage(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "edit_user.html", gin.H{"User": user})
-}
-func (ctrl *UserController) ShowTraderApprovalPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "trader_approval.html", nil)
-}
-func (ctrl *UserController) ShowAssignRolePage(c *gin.Context) {
-	c.HTML(http.StatusOK, "assign_role.html", nil)
 }
 
 func (ctrl *UserController) CreateTrader(c *gin.Context) {
@@ -70,7 +74,7 @@ func (ctrl *UserController) CreateTrader(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/admin/users/all")
+	c.Redirect(http.StatusFound, "/admin/users/traders")
 }
 
 func (ctrl *UserController) CreateCustomer(c *gin.Context) {
@@ -80,9 +84,23 @@ func (ctrl *UserController) CreateCustomer(c *gin.Context) {
 	profile.PhoneNumber = c.PostForm("PhoneNumber")
 
 	if err := ctrl.UserSvc.RegisterCustomer(user, profile); err != nil {
-		c.HTML(http.StatusBadRequest, "add_user.html", gin.H{"error": err.Error()})
+		c.HTML(http.StatusBadRequest, "add_customer.html", gin.H{"error": err.Error()})
 		return
 	}
+	c.Redirect(http.StatusFound, "/admin/users/customers")
+}
+
+func (ctrl *UserController) CreateInternalUser(c *gin.Context) {
+	var user models.User
+	user.Name = c.PostForm("Name")
+	user.Email = c.PostForm("Email")
+	user.Password = c.PostForm("Password")
+
+	if _, err := ctrl.UserSvc.CreateInternalUser(user); err != nil {
+		c.HTML(http.StatusBadRequest, "add_internal_user.html", gin.H{"error": err.Error()})
+		return
+	}
+
 	c.Redirect(http.StatusFound, "/admin/users/all")
 }
 
@@ -244,37 +262,6 @@ func (ctrl *UserController) RejectTrader(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Trader rejected successfully"})
 }
-
-// func (ctrl *UserController) GetUsersForRoleAssignment(c *gin.Context) {
-// 	users, err := ctrl.UserSvc.GetAllUsers()
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
-// 		return
-// 	}
-// 	if users == nil {
-// 		users = make([]models.User, 0)
-// 	}
-// 	c.JSON(http.StatusOK, users)
-// }
-
-// func (ctrl *UserController) AssignRoleToUser(c *gin.Context) {
-// 	var payload struct {
-// 		UserID uint `json:"user_id"`
-// 		RoleID uint `json:"role_id"`
-// 	}
-
-// 	if err := c.ShouldBindJSON(&payload); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: User ID and Role ID are required."})
-// 		return
-// 	}
-
-// 	if err := ctrl.UserSvc.AssignRoleToUser(payload.UserID, payload.RoleID); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to assign role."})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{"message": "Role assigned successfully."})
-// }
 
 func (ctrl *UserController) AssignRoleToUser(c *gin.Context) {
 	var payload struct {

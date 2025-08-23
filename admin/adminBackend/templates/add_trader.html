@@ -30,11 +30,6 @@
             font-family: 'Inter', sans-serif;
         }
 
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
         .wrapper {
             display: flex;
             width: 100%;
@@ -45,8 +40,9 @@
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
             background: var(--sidebar-bg);
-            padding-top: 1rem;
+            transition: all 0.3s;
             box-shadow: 0 0 25px var(--shadow-color);
+            z-index: 1000;
             display: flex;
             flex-direction: column;
         }
@@ -86,8 +82,8 @@
             align-items: center;
             color: var(--link-color);
             text-decoration: none;
+            transition: all 0.2s;
             border-left: 4px solid transparent;
-            transition: background 0.2s;
         }
 
         #sidebar-nav .nav-item a:hover {
@@ -102,18 +98,79 @@
             border-left-color: var(--link-active-color);
         }
 
-        .sidebar-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border-color);
+        #sidebar-nav .nav-item a i {
+            margin-right: 1rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
         }
 
-        .content {
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
+        .collapse-arrow {
+            margin-left: auto;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        a[aria-expanded="true"] .collapse-arrow {
+            transform: rotate(90deg);
+        }
+
+        .nav-collapse .nav-item a {
+            padding-left: 3.8rem !important;
+            font-size: 0.9rem;
+            border-left: none;
+            position: relative;
+            color: #6c757d;
+        }
+
+        .nav-collapse .nav-item.active a {
+            color: var(--link-active-color);
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+        }
+
+        #content {
+            flex-grow: 1;
+            padding: 2.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #6c757d;
         }
     </style>
 </head>
-
 
 <body>
     <div class="wrapper">
@@ -131,18 +188,6 @@
                 </li>
 
                 <li class="nav-heading">Core Management</li>
-                <!-- <li class="nav-item">
-                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="false">
-                        <i class="fas fa-users"></i>
-                        <span>User Management</span>
-                        <i class="fas fa-chevron-right collapse-arrow"></i>
-                    </a>
-                    <ul class="collapse list-unstyled nav-collapse" id="userSubmenu">
-                        <li class="nav-item"><a href="/admin/users/customers">Customers (Followers)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders">Traders (Masters)</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
-                    </ul>
-                </li> -->
 
                 <li class="nav-item">
                     <a href="#permissionsSubmenu" data-bs-toggle="collapse" aria-expanded="false">
@@ -152,23 +197,47 @@
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="permissionsSubmenu">
                         <li class="nav-item"><a href="/admin/users/all">Manage User</a></li>
-                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                         <li class="nav-item"><a href="/admin/roles">Manage Roles</a></li>
-                       <li class="nav-item"><a href="/admin/roles/permissions">Role Resource </a></li>
+                        <li class="nav-item"><a href="/admin/roles/permissions">Assign Permissions </a></li>
                         <li class="nav-item"><a href="/admin/users/assign-role">Assign role to users</a></li>
+
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#customerSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        <span>Customer Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="customerSubmenu">
+                        <li class="nav-item"><a href="/admin/users/customers">Customers List</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="#traderSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Trader Management</span>
+                        <i class="fas fa-chevron-right collapse-arrow"></i>
+                    </a>
+                    <ul class="collapse list-unstyled nav-collapse" id="traderSubmenu">
+                        <li class="nav-item"><a href="/admin/users/traders">Traders List</a></li>
+                        <li class="nav-item"><a href="/admin/users/traders/approval">Trader Approval</a></li>
                     </ul>
                 </li>
 
 
-                <li class="nav-item">
+                <li class="nav-item ">
                     <a href="#activitySubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-sync-alt"></i>
                         <span>Platform Activity</span>
                         <i class="fas fa-chevron-right collapse-arrow"></i>
                     </a>
                     <ul class="collapse list-unstyled nav-collapse" id="activitySubmenu">
+                        <li class="nav-item "><a href="/admin/signals">Live Signals</a></li>
                         <li class="nav-item"><a href="/admin/activity/live">Live Copying</a></li>
-                        <li class="nav-item"><a href="/admin/activity/logs">Trade Log & Errors</a></li>
+                        <li class="nav-item"><a href="/admin/activity/errors">Trade Log & Errors</a></li>
                     </ul>
                 </li>
 
@@ -231,7 +300,6 @@
 
 
         </nav>
-
         <!-- Main Content -->
         <div id="content" class="container-fluid">
             <h2 class="mb-4">Add New Trader (Master)</h2>
