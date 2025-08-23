@@ -5,11 +5,7 @@
     <meta charset="UTF-8">
     <title>Admin - Manage Roles</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- Google Fonts: Inter is a popular, modern choice for dashboards -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -304,10 +300,15 @@
 
 
         </nav>
+
         <div id="content" class="container-fluid p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0">Roles</h2>
-                <a href="/admin/roles/add" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Create Role</a>
+                 <div class="btn-group">
+                    <a href="/admin/roles/add" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Role
+                    </a>
+                </div>
             </div>
             <div class="card">
                 <div class="card-body p-0">
@@ -331,12 +332,9 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // This is the correct ID for the table body on THIS page.
             const tableBody = document.getElementById('role-table-body');
 
-            // This function is the only one needed for this page.
             function loadRoles() {
-                // Check if the tableBody element actually exists before using it.
                 if (!tableBody) {
                     console.error("Fatal Error: Table body with ID 'role-table-body' not found.");
                     return;
@@ -390,8 +388,6 @@
             loadRoles();
         });
 
-        // This function needs to be outside the DOMContentLoaded listener
-        // so it's globally accessible to the onclick attribute.
         function deleteRole(roleId) {
             if (confirm('Are you sure you want to delete this role? This cannot be undone.')) {
                 fetch(`/admin/api/roles/${roleId}`, {
@@ -402,7 +398,6 @@
                     if (data.error) {
                         throw new Error(data.error);
                     }
-                    // Instead of a full reload, just refresh the table data.
                     document.getElementById('role-table-body').innerHTML = '';
                     document.dispatchEvent(new Event('DOMContentLoaded')); // Re-run the loadRoles function
                 })

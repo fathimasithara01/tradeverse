@@ -312,11 +312,8 @@
             <div class="card">
                 <div class="card-body p-4">
 
-                    <!-- Form starts here -->
-                    <!-- The action points to the backend route that handles role creation -->
                     <form action="/admin/roles/add" method="POST">
 
-                        <!-- This block will only display if your Go controller sends an 'error' variable -->
                         {{ if .error }}
                         <div class="alert alert-danger" role="alert">
                             {{ .error }}
@@ -325,8 +322,7 @@
 
                         <div class="mb-3">
                             <label for="roleName" class="form-label">Role Name</label>
-                            <!-- The 'name' attribute MUST be "Name" to match c.PostForm("Name") in your Go code -->
-                            <!-- The 'value' attribute ensures the user doesn't lose their input if an error occurs -->
+
                             <input type="text" class="form-control" id="roleName" name="Name"
                                    placeholder="e.g., Manager, Support Staff" value="{{ .Name }}" required>
                         </div>
@@ -338,9 +334,7 @@
                             <a href="/admin/roles" class="btn btn-light ms-2">Cancel</a>
                         </div>
                     </form>
-                    <!-- Form ends here -->
-
-                </div>
+         </div>
             </div>
         </div>
     </div>
