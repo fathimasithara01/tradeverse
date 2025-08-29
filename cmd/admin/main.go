@@ -1,0 +1,64 @@
+package main
+
+import (
+	"log"
+
+	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
+	routes "github.com/fathimasithara01/tradeverse/internal/admin/router"
+	"github.com/fathimasithara01/tradeverse/pkg/config"
+	"github.com/fathimasithara01/tradeverse/pkg/db"
+	"github.com/fathimasithara01/tradeverse/pkg/repository"
+	"github.com/fathimasithara01/tradeverse/pkg/service"
+	"github.com/gin-gonic/gin"
+)
+
+func main() {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Error loading configuration: %v", err)
+	}
+
+	DB, err := db.ConnectDB(*cfg)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
+
+	db.CreateAdminSeeder(DB, *cfg)
+
+	r := gin.Default()
+	r.LoadHTMLGlob("templates/*.html")
+
+	userRepo := repository.NewUserRepository(DB)
+	roleRepo := repository.NewRoleRepository(DB)
+	dashboardRepo := repository.NewDashboardRepository(DB)
+	permissionRepo := repository.NewPermissionRepository(DB)
+	activityRepo := repository.NewActivityRepository(DB)
+	copyRepo := repository.NewCopyRepository(DB)
+
+	userService := service.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
+	roleService := service.NewRoleService(roleRepo, permissionRepo, userRepo)
+	dashboardService := service.NewDashboardService(dashboardRepo)
+	permissionService := service.NewPermissionService(permissionRepo)
+	activityService := service.NewActivityService(activityRepo)
+	copyService := service.NewCopyService(copyRepo)
+	liveSignalService := service.NewLiveSignalService(userRepo)
+
+	authController := controllers.NewAuthController(userService)
+	userController := controllers.NewUserController(userService)
+	roleController := controllers.NewRoleController(roleService)
+	dashboardController := controllers.NewDashboardController(dashboardService)
+	permissionController := controllers.NewPermissionController(permissionService, roleService)
+	activityController := controllers.NewActivityController(activityService)
+	copyController := controllers.NewCopyController(copyService)
+	signalController := controllers.NewSignalController(liveSignalService)
+
+	routes.WirePublicRoutes(r, authController, signalController)
+	routes.WireFollowerRoutes(r, copyController, cfg)
+	routes.WireAdminRoutes(r, cfg, authController, dashboardController, userController, roleController, permissionController, activityController, roleService, signalController)
+
+	port := cfg.Port
+	log.Printf("Server starting on port http://localhost:%s", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatalf("Failed to start server on port %s: %v", port, err)
+	}
+}
