@@ -26,6 +26,9 @@ type User struct {
 
 	CustomerProfile CustomerProfile `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"customer_profile,omitempty"`
 	TraderProfile   TraderProfile   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"trader_profile,omitempty"`
+
+	Subscriptions []Subscription `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"` // Add this line
+
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {

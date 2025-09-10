@@ -4,12 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-
+    <title>{{.Title}}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <style>
         :root {
             --sidebar-bg: #ffffff;
@@ -149,32 +147,12 @@
             border-bottom: 1px solid var(--border-color);
             font-weight: 600;
         }
-
-        .stat-card {
-            text-align: center;
-            padding: 1.5rem;
-        }
-
-        .stat-card .icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .stat-card .title {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
+        /* End of re-included CSS */
     </style>
 </head>
 
 <body>
     <div class="wrapper">
-        <!-- templates/admin_sidebar.html -->
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3>TradeVerse</h3>
@@ -235,6 +213,7 @@
                         <li class="nav-item"><a href="/admin/users/traders/approval" class="{{if eq .ActiveSubTab "trader_approval"}}active{{end}}">Trader Approval</a></li>
                     </ul>
                 </li>
+
 
                 <li class="nav-item ">
                     <a href="#activitySubmenu" data-bs-toggle="collapse"
@@ -323,122 +302,276 @@
             </ul>
         </nav>
 
-        <div id="content">
-            <h2 class="mb-4">Dashboard Overview</h2>
 
-            <div class="row">
-                <div class="col-lg-3 col-md-6">
-                    <div class="card stat-card text-info">
-                        <div class="icon"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="value" id="kpi-mrr">$0</div>
-                        <div class="title">Monthly Recurring Revenue</div>
-                    </div>
+        <div id="content">
+            <h2 class="mb-4">{{.Title}}</h2>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Subscription Plans
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+                        <i class="fas fa-plus"></i> Add New Plan
+                    </button>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card stat-card text-primary ">
-                        <div class="icon"><i class="fas fa-users"></i></div>
-                        <div class="value" id="kpi-followers">0</div>
-                        <div class="title">Total Customers</div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card stat-card text-success">
-                        <div class="icon"><i class="fas fa-user-tie"></i></div>
-                        <div class="value" id="kpi-traders">0</div>
-                        <div class="title">Approved Traders</div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card stat-card text-warning">
-                        <div class="icon"><i class="fas fa-sync-alt"></i></div>
-                        <div class="value" id="kpi-sessions">0</div>
-                        <div class="title">Live Copying Sessions</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Price</th>
+                                    <th>Duration</th>
+                                    <th>Max Followers</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subscription-plans-table-body">
+                                <!-- Subscription plans will be loaded here by JavaScript -->
+                                <tr>
+                                    <td colspan="8" class="text-center">Loading subscription plans...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header">User Growth (Last 6 Months)</div>
-                        <div class="card-body">
-                            <canvas id="userGrowthChart"></canvas>
+            <!-- Add/Edit Plan Modal -->
+            <div class="modal fade" id="addPlanModal" tabindex="-1" aria-labelledby="addPlanModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addPlanModalLabel">Add/Edit Subscription Plan</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="subscriptionPlanForm">
+                                <input type="hidden" id="planId">
+                                <div class="mb-3">
+                                    <label for="planName" class="form-label">Plan Name</label>
+                                    <input type="text" class="form-control" id="planName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="planDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="planDescription" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="planPrice" class="form-label">Price ($)</label>
+                                    <input type="number" class="form-control" id="planPrice" step="0.01" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="planDuration" class="form-label">Duration (Days)</label>
+                                    <input type="number" class="form-control" id="planDuration" min="1" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="planMaxFollowers" class="form-label">Max Followers</label>
+                                    <input type="number" class="form-control" id="planMaxFollowers" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="planStatus" class="form-label">Status</label>
+                                    <select class="form-select" id="planStatus">
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Plan</button>
+                            </form>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-header">User Distribution</div>
-                        <div class="card-body">
-                            <canvas id="userDistributionChart"></canvas>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deletePlanModal" tabindex="-1" aria-labelledby="deletePlanModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deletePlanModalLabel">Confirm Deletion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete this subscription plan? This action cannot be undone.
+                            <input type="hidden" id="deletePlanId">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
                         </div>
                     </div>
-
                 </div>
             </div>
 
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
+            const planForm = document.getElementById('subscriptionPlanForm');
+            const planIdInput = document.getElementById('planId');
+            const planNameInput = document.getElementById('planName');
+            const planDescriptionInput = document.getElementById('planDescription');
+            const planPriceInput = document.getElementById('planPrice');
+            const planDurationInput = document.getElementById('planDuration');
+            const planMaxFollowersInput = document.getElementById('planMaxFollowers');
+            const planStatusSelect = document.getElementById('planStatus');
+            const plansTableBody = document.getElementById('subscription-plans-table-body');
+            const addPlanModal = new bootstrap.Modal(document.getElementById('addPlanModal'));
+            const deletePlanModal = new bootstrap.Modal(document.getElementById('deletePlanModal'));
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            let planToDeleteId = null;
 
-            // --- RENDER KPI CARDS ---
-            function renderKpis() {
-                fetch('/admin/dashboard/stats')
-                    .then(res => {
-                        if (!res.ok) throw new Error('Failed to load dashboard stats');
-                        return res.json();
+            // Function to fetch and render subscription plans
+            function fetchSubscriptionPlans() {
+                fetch('/admin/financials/subscription-plans/data')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch subscription plans');
+                        }
+                        return response.json();
                     })
                     .then(data => {
-                        document.getElementById('kpi-mrr').textContent = `$${data.mrr.toLocaleString()}`;
-                        document.getElementById('kpi-followers').textContent = data.followers.toLocaleString();
-                        document.getElementById('kpi-traders').textContent = data.traders.toLocaleString();
-                        document.getElementById('kpi-sessions').textContent = data.sessions.toLocaleString();
-                    })
-                    .catch(error => console.error('Error fetching KPIs:', error));
-            }
-
-            function renderCharts() {
-                fetch('/admin/dashboard/charts')
-                    .then(res => {
-                        if (!res.ok) throw new Error('Failed to load chart data');
-                        return res.json();
-                    })
-                    .then(data => {
-                        const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
-                        new Chart(growthCtx, {
-                            type: 'line',
-                            data: {
-                                labels: data.growth.labels,
-                                datasets: [
-                                    { label: 'Followers', data: data.growth.followers, borderColor: '#1a73e8', backgroundColor: 'rgba(26, 115, 232, 0.1)', fill: true, tension: 0.4 },
-                                    { label: 'Traders', data: data.growth.traders, borderColor: '#198754', backgroundColor: 'rgba(25, 135, 84, 0.1)', fill: true, tension: 0.4 }
-                                ]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false }
-                        });
-
-                        const distCtx = document.getElementById('userDistributionChart').getContext('2d');
-                        new Chart(distCtx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: data.distribution.labels,
-                                datasets: [{ data: data.distribution.data, backgroundColor: ['#1a73e8', '#198754'] }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                        plansTableBody.innerHTML = ''; // Clear existing rows
+                        if (data.length === 0) {
+                            plansTableBody.innerHTML = `<tr><td colspan="8" class="text-center">No subscription plans found.</td></tr>`;
+                            return;
+                        }
+                        data.forEach(plan => {
+                            const row = `
+                                <tr>
+                                    <td>${plan.id}</td>
+                                    <td>${plan.name}</td>
+                                    <td>${plan.description}</td>
+                                    <td>$${plan.price.toFixed(2)}</td>
+                                    <td>${plan.duration} Days</td>
+                                    <td>${plan.max_followers}</td>
+                                    <td>
+                                        <span class="badge ${plan.status === 'active' ? 'bg-success' : 'bg-danger'}">
+                                            ${plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info edit-btn" data-id="${plan.id}"
+                                                data-name="${plan.name}" data-description="${plan.description}"
+                                                data-price="${plan.price}" data-duration="${plan.duration}"
+                                                data-max-followers="${plan.max_followers}" data-status="${plan.status}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-btn" data-id="${plan.id}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                            plansTableBody.innerHTML += row;
                         });
                     })
-                    .catch(error => console.error('Error fetching chart data:', error));
+                    .catch(error => {
+                        console.error('Error fetching subscription plans:', error);
+                        plansTableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Failed to load plans. Please try again.</td></tr>`;
+                    });
             }
 
-            renderKpis();
-            renderCharts();
+            // Handle form submission for adding/editing a plan
+            planForm.addEventListener('submit', function(event) {
+                event.preventDefault();
 
-            setInterval(renderKpis, 30000);
+                const planId = planIdInput.value;
+                const url = planId ? `/admin/financials/subscription-plans/${planId}` : '/admin/financials/subscription-plans';
+                const method = planId ? 'PUT' : 'POST';
+
+                const planData = {
+                    name: planNameInput.value,
+                    description: planDescriptionInput.value,
+                    price: parseFloat(planPriceInput.value),
+                    duration: parseInt(planDurationInput.value),
+                    max_followers: parseInt(planMaxFollowersInput.value),
+                    status: planStatusSelect.value,
+                };
+
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(planData),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    addPlanModal.hide();
+                    planForm.reset();
+                    fetchSubscriptionPlans(); // Refresh the table
+                })
+                .catch(error => {
+                    console.error('Error saving plan:', error);
+                    alert(`Error saving plan: ${error.message || error}`);
+                });
+            });
+
+            // Handle edit button click
+            plansTableBody.addEventListener('click', function(event) {
+                if (event.target.closest('.edit-btn')) {
+                    const button = event.target.closest('.edit-btn');
+                    planIdInput.value = button.dataset.id;
+                    planNameInput.value = button.dataset.name;
+                    planDescriptionInput.value = button.dataset.description;
+                    planPriceInput.value = button.dataset.price;
+                    planDurationInput.value = button.dataset.duration;
+                    planMaxFollowersInput.value = button.dataset.maxFollowers;
+                    planStatusSelect.value = button.dataset.status;
+
+                    document.getElementById('addPlanModalLabel').textContent = 'Edit Subscription Plan';
+                    addPlanModal.show();
+                } else if (event.target.closest('.delete-btn')) {
+                    const button = event.target.closest('.delete-btn');
+                    planToDeleteId = button.dataset.id;
+                    deletePlanModal.show();
+                }
+            });
+
+            // Handle delete confirmation
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (planToDeleteId) {
+                    fetch(`/admin/financials/subscription-plans/${planToDeleteId}`, {
+                        method: 'DELETE',
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to delete subscription plan');
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        deletePlanModal.hide();
+                        fetchSubscriptionPlans(); // Refresh the table
+                    })
+                    .catch(error => {
+                        console.error('Error deleting plan:', error);
+                        alert('Error deleting plan.');
+                    });
+                }
+            });
+
+            // Reset form when add modal is shown
+            document.getElementById('addPlanModal').addEventListener('show.bs.modal', function(event) {
+                if (event.relatedTarget && event.relatedTarget.id === 'addPlanModal') { // Check if triggered by "Add New Plan" button
+                     planForm.reset();  
+                     planIdInput.value = '';
+                     document.getElementById('addPlanModalLabel').textContent = 'Add New Subscription Plan';
+                }
+            });
+
+
+            // Initial fetch
+            fetchSubscriptionPlans();
         });
     </script>
 </body>

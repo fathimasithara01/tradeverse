@@ -25,6 +25,10 @@ type IUserRepository interface {
 
 	FindTradersByStatus(status models.TraderStatus) ([]models.User, error)
 	GetLatestOpenTradeForUser(userID uint) (models.Trade, error)
+
+	GetUserByIDWithProfile(id uint) (*models.User, error) // New
+	UpdateUserAndProfile(user *models.User) error         // New
+	DeleteUser(id uint) error
 }
 
 type UserRepository struct {
@@ -33,6 +37,102 @@ type UserRepository struct {
 
 func NewUserRepository(db *gorm.DB) IUserRepository {
 	return &UserRepository{DB: db}
+}
+
+func (r *UserRepository) CreateUser(user models.User, profile models.CustomerProfile) error {
+	tx := r.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	profile.UserID = user.ID // Link profile to the newly created user
+	if err := tx.Create(&profile).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
+}
+
+func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
+	var user models.User
+	if err := r.DB.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+	var user models.User
+	if err := r.DB.First(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) GetUserByIDWithProfile(id uint) (*models.User, error) {
+	var user models.User
+	if err := r.DB.Preload("CustomerProfile").First(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
+	tx := r.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Save(user).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if user.CustomerProfile.ID != 0 { // Check if a profile exists and has an ID
+		if err := tx.Save(&user.CustomerProfile).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else if user.CustomerProfile.UserID != 0 { // If no ID but UserID is set, it might be a new profile for an existing user
+
+		if err := tx.Create(&user.CustomerProfile).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
+func (r *UserRepository) DeleteUser(id uint) error {
+	tx := r.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Where("user_id = ?", id).Delete(&models.CustomerProfile{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Delete(&models.User{}, id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 func (r *UserRepository) Create(user *models.User) error {

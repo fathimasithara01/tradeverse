@@ -27,6 +27,11 @@ type IUserService interface {
 	RejectTrader(traderID uint) error
 	GetAllUsersWithRole() ([]models.User, error)
 	AssignRoleToUser(userID, roleID uint) error
+
+	// GetUserByID(id uint) (*models.User, error)                                                 // New
+	UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error // New
+	// DeleteUser(id uint) error                                                                  // New
+
 }
 
 type UserService struct {
@@ -48,6 +53,25 @@ type UserWithRoleName struct {
 	RoleName string `json:"role_name"`
 }
 
+func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error {
+	existingUser, err := s.UserRepo.GetUserByIDWithProfile(userID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if user.Name != "" {
+		existingUser.Name = user.Name
+	}
+	if user.Email != "" {
+		existingUser.Email = user.Email
+	}
+
+	if profile.PhoneNumber != "" {
+		existingUser.CustomerProfile.PhoneNumber = profile.PhoneNumber
+	}
+
+	return s.UserRepo.UpdateUserAndProfile(existingUser)
+}
 func (s *UserService) Login(email, password string) (string, models.User, error) {
 	user, err := s.UserRepo.FindByEmail(email)
 	if err != nil {

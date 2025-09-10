@@ -10,6 +10,7 @@ import (
 func SetupRouter(
 	cfg *config.Config,
 	authController *controllers.AuthController,
+	profileController *controllers.ProfileController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -22,8 +23,9 @@ func SetupRouter(
 	protected := r.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
-		// Example protected route:
-		// protected.GET("/profile", profileController.GetProfile)
+		protected.GET("/profile", profileController.GetProfile)
+		protected.PUT("/profile", profileController.UpdateProfile)
+		protected.DELETE("/account", profileController.DeleteAccount)
 	}
 
 	return r

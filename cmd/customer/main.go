@@ -28,8 +28,9 @@ func main() {
 	userService := service.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 
 	authController := controllers.NewAuthController(userService)
+	profileController := controllers.NewProfileController(userService) // New
 
-	r := router.SetupRouter(cfg, authController)
+	r := router.SetupRouter(cfg, authController, profileController)
 
 	customerPort := "8081"
 	log.Printf("Customer API server starting on port http://localhost:%s", customerPort)

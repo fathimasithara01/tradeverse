@@ -13,8 +13,16 @@ func NewDashboardController(dashboardSvc service.IDashboardService) *DashboardCo
 	return &DashboardController{DashboardSvc: dashboardSvc}
 }
 
+// func (ctrl *DashboardController) ShowDashboardPage(c *gin.Context) {
+// 	c.HTML(http.StatusOK, "dashboard.html", nil)
+// }
+
 func (ctrl *DashboardController) ShowDashboardPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "dashboard.html", nil)
+	c.HTML(http.StatusOK, "dashboard.html", gin.H{
+		"Title":        "Admin Dashboard",
+		"ActiveTab":    "dashboard",
+		"ActiveSubTab": "",
+	})
 }
 
 func (ctrl *DashboardController) GetDashboardStats(c *gin.Context) {

@@ -35,6 +35,8 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		&models.Address{},
 		&models.Product{},
 		&models.Trade{},
+		&models.SubscriptionPlan{},
+		&models.Subscription{},
 	)
 	if err != nil {
 		log.Printf("DATABASE MIGRATION ERROR (Step 1): %v", err)

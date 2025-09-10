@@ -26,7 +26,10 @@ func main() {
 	db.CreateAdminSeeder(DB, *cfg)
 
 	r := gin.Default()
+	// r.LoadHTMLGlob("templates/**/*html")
+
 	r.LoadHTMLGlob("templates/*.html")
+	// r.Static("/static", "./static") // Serve static files (ensure you have a /static folder)
 
 	userRepo := repository.NewUserRepository(DB)
 	roleRepo := repository.NewRoleRepository(DB)
@@ -34,6 +37,8 @@ func main() {
 	permissionRepo := repository.NewPermissionRepository(DB)
 	activityRepo := repository.NewActivityRepository(DB)
 	copyRepo := repository.NewCopyRepository(DB)
+	subscriptionPlanRepo := repository.NewSubscriptionPlanRepository(DB) // New
+	subscriptionRepo := repository.NewSubscriptionRepository(DB)
 
 	userService := service.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	roleService := service.NewRoleService(roleRepo, permissionRepo, userRepo)
@@ -42,6 +47,8 @@ func main() {
 	activityService := service.NewActivityService(activityRepo)
 	copyService := service.NewCopyService(copyRepo)
 	liveSignalService := service.NewLiveSignalService(userRepo)
+	subscriptionPlanService := service.NewSubscriptionPlanService(subscriptionPlanRepo) // New
+	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriptionPlanRepo)
 
 	authController := controllers.NewAuthController(userService)
 	userController := controllers.NewUserController(userService)
@@ -51,10 +58,23 @@ func main() {
 	activityController := controllers.NewActivityController(activityService)
 	copyController := controllers.NewCopyController(copyService)
 	signalController := controllers.NewSignalController(liveSignalService)
+	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService) // New
 
 	routes.WirePublicRoutes(r, authController, signalController)
 	routes.WireFollowerRoutes(r, copyController, cfg)
-	routes.WireAdminRoutes(r, cfg, authController, dashboardController, userController, roleController, permissionController, activityController, roleService, signalController)
+	routes.WireAdminRoutes(
+		r,
+		cfg,
+		authController,
+		dashboardController,
+		userController,
+		roleController,
+		permissionController,
+		activityController,
+		roleService,
+		signalController,
+		subscriptionController,
+	)
 
 	port := cfg.Port
 	log.Printf("Server starting on port http://localhost:%s", port)
