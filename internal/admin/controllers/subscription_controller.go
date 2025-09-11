@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	"github.com/fathimasithara01/tradeverse/pkg/service" // Adjust import path for services
 	"github.com/gin-gonic/gin"
 )
 

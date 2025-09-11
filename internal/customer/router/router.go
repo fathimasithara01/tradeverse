@@ -11,6 +11,8 @@ func SetupRouter(
 	cfg *config.Config,
 	authController *controllers.AuthController,
 	profileController *controllers.ProfileController,
+	kycController *controllers.KYCController,
+	walletController *controllers.WalletController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -27,6 +29,18 @@ func SetupRouter(
 		protected.PUT("/profile", profileController.UpdateProfile)
 		protected.DELETE("/account", profileController.DeleteAccount)
 	}
+
+	kycGroup := protected.Group("/customers")
+	{
+		kycGroup.POST("/kyc", kycController.SubmitKYCDocuments)
+		kycGroup.GET("/kyc/status", kycController.GetKYCStatus)
+	}
+
+	protected.GET("/wallet", walletController.GetWalletSummary)
+	protected.POST("/wallet/deposit", walletController.CreateDepositRequest)
+	protected.POST("/wallet/deposit/verify", walletController.VerifyDeposit)
+	protected.POST("/wallet/withdraw", walletController.CreateWithdrawalRequest)
+	protected.GET("/wallet/transactions", walletController.ListWalletTransactions)
 
 	return r
 }

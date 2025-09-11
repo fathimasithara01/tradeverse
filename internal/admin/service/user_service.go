@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/auth"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	"github.com/fathimasithara01/tradeverse/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 

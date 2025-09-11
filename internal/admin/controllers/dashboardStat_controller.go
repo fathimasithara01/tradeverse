@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/fathimasithara01/tradeverse/pkg/service"
+	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/gin-gonic/gin"
 )
 

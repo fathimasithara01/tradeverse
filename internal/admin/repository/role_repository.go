@@ -60,10 +60,21 @@ func (r *RoleRepository) Delete(id uint) error {
 func (r *RoleRepository) FindByIDWithPermissions(id uint) (models.Role, error) {
 	var role models.Role
 	if err := r.DB.Preload("Permissions").First(&role, id).Error; err != nil {
-		return models.Role{}, errors.New("role not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.Role{}, errors.New("role not found")
+		}
+		return models.Role{}, err
 	}
 	return role, nil
 }
+
+// func (r *RoleRepository) FindByIDWithPermissions(id uint) (models.Role, error) {
+// 	var role models.Role
+// 	if err := r.DB.Preload("Permissions").First(&role, id).Error; err != nil {
+// 		return models.Role{}, errors.New("role not found")
+// 	}
+// 	return role, nil
+// }
 
 func (r *RoleRepository) UpdatePermissions(role *models.Role, permissions []models.Permission) error {
 	return r.DB.Model(role).Association("Permissions").Replace(permissions)

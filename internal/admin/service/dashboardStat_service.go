@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	"github.com/fathimasithara01/tradeverse/pkg/repository"
 )
 
 type IDashboardService interface {

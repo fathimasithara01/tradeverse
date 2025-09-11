@@ -3,12 +3,17 @@ package main
 import (
 	"log"
 
+	repositoryy "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
+	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
 	"github.com/fathimasithara01/tradeverse/internal/customer/router"
+	"github.com/fathimasithara01/tradeverse/internal/customer/service"
+	"github.com/fathimasithara01/tradeverse/migrations"
 	"github.com/fathimasithara01/tradeverse/pkg/config"
-	"github.com/fathimasithara01/tradeverse/pkg/db"
-	"github.com/fathimasithara01/tradeverse/pkg/repository"
-	"github.com/fathimasithara01/tradeverse/pkg/service"
+
+	servicer "github.com/fathimasithara01/tradeverse/internal/admin/service"
+
+	paymentgateway "github.com/fathimasithara01/tradeverse/pkg/payment_gateway.go"
 )
 
 func main() {
@@ -17,20 +22,29 @@ func main() {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
 
-	gormDB, err := db.ConnectDB(*cfg)
+	gormDB, err := migrations.ConnectDB(*cfg)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	userRepo := repository.NewUserRepository(gormDB)
-	roleRepo := repository.NewRoleRepository(gormDB)
+	userRepo := repositoryy.NewUserRepository(gormDB)
+	roleRepo := repositoryy.NewRoleRepository(gormDB)
 
-	userService := service.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
+	userService := servicer.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 
 	authController := controllers.NewAuthController(userService)
-	profileController := controllers.NewProfileController(userService) // New
+	profileController := controllers.NewProfileController(userService)
 
-	r := router.SetupRouter(cfg, authController, profileController)
+	kycRepo := repository.NewKYCRepository(gormDB)
+	kycSvc := service.NewKYCService(kycRepo)
+	kycController := controllers.NewKYCController(kycSvc)
+
+	walletRepo := repository.NewWalletRepository(gormDB)
+	pgClient := paymentgateway.NewSimulatedPaymentClient()
+	walletSvc := service.NewWalletService(walletRepo, pgClient)
+	walletController := controllers.NewWalletController(walletSvc)
+
+	r := router.SetupRouter(cfg, authController, profileController, kycController, walletController)
 
 	customerPort := "8081"
 	log.Printf("Customer API server starting on port http://localhost:%s", customerPort)

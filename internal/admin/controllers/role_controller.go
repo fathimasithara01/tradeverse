@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	"github.com/fathimasithara01/tradeverse/pkg/service"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
 )

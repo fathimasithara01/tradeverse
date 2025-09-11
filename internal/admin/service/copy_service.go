@@ -1,6 +1,6 @@
 package service
 
-import "github.com/fathimasithara01/tradeverse/pkg/repository"
+import "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 
 type ICopyService interface {
 	GetCopyStatus(followerID, masterID uint) (bool, error)

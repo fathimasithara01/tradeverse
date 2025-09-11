@@ -1,4 +1,4 @@
-package db
+package migrations
 
 import (
 	"fmt"
@@ -37,6 +37,12 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		&models.Trade{},
 		&models.SubscriptionPlan{},
 		&models.Subscription{},
+		&models.KYCDocument{},
+		&models.UserKYCStatus{},
+		&models.Wallet{},
+		&models.WalletTransaction{},
+		&models.DepositRequest{},
+		&models.WithdrawRequest{},
 	)
 	if err != nil {
 		log.Printf("DATABASE MIGRATION ERROR (Step 1): %v", err)

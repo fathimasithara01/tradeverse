@@ -1,8 +1,8 @@
 package service
 
 import (
+	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	"github.com/fathimasithara01/tradeverse/pkg/repository"
 )
 
 type IPermissionService interface {

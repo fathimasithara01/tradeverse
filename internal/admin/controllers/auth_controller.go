@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/pkg/config"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	"github.com/fathimasithara01/tradeverse/pkg/service"
 	"github.com/gin-gonic/gin"
 )
 

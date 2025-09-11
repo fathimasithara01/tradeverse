@@ -4,11 +4,13 @@ import (
 	"log"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
+	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	routes "github.com/fathimasithara01/tradeverse/internal/admin/router"
+	"github.com/fathimasithara01/tradeverse/internal/admin/service"
+	"github.com/fathimasithara01/tradeverse/migrations"
 	"github.com/fathimasithara01/tradeverse/pkg/config"
-	"github.com/fathimasithara01/tradeverse/pkg/db"
-	"github.com/fathimasithara01/tradeverse/pkg/repository"
-	"github.com/fathimasithara01/tradeverse/pkg/service"
+	"github.com/fathimasithara01/tradeverse/pkg/seeder"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,12 +20,12 @@ func main() {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
 
-	DB, err := db.ConnectDB(*cfg)
+	DB, err := migrations.ConnectDB(*cfg)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	db.CreateAdminSeeder(DB, *cfg)
+	seeder.CreateAdminSeeder(DB, *cfg)
 
 	r := gin.Default()
 	// r.LoadHTMLGlob("templates/**/*html")
