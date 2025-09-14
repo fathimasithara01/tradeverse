@@ -44,11 +44,23 @@ func main() {
 	walletSvc := service.NewWalletService(walletRepo, pgClient)
 	walletController := controllers.NewWalletController(walletSvc)
 
-	r := router.SetupRouter(cfg, authController, profileController, kycController, walletController)
+	subscriptionRepo := repository.NewSubscriptionRepository(gormDB)
+	subscriptionService := service.NewSubscriptionService(subscriptionRepo)
+	subscriptionController := controllers.NewSubscriptionController(subscriptionService)
 
-	customerPort := "8081"
-	log.Printf("Customer API server starting on port http://localhost:%s", customerPort)
-	if err := r.Run(":" + customerPort); err != nil {
+	adminTraderSubscriptionPlanRepo := repository.NewAdminTraderSubscriptionPlanRepository(gormDB)
+	adminTraderSubscriptionPlanService := service.NewAdminTraderSubscriptionPlanService(adminTraderSubscriptionPlanRepo)
+	adminTraderSubscriptionPlanController := controllers.NewAdminTraderSubscriptionPlanController(adminTraderSubscriptionPlanService)
+
+	// traderSubscriptionRepo := repository.NewTraderSubscriptionRepository(gormDB)
+	// traderSubscriptionService := service.NewTraderSubscriptionService(traderSubscriptionRepo, userRepo, pgClient)
+	// traderSubscriptionController := controllers.NewTraderSubscriptionController(traderSubscriptionService)
+
+	r := router.SetupRouter(cfg, authController, profileController, kycController, walletController, subscriptionController, adminTraderSubscriptionPlanController)
+
+	port := cfg.CustomerPort
+	log.Printf("Customer API server starting on port http://localhost:%s", port)
+	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start customer server: %v", err)
 	}
 }

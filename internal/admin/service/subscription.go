@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
@@ -15,18 +16,41 @@ type ISubscriptionService interface {
 	UpdateSubscription(subscription *models.Subscription) error
 	DeleteSubscription(id uint) error
 	GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
+	UpgradeUserToTrader(userID uint) error
 }
 
 type SubscriptionService struct {
 	subscriptionRepo repository.ISubscriptionRepository
 	planRepo         repository.ISubscriptionPlanRepository
+	userRepo         repository.IUserRepository
 }
 
-func NewSubscriptionService(subRepo repository.ISubscriptionRepository, planRepo repository.ISubscriptionPlanRepository) *SubscriptionService {
+func NewSubscriptionService(subRepo repository.ISubscriptionRepository, planRepo repository.ISubscriptionPlanRepository, userRepo repository.IUserRepository) *SubscriptionService {
 	return &SubscriptionService{
 		subscriptionRepo: subRepo,
 		planRepo:         planRepo,
+		userRepo:         userRepo,
 	}
+}
+
+func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+
+	// Find the Trader role. This assumes "trader" role exists in your database.
+	traderRole, err := s.userRepo.GetRoleByName(models.RoleTrader) // Assuming GetRoleByName exists
+	if err != nil {
+		log.Printf("Error: Trader role not found: %v", err)
+		return err // Or create the role if it doesn't exist
+	}
+
+	user.RoleID = &traderRole.ID
+	user.Role = models.RoleTrader // Explicitly set the string representation
+
+	// Save the updated user
+	return s.userRepo.UpdateUser(user) // Assuming UpdateUser exists
 }
 
 func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.Subscription, error) {
@@ -46,6 +70,7 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 	case "yearly":
 		endDate = startDate.AddDate(plan.Duration, 0, 0)
 	default:
+		// Default to monthly if interval is not specified or recognized
 		endDate = startDate.AddDate(0, 1, 0)
 	}
 

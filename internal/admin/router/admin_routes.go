@@ -32,25 +32,19 @@ func WireAdminRoutes(
 
 		{
 
-			// --- Subscription Management Routes ---
 			protected.GET("/financials/subscriptions", authz.RequirePermission("view_subscriptions"), subscriptionCtrl.ShowSubscriptionsPage)
-			protected.GET("/api/subscriptions", subscriptionCtrl.GetSubscriptions) // API for all subscriptions
+			protected.GET("/api/subscriptions", subscriptionCtrl.GetSubscriptions)
+			// This endpoint is for customer-initiated (or admin-initiated for a specific customer) subscriptions
+			protected.POST("/api/customer/subscribe-to-trader-plan", subscriptionCtrl.CreateCustomerSubscription)
 
 			protected.GET("/financials/subscription-plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.ShowSubscriptionPlansPage)
 
 			// API for Subscription Plans (GET, POST, PUT, DELETE)
-			protected.GET("/api/subscriptions/plans", subscriptionCtrl.GetSubscriptionPlans)                                                                // Get all plans
-			protected.POST("/api/subscriptions/plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.CreateSubscriptionPlan)       // Create a new plan
-			protected.PUT("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.UpdateSubscriptionPlan)    // Update an existing plan
-			protected.DELETE("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.DeleteSubscriptionPlan) // Delete a plan
-
-			// protected.GET("/financials/subscriptions", authz.RequirePermission("view_subscriptions"), subscriptionCtrl.ShowSubscriptionsPage)
-			// protected.GET("/api/subscriptions", subscriptionCtrl.GetSubscriptions)
-			// protected.GET("/api/subscriptions/plans", subscriptionCtrl.GetSubscriptionPlans)
-			// protected.POST("/api/subscriptions/plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.CreateSubscriptionPlan)
-			// protected.PUT("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.UpdateSubscriptionPlan)
-			// protected.DELETE("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.DeleteSubscriptionPlan)
-			// protected.GET("/financials/subscription-plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.ShowSubscriptionPlansPage)
+			protected.GET("/api/subscriptions/plans", subscriptionCtrl.GetSubscriptionPlans)
+			// CORRECTED: This should call CreateSubscriptionPlan, not CreateCustomerSubscription
+			protected.POST("/api/subscriptions/plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.CreateSubscriptionPlan)
+			protected.PUT("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.UpdateSubscriptionPlan)
+			protected.DELETE("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.DeleteSubscriptionPlan)
 
 			protected.GET("/dashboard", authz.RequirePermission("view_dashboard"), dashCtrl.ShowDashboardPage)
 			protected.GET("/dashboard/stats", dashCtrl.GetDashboardStats)

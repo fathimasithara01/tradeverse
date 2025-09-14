@@ -50,5 +50,5 @@ func (r *SubscriptionRepository) UpdateSubscription(subscription *models.Subscri
 }
 
 func (r *SubscriptionRepository) DeleteSubscription(id uint) error {
-	return r.DB.Delete(&models.Subscription{}, id).Error
+	return r.DB.Unscoped().Delete(&models.Subscription{}, id).Error
 }

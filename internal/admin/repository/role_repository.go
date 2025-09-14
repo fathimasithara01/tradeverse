@@ -54,7 +54,9 @@ func (r *RoleRepository) Update(role *models.Role) error {
 }
 
 func (r *RoleRepository) Delete(id uint) error {
-	return r.DB.Delete(&models.Role{}, id).Error
+	// return r.DB.Delete(&models.Role{}, id).Error
+	return r.DB.Unscoped().Delete(&models.Role{}, id).Error
+
 }
 
 func (r *RoleRepository) FindByIDWithPermissions(id uint) (models.Role, error) {
@@ -67,14 +69,6 @@ func (r *RoleRepository) FindByIDWithPermissions(id uint) (models.Role, error) {
 	}
 	return role, nil
 }
-
-// func (r *RoleRepository) FindByIDWithPermissions(id uint) (models.Role, error) {
-// 	var role models.Role
-// 	if err := r.DB.Preload("Permissions").First(&role, id).Error; err != nil {
-// 		return models.Role{}, errors.New("role not found")
-// 	}
-// 	return role, nil
-// }
 
 func (r *RoleRepository) UpdatePermissions(role *models.Role, permissions []models.Permission) error {
 	return r.DB.Model(role).Association("Permissions").Replace(permissions)

@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"errors" // Import errors for error checking
+	"errors"
 	"fmt"
 	"net/http"
 

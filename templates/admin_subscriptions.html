@@ -234,16 +234,24 @@
                         }
 
                         data.forEach((sub, index) => {
+                            // Ensure user and subscription_plan are not null or undefined
+                            const userName = sub.user ? sub.user.name : 'N/A';
+                            const userEmail = sub.user ? sub.user.email : 'N/A';
+                            const userId = sub.user ? sub.user.ID : '0'; // For gravatar-like image
+                            const planName = sub.subscription_plan ? sub.subscription_plan.name : 'N/A';
+                            const planDuration = sub.subscription_plan ? sub.subscription_plan.duration : 'N/A';
+                            const planInterval = sub.subscription_plan ? sub.subscription_plan.interval : '';
+
                             const row = `
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>
-                                        <img src="https://i.pravatar.cc/30?u=${sub.user.ID}" alt="${sub.user.name}" class="rounded-circle">
-                                        ${sub.user.name} (${sub.user.email})
+                                        <img src="https://i.pravatar.cc/30?u=${userId}" alt="${userName}" class="rounded-circle me-2">
+                                        ${userName} (${userEmail})
                                     </td>
-                                    <td>${sub.subscription_plan.name}</td>
-                                    <td>$${sub.amount_paid.toFixed(2)}</td>
-                                    <td>${sub.subscription_plan.duration} ${sub.subscription_plan.interval}</td>
+                                    <td>${planName}</td>
+                                    <td>$${sub.amount_paid ? sub.amount_paid.toFixed(2) : '0.00'}</td>
+                                    <td>${planDuration} ${planInterval}</td>
                                     <td>${new Date(sub.start_date).toLocaleDateString()}</td>
                                     <td>${new Date(sub.end_date).toLocaleDateString()}</td>
                                     <td>

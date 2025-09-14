@@ -42,5 +42,6 @@ func (r *SubscriptionPlanRepository) UpdateSubscriptionPlan(plan *models.Subscri
 }
 
 func (r *SubscriptionPlanRepository) DeleteSubscriptionPlan(id uint) error {
-	return r.DB.Delete(&models.SubscriptionPlan{}, id).Error
+	return r.DB.Unscoped().Delete(&models.SubscriptionPlan{}, id).Error
+
 }

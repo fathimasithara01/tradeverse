@@ -323,6 +323,7 @@
                                     <th>Description</th>
                                     <th>Price</th>
                                     <th>Duration</th>
+                                    <th>Interval</th>
                                     <th>Max Followers</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -331,7 +332,7 @@
                             <tbody id="subscription-plans-table-body">
                                 <!-- Subscription plans will be loaded here by JavaScript -->
                                 <tr>
-                                    <td colspan="8" class="text-center">Loading subscription plans...</td>
+                                    <td colspan="9" class="text-center">Loading subscription plans...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -362,9 +363,19 @@
                                     <label for="planPrice" class="form-label">Price ($)</label>
                                     <input type="number" class="form-control" id="planPrice" step="0.01" min="0" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="planDuration" class="form-label">Duration (Days)</label>
-                                    <input type="number" class="form-control" id="planDuration" min="1" required>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="planDuration" class="form-label">Duration</label>
+                                        <input type="number" class="form-control" id="planDuration" min="1" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="planInterval" class="form-label">Interval</label>
+                                        <select class="form-select" id="planInterval" required>
+                                            <option value="days">Days</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="yearly">Yearly</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="planMaxFollowers" class="form-label">Max Followers</label>
@@ -416,6 +427,7 @@
             const planDescriptionInput = document.getElementById('planDescription');
             const planPriceInput = document.getElementById('planPrice');
             const planDurationInput = document.getElementById('planDuration');
+            const planIntervalSelect = document.getElementById('planInterval'); // Added
             const planMaxFollowersInput = document.getElementById('planMaxFollowers');
             const planStatusSelect = document.getElementById('planStatus');
             const plansTableBody = document.getElementById('subscription-plans-table-body');
@@ -424,9 +436,9 @@
             const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
             let planToDeleteId = null;
 
-            // Function to fetch and render subscription plans
             function fetchSubscriptionPlans() {
-                fetch('/admin/financials/subscription-plans/data')
+                // Corrected API endpoint for GET
+                fetch('/admin/api/subscriptions/plans')
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Failed to fetch subscription plans');
@@ -436,17 +448,18 @@
                     .then(data => {
                         plansTableBody.innerHTML = ''; // Clear existing rows
                         if (data.length === 0) {
-                            plansTableBody.innerHTML = `<tr><td colspan="8" class="text-center">No subscription plans found.</td></tr>`;
+                            plansTableBody.innerHTML = `<tr><td colspan="9" class="text-center">No subscription plans found.</td></tr>`;
                             return;
                         }
                         data.forEach(plan => {
                             const row = `
                                 <tr>
-                                    <td>${plan.id}</td>
+                                    <td>${plan.ID}</td>
                                     <td>${plan.name}</td>
                                     <td>${plan.description}</td>
                                     <td>$${plan.price.toFixed(2)}</td>
-                                    <td>${plan.duration} Days</td>
+                                    <td>${plan.duration}</td>
+                                    <td>${plan.interval.charAt(0).toUpperCase() + plan.interval.slice(1)}</td>
                                     <td>${plan.max_followers}</td>
                                     <td>
                                         <span class="badge ${plan.status === 'active' ? 'bg-success' : 'bg-danger'}">
@@ -454,13 +467,14 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-info edit-btn" data-id="${plan.id}"
+                                        <button class="btn btn-sm btn-info edit-btn" data-id="${plan.ID}"
                                                 data-name="${plan.name}" data-description="${plan.description}"
                                                 data-price="${plan.price}" data-duration="${plan.duration}"
+                                                data-interval="${plan.interval}"
                                                 data-max-followers="${plan.max_followers}" data-status="${plan.status}">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-danger delete-btn" data-id="${plan.id}">
+                                        <button class="btn btn-sm btn-danger delete-btn" data-id="${plan.ID}">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </td>
@@ -471,7 +485,7 @@
                     })
                     .catch(error => {
                         console.error('Error fetching subscription plans:', error);
-                        plansTableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Failed to load plans. Please try again.</td></tr>`;
+                        plansTableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">Failed to load plans. Please try again.</td></tr>`;
                     });
             }
 
@@ -480,7 +494,8 @@
                 event.preventDefault();
 
                 const planId = planIdInput.value;
-                const url = planId ? `/admin/financials/subscription-plans/${planId}` : '/admin/financials/subscription-plans';
+                // Corrected API endpoints for POST/PUT
+                const url = planId ? `/admin/api/subscriptions/plans/${planId}` : '/admin/api/subscriptions/plans';
                 const method = planId ? 'PUT' : 'POST';
 
                 const planData = {
@@ -488,6 +503,7 @@
                     description: planDescriptionInput.value,
                     price: parseFloat(planPriceInput.value),
                     duration: parseInt(planDurationInput.value),
+                    interval: planIntervalSelect.value,
                     max_followers: parseInt(planMaxFollowersInput.value),
                     status: planStatusSelect.value,
                 };
@@ -525,6 +541,7 @@
                     planDescriptionInput.value = button.dataset.description;
                     planPriceInput.value = button.dataset.price;
                     planDurationInput.value = button.dataset.duration;
+                    planIntervalSelect.value = button.dataset.interval;
                     planMaxFollowersInput.value = button.dataset.maxFollowers;
                     planStatusSelect.value = button.dataset.status;
 
@@ -540,7 +557,8 @@
             // Handle delete confirmation
             confirmDeleteBtn.addEventListener('click', function() {
                 if (planToDeleteId) {
-                    fetch(`/admin/financials/subscription-plans/${planToDeleteId}`, {
+                    // Corrected API endpoint for DELETE
+                    fetch(`/admin/api/subscriptions/plans/${planToDeleteId}`, {
                         method: 'DELETE',
                     })
                     .then(response => {
@@ -562,14 +580,19 @@
 
             // Reset form when add modal is shown
             document.getElementById('addPlanModal').addEventListener('show.bs.modal', function(event) {
-                if (event.relatedTarget && event.relatedTarget.id === 'addPlanModal') { // Check if triggered by "Add New Plan" button
-                     planForm.reset();  
-                     planIdInput.value = '';
+                // Only reset if the modal is opened by the "Add New Plan" button, not for editing
+                // Make sure to add id="addPlanButton" to your "Add New Plan" button in the HTML
+                if (!event.relatedTarget || event.relatedTarget.id === 'addPlanButton') {
+                     planForm.reset();
+                     planIdInput.value = ''; // Ensure ID is cleared for new plan
                      document.getElementById('addPlanModalLabel').textContent = 'Add New Subscription Plan';
+                     // Set default interval if needed
+                     planIntervalSelect.value = 'days';
+                     planStatusSelect.value = 'active'; // Default status
                 }
             });
 
-
+          
             // Initial fetch
             fetchSubscriptionPlans();
         });

@@ -49,8 +49,8 @@ func main() {
 	activityService := service.NewActivityService(activityRepo)
 	copyService := service.NewCopyService(copyRepo)
 	liveSignalService := service.NewLiveSignalService(userRepo)
-	subscriptionPlanService := service.NewSubscriptionPlanService(subscriptionPlanRepo) // New
-	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriptionPlanRepo)
+	subscriptionPlanService := service.NewSubscriptionPlanService(subscriptionPlanRepo)
+	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriptionPlanRepo, userRepo)
 
 	authController := controllers.NewAuthController(userService)
 	userController := controllers.NewUserController(userService)
@@ -60,7 +60,7 @@ func main() {
 	activityController := controllers.NewActivityController(activityService)
 	copyController := controllers.NewCopyController(copyService)
 	signalController := controllers.NewSignalController(liveSignalService)
-	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService) // New
+	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService)
 
 	routes.WirePublicRoutes(r, authController, signalController)
 	routes.WireFollowerRoutes(r, copyController, cfg)
@@ -78,7 +78,7 @@ func main() {
 		subscriptionController,
 	)
 
-	port := cfg.Port
+	port := cfg.AdminPort
 	log.Printf("Server starting on port http://localhost:%s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server on port %s: %v", port, err)

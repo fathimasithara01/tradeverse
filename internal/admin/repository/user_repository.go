@@ -29,6 +29,10 @@ type IUserRepository interface {
 	GetUserByIDWithProfile(id uint) (*models.User, error) // New
 	UpdateUserAndProfile(user *models.User) error         // New
 	DeleteUser(id uint) error
+
+	GetUserByID(id uint) (*models.User, error)
+	GetRoleByName(name models.UserRole) (*models.Role, error) // New method
+	UpdateUser(user *models.User) error
 }
 
 type UserRepository struct {
@@ -61,6 +65,22 @@ func (r *UserRepository) CreateUser(user models.User, profile models.CustomerPro
 	return tx.Commit().Error
 }
 
+func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+	var user models.User
+	err := r.DB.Preload("Role").First(&user, id).Error
+	return &user, err
+}
+
+func (r *UserRepository) GetRoleByName(name models.UserRole) (*models.Role, error) {
+	var role models.Role
+	err := r.DB.Where("name = ?", string(name)).First(&role).Error
+	return &role, err
+}
+
+func (r *UserRepository) UpdateUser(user *models.User) error {
+	return r.DB.Save(user).Error
+}
+
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.DB.Where("email = ?", email).First(&user).Error; err != nil {
@@ -69,13 +89,13 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
-	var user models.User
-	if err := r.DB.First(&user, id).Error; err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
+// func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+// 	var user models.User
+// 	if err := r.DB.First(&user, id).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return &user, nil
+// }
 
 func (r *UserRepository) GetUserByIDWithProfile(id uint) (*models.User, error) {
 	var user models.User
@@ -127,7 +147,7 @@ func (r *UserRepository) DeleteUser(id uint) error {
 		return err
 	}
 
-	if err := tx.Delete(&models.User{}, id).Error; err != nil {
+	if err := tx.Unscoped().Delete(&models.User{}, id).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -212,7 +232,7 @@ func (r *UserRepository) Update(user *models.User) error {
 }
 
 func (r *UserRepository) Delete(id uint) error {
-	return r.DB.Delete(&models.User{}, id).Error
+	return r.DB.Unscoped().Delete(&models.User{}, id).Error
 }
 
 type UserQueryOptions struct {
