@@ -37,6 +37,7 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		&models.Trade{},
 		&models.SubscriptionPlan{},
 		&models.Subscription{},
+		&models.TraderSubscription{},
 		&models.KYCDocument{},
 		&models.UserKYCStatus{},
 		&models.Wallet{},
