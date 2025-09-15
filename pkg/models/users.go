@@ -39,3 +39,15 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	u.Password = string(hashedPassword)
 	return nil
 }
+
+func (u *User) IsAdmin() bool {
+	return u.Role == RoleAdmin
+}
+
+func (u *User) IsTrader() bool {
+	return u.Role == RoleTrader
+}
+
+func (u *User) IsCustomer() bool {
+	return u.Role == RoleCustomer
+}

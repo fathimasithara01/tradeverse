@@ -7,249 +7,195 @@ import (
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
+	"gorm.io/gorm"
 )
 
-// ITraderSubscriptionService defines the interface for customer-facing trader subscription business logic.
-type ITraderSubscriptionService interface {
-	GetTraderSubscriptionPlanByID(planID uint) (*models.SubscriptionPlan, error)
-	GetAllActiveTraderSubscriptionPlans() ([]models.SubscriptionPlan, error)
-	GetTraderProfile(traderProfileID uint) (*models.TraderProfile, error)
-
-	SubscribeToTrader(userID, planID, traderProfileID uint, amountPaid float64, transactionID string) (*models.TraderSubscription, error)
-	GetMyTraderSubscription(subscriptionID, userID uint) (*models.TraderSubscription, error)
-	ListMyTraderSubscriptions(userID uint) ([]models.TraderSubscription, error)
-	UpdateTraderSubscriptionSettings(subscriptionID, userID uint, allocation, riskMultiplier float64) (*models.TraderSubscription, error)
-	PauseTraderCopyTrading(subscriptionID, userID uint) error
-	ResumeTraderCopyTrading(subscriptionID, userID uint) error
-	CancelTraderSubscription(subscriptionID, userID uint) error
-	SimulateTraderSubscription(planID uint, initialCapital float64) (interface{}, error) // Placeholder for simulation
+// DTOs for request/response
+type TraderSubscriptionPlanResponse struct {
+	ID              uint    `json:"id"`
+	Name            string  `json:"name"`
+	Description     string  `json:"description"`
+	Price           float64 `json:"price"`
+	Duration        int     `json:"duration"`
+	Interval        string  `json:"interval"`
+	Features        string  `json:"features"`
+	MaxFollowers    int     `json:"max_followers,omitempty"`
+	CommissionRate  float64 `json:"commission_rate,omitempty"`
+	AnalyticsAccess string  `json:"analytics_access,omitempty"`
 }
 
-type TraderSubscriptionService struct {
-	repo repository.ITraderSubscriptionRepository
+type UserTraderSubscriptionResponse struct {
+	ID        uint      `json:"id"`
+	PlanName  string    `json:"plan_name"`
+	Price     float64   `json:"price"`
+	StartDate time.Time `json:"start_date"`
+	EndDate   time.Time `json:"end_date"`
+	IsActive  bool      `json:"is_active"`
+	Status    string    `json:"payment_status"`
 }
 
-func NewTraderSubscriptionService(repo repository.ITraderSubscriptionRepository) *TraderSubscriptionService {
-	return &TraderSubscriptionService{repo: repo}
+type CustomerService interface {
+	ListTraderSubscriptionPlans() ([]TraderSubscriptionPlanResponse, error)
+	SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error)
+	GetCustomerTraderSubscription(userID uint) (*UserTraderSubscriptionResponse, error)
+	CancelCustomerTraderSubscription(userID uint, subscriptionID uint) error
 }
 
-func (s *TraderSubscriptionService) GetTraderSubscriptionPlanByID(planID uint) (*models.SubscriptionPlan, error) {
-	plan, err := s.repo.GetTraderSubscriptionPlanByID(planID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch trader subscription plan: %w", err)
-	}
-	if plan == nil {
-		return nil, errors.New("trader subscription plan not found or not active")
-	}
-	return plan, nil
+type customerService struct {
+	repo repository.CustomerRepository
 }
 
-// GetAllActiveTraderSubscriptionPlans retrieves all active trader subscription plans.
-func (s *TraderSubscriptionService) GetAllActiveTraderSubscriptionPlans() ([]models.SubscriptionPlan, error) {
-	plans, err := s.repo.GetActiveTraderSubscriptionPlans()
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch active trader subscription plans: %w", err)
-	}
-	return plans, nil
+func NewCustomerService(repo repository.CustomerRepository) CustomerService {
+	return &customerService{repo: repo}
 }
 
-// GetTraderProfile retrieves a trader's profile.
-func (s *TraderSubscriptionService) GetTraderProfile(traderProfileID uint) (*models.TraderProfile, error) {
-	profile, err := s.repo.GetTraderProfileByID(traderProfileID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch trader profile: %w", err)
-	}
-	if profile == nil {
-		return nil, errors.New("trader profile not found")
-	}
-	// Optionally, ensure the trader is approved before allowing subscription
-	// if !profile.IsApproved {
-	// 	return nil, errors.New("trader not yet approved")
+func (s *customerService) ListTraderSubscriptionPlans() ([]TraderSubscriptionPlanResponse, error) {
+	// plans, err := s.repo.GetTraderSubscriptionPlans()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to fetch trader subscription plans: %w", err)
 	// }
-	return profile, nil
+
+	// var responses []TraderSubscriptionPlanResponse
+	// for _, plan := range plans {
+	// 	responses = append(responses, TraderSubscriptionPlanResponse{
+	// 		ID:              plan.ID,
+	// 		Name:            plan.Name,
+	// 		Description:     plan.Description,
+	// 		Price:           plan.Price,
+	// 		Duration:        plan.Duration,
+	// 		Interval:        plan.Interval,
+	// 		Features:        plan.Features,
+	// 		MaxFollowers:    plan.MaxFollowers,
+	// 		CommissionRate:  plan.CommissionRate,
+	// 		AnalyticsAccess: plan.AnalyticsAccess,
+	// 	})
+	// }
+	return s.repo.GetTraderSubscriptionPlans()
+
+	// return responses, nil
 }
 
-// SubscribeToTrader creates a new trader subscription for a customer.
-func (s *TraderSubscriptionService) SubscribeToTrader(userID, planID, traderProfileID uint, amountPaid float64, transactionID string) (*models.TraderSubscription, error) {
-	plan, err := s.GetTraderSubscriptionPlanByID(planID)
+func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error) {
+	// 1. Get the plan details
+	plan, err := s.repo.GetSubscriptionPlanByID(planID)
 	if err != nil {
-		return nil, err
-	}
-	if plan.Price > amountPaid {
-		return nil, errors.New("amount paid is less than plan price")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("subscription plan not found")
+		}
+		return nil, fmt.Errorf("failed to get subscription plan: %w", err)
 	}
 
-	// Validate TraderProfile exists and is associated with a trader
-	traderProfile, err := s.GetTraderProfile(traderProfileID)
+	if !plan.IsTraderPlan {
+		return nil, errors.New("this is not a trader subscription plan")
+	}
+
+	// 2. Check if user already has an active trader subscription
+	existingSub, err := s.repo.GetUserTraderSubscription(userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check existing trader subscription: %w", err)
 	}
-	if traderProfile == nil {
-		return nil, errors.New("trader profile not found")
-	}
-	// TODO: Add logic to check if UserID is a customer and TraderProfileID is a trader
-	// This would typically involve user service calls.
-
-	// Calculate subscription end date
-	startDate := time.Now()
-	var endDate time.Time
-	switch plan.Interval {
-	case "days":
-		endDate = startDate.AddDate(0, 0, plan.Duration)
-	case "monthly":
-		endDate = startDate.AddDate(0, plan.Duration, 0)
-	case "yearly":
-		endDate = startDate.AddDate(plan.Duration, 0, 0)
-	default:
-		return nil, errors.New("invalid subscription plan interval")
+	if existingSub != nil {
+		return nil, errors.New("user already has an active trader subscription")
 	}
 
-	subscription := &models.TraderSubscription{
+	// 3. Simulate payment (in a real app, this integrates with a payment gateway)
+	// For simplicity, we assume payment is successful and funds go to admin.
+	adminWallet, err := s.repo.GetAdminWallet()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve admin wallet: %w", err)
+	}
+
+	paymentReferenceID := fmt.Sprintf("SUB_%d_USER_%d_%s", planID, userID, time.Now().Format("20060102150405"))
+	paymentDescription := fmt.Sprintf("Payment for Trader Subscription Plan '%s' by User ID %d", plan.Name, userID)
+
+	// Credit admin's wallet
+	err = s.repo.CreditWallet(adminWallet.ID, plan.Price, models.TxTypeDeposit, paymentReferenceID, paymentDescription)
+	if err != nil {
+		return nil, fmt.Errorf("failed to credit admin wallet: %w", err)
+	}
+
+	// 4. Create TraderSubscription record
+	now := time.Now()
+	endDate := now.AddDate(0, 0, plan.Duration) // Assuming Duration is in days. Adjust if 'Interval' is used.
+	if plan.Interval == "monthly" {
+		endDate = now.AddDate(0, plan.Duration, 0)
+	} else if plan.Interval == "yearly" {
+		endDate = now.AddDate(plan.Duration, 0, 0)
+	}
+
+	newSubscription := models.TraderSubscription{
 		UserID:                   userID,
-		TraderSubscriptionPlanID: planID,
-		TraderProfileID:          &traderProfileID, // Link to the specific trader
-		StartDate:                startDate,
+		TraderSubscriptionPlanID: plan.ID,
+		StartDate:                now,
 		EndDate:                  endDate,
 		IsActive:                 true,
-		PaymentStatus:            "paid", // Assuming successful payment
-		AmountPaid:               amountPaid,
-		TransactionID:            transactionID,
-		Allocation:               1.0, // Default allocation
-		RiskMultiplier:           1.0, // Default risk multiplier
+		// PaymentStatus:            models.TxStatusSuccess, // Assuming success
+		AmountPaid:    plan.Price,
+		TransactionID: paymentReferenceID, // Store our internal reference
 	}
 
-	if err := s.repo.CreateTraderSubscription(subscription); err != nil {
-		return nil, fmt.Errorf("failed to create trader subscription: %w", err)
+	if err := s.repo.CreateTraderSubscription(&newSubscription); err != nil {
+		// IMPORTANT: In a real scenario, if subscription creation fails *after* payment,
+		// you need to either refund the user or flag it for manual review.
+		return nil, fmt.Errorf("failed to create trader subscription record: %w", err)
 	}
 
-	// TODO: Integrate with a wallet service here to deposit `amountPaid` into the admin's wallet.
-	// Example: s.walletService.DepositToAdmin(amountPaid, transactionID, userID, "TraderSubscription")
+	// 5. Update user role to Trader
+	if err := s.repo.UpdateUserRole(userID, models.RoleTrader); err != nil {
+		// Similar to above, consider rollbacks or flags
+		return nil, fmt.Errorf("failed to update user role to trader: %w", err)
+	}
 
-	return subscription, nil
+	return &UserTraderSubscriptionResponse{
+		ID:        newSubscription.ID,
+		PlanName:  plan.Name,
+		Price:     newSubscription.AmountPaid,
+		StartDate: newSubscription.StartDate,
+		EndDate:   newSubscription.EndDate,
+		IsActive:  newSubscription.IsActive,
+		Status:    string(newSubscription.PaymentStatus),
+	}, nil
 }
 
-// GetMyTraderSubscription fetches a single trader subscription for the authenticated user.
-func (s *TraderSubscriptionService) GetMyTraderSubscription(subscriptionID, userID uint) (*models.TraderSubscription, error) {
-	subscription, err := s.repo.GetTraderSubscriptionByID(subscriptionID)
+func (s *customerService) GetCustomerTraderSubscription(userID uint) (*UserTraderSubscriptionResponse, error) {
+	sub, err := s.repo.GetUserTraderSubscription(userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve subscription: %w", err)
+		return nil, fmt.Errorf("failed to fetch user's trader subscription: %w", err)
 	}
-	if subscription == nil || subscription.UserID != userID { // Authorization check in service
-		return nil, errors.New("subscription not found or not authorized")
+	if sub == nil {
+		return nil, nil // No active subscription
 	}
-	return subscription, nil
+
+	return &UserTraderSubscriptionResponse{
+		ID:        sub.ID,
+		PlanName:  sub.TraderSubscriptionPlan.Name,
+		Price:     sub.AmountPaid,
+		StartDate: sub.StartDate,
+		EndDate:   sub.EndDate,
+		IsActive:  sub.IsActive,
+		Status:    string(sub.PaymentStatus),
+	}, nil
 }
 
-// ListMyTraderSubscriptions fetches all trader subscriptions for the authenticated user.
-func (s *TraderSubscriptionService) ListMyTraderSubscriptions(userID uint) ([]models.TraderSubscription, error) {
-	subscriptions, err := s.repo.GetTraderSubscriptionsByUserID(userID)
+func (s *customerService) CancelCustomerTraderSubscription(userID uint, subscriptionID uint) error {
+	// Optional: You might want to add logic here to check if a refund is due
+	// This example simply marks it inactive.
+	existingSub, err := s.repo.GetUserTraderSubscription(userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list subscriptions: %w", err)
+		return fmt.Errorf("failed to check existing trader subscription: %w", err)
 	}
-	return subscriptions, nil
-}
+	if existingSub == nil || existingSub.ID != subscriptionID || !existingSub.IsActive {
+		return errors.New("active trader subscription not found for this user and ID")
+	}
 
-// UpdateTraderSubscriptionSettings allows a customer to update allocation and risk multiplier.
-func (s *TraderSubscriptionService) UpdateTraderSubscriptionSettings(subscriptionID, userID uint, allocation, riskMultiplier float64) (*models.TraderSubscription, error) {
-	subscription, err := s.repo.GetTraderSubscriptionByID(subscriptionID)
+	err = s.repo.CancelTraderSubscription(userID, subscriptionID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve subscription: %w", err)
-	}
-	if subscription == nil || subscription.UserID != userID { // Authorization check in service
-		return nil, errors.New("subscription not found or not authorized")
-	}
-	if !subscription.IsActive {
-		return nil, errors.New("cannot update an inactive subscription")
+		return fmt.Errorf("failed to cancel trader subscription: %w", err)
 	}
 
-	// Basic validation for allocation and risk (e.g., must be positive)
-	if allocation <= 0 || riskMultiplier <= 0 {
-		return nil, errors.New("allocation and risk multiplier must be positive")
-	}
-	// Add more complex validation as needed (e.g., max limits)
+	// Optional: Revert user role if no other active trader subscriptions (complex, depends on business logic)
+	// For simplicity, we won't revert the role automatically here, as they might have other trader activities.
+	// Reverting role might be an admin-only action or part of a more complex lifecycle.
 
-	subscription.Allocation = allocation
-	subscription.RiskMultiplier = riskMultiplier
-
-	if err := s.repo.UpdateTraderSubscription(subscription); err != nil {
-		return nil, fmt.Errorf("failed to update subscription settings: %w", err)
-	}
-	return subscription, nil
-}
-
-// PauseTraderCopyTrading pauses a customer's copy trading for a specific subscription.
-func (s *TraderSubscriptionService) PauseTraderCopyTrading(subscriptionID, userID uint) error {
-	subscription, err := s.repo.GetTraderSubscriptionByID(subscriptionID)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve subscription: %w", err)
-	}
-	if subscription == nil || subscription.UserID != userID { // Authorization check in service
-		return errors.New("subscription not found or not authorized")
-	}
-	if !subscription.IsActive {
-		return errors.New("cannot pause an inactive subscription")
-	}
-	if subscription.IsPaused {
-		return errors.New("subscription is already paused")
-	}
-
-	return s.repo.PauseTraderSubscription(subscriptionID)
-}
-
-func (s *TraderSubscriptionService) ResumeTraderCopyTrading(subscriptionID, userID uint) error {
-	subscription, err := s.repo.GetTraderSubscriptionByID(subscriptionID)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve subscription: %w", err)
-	}
-	if subscription == nil || subscription.UserID != userID { // Authorization check in service
-		return errors.New("subscription not found or not authorized")
-	}
-	if !subscription.IsActive {
-		return errors.New("cannot resume an inactive subscription")
-	}
-	if !subscription.IsPaused {
-		return errors.New("subscription is not paused")
-	}
-
-	return s.repo.ResumeTraderSubscription(subscriptionID)
-}
-
-func (s *TraderSubscriptionService) CancelTraderSubscription(subscriptionID, userID uint) error {
-	subscription, err := s.repo.GetTraderSubscriptionByID(subscriptionID)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve subscription: %w", err)
-	}
-	if subscription == nil || subscription.UserID != userID { // Authorization check in service
-		return errors.New("subscription not found or not authorized")
-	}
-	if !subscription.IsActive {
-		return errors.New("subscription is already inactive or cancelled")
-	}
-
-	now := time.Now()
-	if err := s.repo.UpdateSubscriptionStatus(subscriptionID, false, true, &now); err != nil { // Set isActive=false, isPaused=true
-		return fmt.Errorf("failed to cancel subscription: %w", err)
-	}
 	return nil
-}
-
-func (s *TraderSubscriptionService) SimulateTraderSubscription(planID uint, initialCapital float64) (interface{}, error) {
-	plan, err := s.GetTraderSubscriptionPlanByID(planID)
-	if err != nil {
-		return nil, err
-	}
-	if plan == nil { // This check is technically redundant if GetTraderSubscriptionPlanByID returns an error for nil.
-		return nil, errors.New("trader subscription plan not found for simulation")
-	}
-
-	simulationResult := map[string]interface{}{
-		"plan_name":        plan.Name,
-		"initial_capital":  initialCapital,
-		"simulated_return": fmt.Sprintf("%.2f", initialCapital*1.15), // Dummy 15% return
-		"max_drawdown":     fmt.Sprintf("%.2f", initialCapital*0.05), // Dummy 5% drawdown
-		"duration":         fmt.Sprintf("%d %s", plan.Duration, plan.Interval),
-		"message":          "This is a placeholder simulation. Implement detailed logic here.",
-	}
-
-	return simulationResult, nil
 }

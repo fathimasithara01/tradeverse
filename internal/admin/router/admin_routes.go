@@ -34,14 +34,12 @@ func WireAdminRoutes(
 
 			protected.GET("/financials/subscriptions", authz.RequirePermission("view_subscriptions"), subscriptionCtrl.ShowSubscriptionsPage)
 			protected.GET("/api/subscriptions", subscriptionCtrl.GetSubscriptions)
-			// This endpoint is for customer-initiated (or admin-initiated for a specific customer) subscriptions
 			protected.POST("/api/customer/subscribe-to-trader-plan", subscriptionCtrl.CreateCustomerSubscription)
 
 			protected.GET("/financials/subscription-plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.ShowSubscriptionPlansPage)
 
 			// API for Subscription Plans (GET, POST, PUT, DELETE)
 			protected.GET("/api/subscriptions/plans", subscriptionCtrl.GetSubscriptionPlans)
-			// CORRECTED: This should call CreateSubscriptionPlan, not CreateCustomerSubscription
 			protected.POST("/api/subscriptions/plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.CreateSubscriptionPlan)
 			protected.PUT("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.UpdateSubscriptionPlan)
 			protected.DELETE("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.DeleteSubscriptionPlan)

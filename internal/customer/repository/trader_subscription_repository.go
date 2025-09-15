@@ -1,121 +1,217 @@
 package repository
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
+	clause "gorm.io/gorm/clause"
 )
 
-// ITraderSubscriptionRepository defines the interface for customer-facing trader subscription data operations.
-type ITraderSubscriptionRepository interface {
-	CreateTraderSubscription(subscription *models.TraderSubscription) error
-	GetTraderSubscriptionByID(id uint) (*models.TraderSubscription, error) // No user ID needed here, service handles authorization
-	GetTraderSubscriptionsByUserID(userID uint) ([]models.TraderSubscription, error)
-	UpdateTraderSubscription(subscription *models.TraderSubscription) error
-	UpdateSubscriptionStatus(id uint, isActive, isPaused bool, endDate *time.Time) error
-
-	PauseTraderSubscription(id uint) error
-	ResumeTraderSubscription(id uint) error
-
-	// Get available trader subscription plans
-	GetActiveTraderSubscriptionPlans() ([]models.SubscriptionPlan, error)
-	GetTraderSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
-	GetTraderProfileByID(id uint) (*models.TraderProfile, error)
+type modelsPackage struct {
+	SubscriptionPlan   models.SubscriptionPlan
+	TraderSubscription models.TraderSubscription
+	User               models.User
+	Wallet             models.Wallet
+	WalletTransaction  models.WalletTransaction
+	TransactionType    models.TransactionType
+	TransactionStatus  models.TransactionStatus
+	UserRole           models.UserRole
 }
 
-// TraderSubscriptionRepository implements ITraderSubscriptionRepository
-type TraderSubscriptionRepository struct {
-	DB *gorm.DB
+type CustomerRepository interface {
+	GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error)
+	GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
+	CreateTraderSubscription(sub *models.TraderSubscription) error
+	GetUserTraderSubscription(userID uint) (*models.TraderSubscription, error)
+	CancelTraderSubscription(userID uint, subscriptionID uint) error
+	GetUserByID(userID uint) (*models.User, error)
+	UpdateUserRole(userID uint, role models.UserRole) error
+	GetAdminWallet() (*models.Wallet, error)
+	CreditWallet(walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
+	DebitWallet(walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
+	CreateWalletTransaction(tx *models.WalletTransaction) error
+	// For customer's general subscriptions (if they exist)
+	GetActiveSubscriptionByUserID(userID uint) (*models.Subscription, error)
 }
 
-// NewTraderSubscriptionRepository creates a new TraderSubscriptionRepository
-func NewTraderSubscriptionRepository(db *gorm.DB) *TraderSubscriptionRepository {
-	return &TraderSubscriptionRepository{DB: db}
+type customerRepository struct {
+	db *gorm.DB
+	// Assuming models are defined in pkg/models based on your folder structure
+	// You might need to adjust this if your models are nested differently
+	models *modelsPackage
 }
 
-// CreateTraderSubscription creates a new trader subscription record in the database.
-func (r *TraderSubscriptionRepository) CreateTraderSubscription(subscription *models.TraderSubscription) error {
-	return r.DB.Create(subscription).Error
-}
-
-// GetTraderSubscriptionByID fetches a single trader subscription by its ID, including related User, Plan, and TraderProfile.
-// This method takes only the subscription ID. Authorization logic (checking userID) should be in the service layer.
-func (r *TraderSubscriptionRepository) GetTraderSubscriptionByID(id uint) (*models.TraderSubscription, error) {
-	var subscription models.TraderSubscription
-	err := r.DB.Preload("User").Preload("TraderSubscriptionPlan").Preload("TraderProfile").First(&subscription, id).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil // Return nil if not found
+func NewCustomerRepository(db *gorm.DB) CustomerRepository {
+	return &customerRepository{
+		db: db,
+		models: &modelsPackage{
+			SubscriptionPlan:   models.SubscriptionPlan{},
+			TraderSubscription: models.TraderSubscription{},
+			User:               models.User{},
+			Wallet:             models.Wallet{},
+			WalletTransaction:  models.WalletTransaction{},
+			TransactionType:    "",
+			TransactionStatus:  "",
+			UserRole:           "",
+		},
 	}
-	return &subscription, err
 }
 
-// GetTraderSubscriptionsByUserID fetches all trader subscriptions for a given user ID, including related data.
-func (r *TraderSubscriptionRepository) GetTraderSubscriptionsByUserID(userID uint) ([]models.TraderSubscription, error) {
-	var subscriptions []models.TraderSubscription
-	err := r.DB.Where("user_id = ?", userID).Preload("TraderSubscriptionPlan").Preload("TraderProfile").Find(&subscriptions).Error
-	return subscriptions, err
-}
-
-// UpdateTraderSubscription updates an existing trader subscription record.
-func (r *TraderSubscriptionRepository) UpdateTraderSubscription(subscription *models.TraderSubscription) error {
-	return r.DB.Save(subscription).Error
-}
-
-// UpdateSubscriptionStatus updates the active and paused status of a subscription, and optionally its end date.
-// This replaces the old DeleteTraderSubscription logic for cancellation.
-func (r *TraderSubscriptionRepository) UpdateSubscriptionStatus(id uint, isActive, isPaused bool, endDate *time.Time) error {
-	updates := map[string]interface{}{
-		"is_active": isActive,
-		"is_paused": isPaused,
-	}
-	if endDate != nil {
-		updates["end_date"] = *endDate
-	}
-	return r.DB.Model(&models.TraderSubscription{}).Where("id = ?", id).Updates(updates).Error
-}
-
-// PauseTraderSubscription sets the IsPaused flag to true and updates last_pause_date.
-func (r *TraderSubscriptionRepository) PauseTraderSubscription(id uint) error {
-	return r.DB.Model(&models.TraderSubscription{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"is_paused":       true,
-		"last_pause_date": time.Now(),
-	}).Error
-}
-
-// ResumeTraderSubscription sets the IsPaused flag to false and updates last_resume_date.
-func (r *TraderSubscriptionRepository) ResumeTraderSubscription(id uint) error {
-	return r.DB.Model(&models.TraderSubscription{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"is_paused":        false,
-		"last_resume_date": time.Now(),
-	}).Error
-}
-
-// GetActiveTraderSubscriptionPlans fetches all active subscription plans marked as trader plans.
-func (r *TraderSubscriptionRepository) GetActiveTraderSubscriptionPlans() ([]models.SubscriptionPlan, error) {
+func (r *customerRepository) GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error) {
 	var plans []models.SubscriptionPlan
-	// Filter for plans that are active and specifically marked as trader plans
-	err := r.DB.Where("is_active = ? AND is_trader_plan = ?", true, true).Find(&plans).Error
-	return plans, err
+	// Fetch only plans designated for traders
+	if err := r.db.Where("is_trader_plan = ?", true).Find(&plans).Error; err != nil {
+		return nil, err
+	}
+	return plans, nil
 }
 
-// GetTraderSubscriptionPlanByID fetches a specific active trader subscription plan by ID.
-func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error) {
+func (r *customerRepository) GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error) {
 	var plan models.SubscriptionPlan
-	// This is the query causing "record not found" if the plan doesn't meet conditions
-	err := r.DB.Where("id = ? AND is_active = ? AND is_trader_plan = ?", id, true, true).First(&plan).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil
+	if err := r.db.First(&plan, id).Error; err != nil {
+		return nil, err
 	}
-	return &plan, err
+	return &plan, nil
 }
 
-// GetTraderProfileByID fetches a trader profile by ID.
-func (r *TraderSubscriptionRepository) GetTraderProfileByID(id uint) (*models.TraderProfile, error) {
-	var traderProfile models.TraderProfile
-	err := r.DB.Preload("User").First(&traderProfile, id).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil
+func (r *customerRepository) CreateTraderSubscription(sub *models.TraderSubscription) error {
+	return r.db.Create(sub).Error
+}
+
+func (r *customerRepository) GetUserTraderSubscription(userID uint) (*models.TraderSubscription, error) {
+	var sub models.TraderSubscription
+	// Fetch active trader subscriptions for the user
+	err := r.db.Where("user_id = ? AND is_active = ?", userID, true).Preload("TraderSubscriptionPlan").First(&sub).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // No active subscription found
+		}
+		return nil, err
 	}
-	return &traderProfile, err
+	return &sub, nil
+}
+
+func (r *customerRepository) CancelTraderSubscription(userID uint, subscriptionID uint) error {
+	return r.db.Model(&models.TraderSubscription{}).
+		Where("id = ? AND user_id = ?", subscriptionID, userID).
+		Updates(map[string]interface{}{"is_active": false, "end_date": time.Now()}).Error
+}
+
+func (r *customerRepository) GetUserByID(userID uint) (*models.User, error) {
+	var user models.User
+	if err := r.db.First(&user, userID).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *customerRepository) UpdateUserRole(userID uint, role models.UserRole) error {
+	return r.db.Model(&models.User{}).Where("id = ?", userID).Update("role", role).Error
+}
+
+// GetAdminWallet fetches the wallet of the admin user.
+// In a real application, AdminUserID should be configured or dynamically found.
+// For this example, I'll assume an admin user exists with ID 1 and their role is 'admin'.
+const AdminUserID uint = 1 // THIS IS A PLACEHOLDER. ADJUST AS PER YOUR ADMIN USER ID.
+
+func (r *customerRepository) GetAdminWallet() (*models.Wallet, error) {
+	var wallet models.Wallet
+	err := r.db.Where("user_id = ?", AdminUserID).First(&wallet).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("admin wallet not found for user ID %d", AdminUserID)
+		}
+		return nil, err
+	}
+	return &wallet, nil
+}
+
+func (r *customerRepository) CreditWallet(walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var wallet models.Wallet
+		// Ensure 'clause' is accessible here
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&wallet, walletID).Error; err != nil {
+			return err
+		}
+
+		balanceBefore := wallet.Balance
+		wallet.Balance += amount
+		wallet.LastUpdated = time.Now()
+		if err := tx.Save(&wallet).Error; err != nil {
+			return err
+		}
+
+		walletTx := models.WalletTransaction{
+			WalletID:        walletID,
+			UserID:          wallet.UserID,
+			TransactionType: transactionType,
+			Amount:          amount,
+			Currency:        wallet.Currency,
+			Status:          models.TxStatusSuccess,
+			ReferenceID:     referenceID,
+			Description:     description,
+			BalanceBefore:   balanceBefore,
+			BalanceAfter:    wallet.Balance,
+		}
+		if err := tx.Create(&walletTx).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (r *customerRepository) DebitWallet(walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var wallet models.Wallet
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&wallet, walletID).Error; err != nil {
+			return err
+		}
+
+		if wallet.Balance < amount {
+			return errors.New("insufficient funds")
+		}
+
+		balanceBefore := wallet.Balance
+		wallet.Balance -= amount
+		wallet.LastUpdated = time.Now()
+		if err := tx.Save(&wallet).Error; err != nil {
+			return err
+		}
+
+		walletTx := models.WalletTransaction{
+			WalletID:        walletID,
+			UserID:          wallet.UserID,
+			TransactionType: transactionType,
+			Amount:          amount,
+			Currency:        wallet.Currency,
+			Status:          models.TxStatusSuccess,
+			ReferenceID:     referenceID,
+			Description:     description,
+			BalanceBefore:   balanceBefore,
+			BalanceAfter:    wallet.Balance,
+		}
+		if err := tx.Create(&walletTx).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (r *customerRepository) CreateWalletTransaction(tx *models.WalletTransaction) error {
+	return r.db.Create(tx).Error
+}
+
+func (r *customerRepository) GetActiveSubscriptionByUserID(userID uint) (*models.Subscription, error) {
+	var sub models.Subscription
+	err := r.db.Where("user_id = ? AND is_active = ? AND end_date > ?", userID, true, time.Now()).Preload("SubscriptionPlan").First(&sub).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &sub, nil
 }

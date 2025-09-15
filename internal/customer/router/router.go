@@ -13,7 +13,7 @@ func SetupRouter(
 	profileController *controllers.ProfileController,
 	kycController *controllers.KYCController,
 	walletController *controllers.WalletController,
-	subscriptionController *controllers.CustomerSubscriptionController,
+	customerTraderSubController controllers.CustomerController,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -22,11 +22,6 @@ func SetupRouter(
 	{
 		public.POST("/signup", authController.Signup)
 		public.POST("/login", authController.Login)
-
-		public.GET("/subscriptions/plans", subscriptionController.GetAllTraderSubscriptionPlans)
-		public.GET("/subscriptions/plans/:id", subscriptionController.GetSubscriptionPlanDetails)
-		// Simulation can also be public if you allow anonymous simulation
-		public.POST("/subscriptions/plans/:plan_id/simulate", subscriptionController.SimulateSubscription)
 	}
 
 	protected := r.Group("/api/v1")
@@ -49,22 +44,10 @@ func SetupRouter(
 	protected.POST("/wallet/withdraw", walletController.CreateWithdrawalRequest)
 	protected.GET("/wallet/transactions", walletController.ListWalletTransactions)
 
-	// Subscribe to trader
-	protected.POST("/subscriptions", subscriptionController.SubscribeToTrader)
-
-	// Get my subscriptions
-	protected.GET("/subscriptions", subscriptionController.ListMySubscriptions)
-	protected.GET("/subscriptions/:id", subscriptionController.GetMySubscriptionDetails)
-
-	// Update subscription (allocation/risk)
-	protected.PUT("/subscriptions/:id", subscriptionController.UpdateSubscriptionSettings)
-
-	// Pause/Resume copy trading
-	protected.POST("/subscriptions/:id/pause", subscriptionController.PauseCopyTrading)
-	protected.POST("/subscriptions/:id/resume", subscriptionController.ResumeCopyTrading)
-
-	// Cancel subscription
-	protected.DELETE("/subscriptions/:id", subscriptionController.CancelSubscription)
+	protected.GET("/trader-plans", customerTraderSubController.ListTraderSubscriptionPlans)
+	protected.POST("/trader-plans/:plan_id/subscribe", customerTraderSubController.SubscribeToTraderPlan)
+	protected.GET("/trader-subscription", customerTraderSubController.GetCustomerTraderSubscription)
+	protected.POST("/trader-subscription/:subscription_id/cancel", customerTraderSubController.CancelCustomerTraderSubscription)
 
 	return r
 }

@@ -44,11 +44,10 @@ func main() {
 	walletSvc := service.NewWalletService(walletRepo, pgClient)
 	walletController := controllers.NewWalletController(walletSvc)
 
-	traderSubscriptionRepo := repository.NewTraderSubscriptionRepository(gormDB)
-	traderSubscriptionService := service.NewTraderSubscriptionService(traderSubscriptionRepo)
-	customerSubscriptionCtrl := controllers.NewCustomerSubscriptionController(traderSubscriptionService)
-
-	r := router.SetupRouter(cfg, authController, profileController, kycController, walletController, customerSubscriptionCtrl)
+	customerRepo := repository.NewCustomerRepository(gormDB)
+	customerService := service.NewCustomerService(customerRepo)
+	customerController := controllers.NewCustomerController(customerService)
+	r := router.SetupRouter(cfg, authController, profileController, kycController, walletController, customerController)
 
 	port := cfg.CustomerPort
 	log.Printf("Customer API server starting on port http://localhost:%s", port)

@@ -28,7 +28,6 @@ func (r *SubscriptionRepository) CreateSubscription(subscription *models.Subscri
 
 func (r *SubscriptionRepository) GetAllSubscriptions() ([]models.Subscription, error) {
 	var subscriptions []models.Subscription
-	// Preload User and SubscriptionPlan for detailed view
 	err := r.DB.Preload("User").Preload("SubscriptionPlan").Find(&subscriptions).Error
 	return subscriptions, err
 }
