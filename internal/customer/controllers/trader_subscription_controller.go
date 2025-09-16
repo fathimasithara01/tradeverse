@@ -48,14 +48,12 @@ func (ctrl *customerController) SubscribeToTraderPlan(c *gin.Context) {
 		switch err {
 		case service.ErrPlanNotFound:
 			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
-			return
 		case service.ErrAlreadyHasTraderSubscription, service.ErrNotTraderPlan:
 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-			return
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to subscribe: " + err.Error()})
-			return
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		}
+		return
 	}
 
 	c.JSON(http.StatusOK, sub)

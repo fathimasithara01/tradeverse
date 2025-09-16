@@ -123,7 +123,15 @@ func (r *customerRepository) GetAdminWallet() (*models.Wallet, error) {
 	err := r.db.Where("user_id = ?", AdminUserID).First(&wallet).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("admin wallet not found for user ID %d", AdminUserID)
+			newWallet := models.Wallet{
+				UserID:   AdminUserID,
+				Balance:  0,
+				Currency: "INR",
+			}
+			if err := r.db.Create(&newWallet).Error; err != nil {
+				return nil, fmt.Errorf("failed to auto-create admin wallet: %w", err)
+			}
+			return &newWallet, nil
 		}
 		return nil, err
 	}

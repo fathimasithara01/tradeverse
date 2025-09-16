@@ -80,6 +80,7 @@ func (s *customerService) ListTraderSubscriptionPlans() ([]TraderSubscriptionPla
 	}
 	return responses, nil
 }
+
 func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error) {
 	plan, err := s.repo.GetSubscriptionPlanByID(planID)
 	if err != nil {
