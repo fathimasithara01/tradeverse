@@ -69,7 +69,7 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 		Email:    adminEmail,
 		Password: adminPassword,
 		Role:     models.RoleAdmin,
-		RoleID:   &adminRole.ID,
+		// RoleID:   &adminRole.ID,
 	}
 
 	if err := db.Create(&newAdmin).Error; err != nil {

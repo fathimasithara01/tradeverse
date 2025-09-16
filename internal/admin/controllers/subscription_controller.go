@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -8,10 +9,10 @@ import (
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-// SubscriptionPlanResponseDTO is a DTO for returning subscription plans to the frontend,
-// including a 'status' string based on IsActive.
+// Re-using the DTO from before, but will apply it for input as well
 type SubscriptionPlanResponseDTO struct {
 	ID              uint    `json:"ID"`
 	Name            string  `json:"name"`
@@ -20,11 +21,26 @@ type SubscriptionPlanResponseDTO struct {
 	Duration        int     `json:"duration"`
 	Interval        string  `json:"interval"`
 	MaxFollowers    int     `json:"max_followers"`
-	Status          string  `json:"status"` // "active" or "inactive" based on IsActive
+	Status          string  `json:"status"`
 	Features        string  `json:"features"`
 	CommissionRate  float64 `json:"commission_rate"`
 	AnalyticsAccess string  `json:"analytics_access"`
 	IsTraderPlan    bool    `json:"is_trader_plan"`
+	IsActive        bool    `json:"is_active"`
+}
+
+type CreateUpdateSubscriptionPlanRequest struct {
+	Name            string  `json:"name" binding:"required"`
+	Description     string  `json:"description"`
+	Price           float64 `json:"price" binding:"required,gt=0"`
+	Duration        int     `json:"duration" binding:"required,gt=0"`
+	Interval        string  `json:"interval"`
+	MaxFollowers    int     `json:"max_followers"`
+	Features        string  `json:"features"`
+	CommissionRate  float64 `json:"commission_rate"`
+	AnalyticsAccess string  `json:"analytics_access"`
+	IsTraderPlan    bool    `json:"is_trader_plan"` // Admin can specify if it's a trader plan
+	IsActive        bool    `json:"is_active"`      // Admin can specify if it's active
 }
 
 type SubscriptionController struct {
@@ -63,7 +79,6 @@ func (ctrl *SubscriptionController) GetSubscriptionPlans(c *gin.Context) {
 		return
 	}
 
-	// Convert models.SubscriptionPlan to SubscriptionPlanResponseDTO
 	var responsePlans []SubscriptionPlanResponseDTO
 	for _, plan := range plans {
 		status := "inactive"
@@ -83,6 +98,7 @@ func (ctrl *SubscriptionController) GetSubscriptionPlans(c *gin.Context) {
 			CommissionRate:  plan.CommissionRate,
 			AnalyticsAccess: plan.AnalyticsAccess,
 			IsTraderPlan:    plan.IsTraderPlan,
+			IsActive:        plan.IsActive, // Expose IsActive in response
 		})
 	}
 	c.JSON(http.StatusOK, responsePlans)
@@ -131,25 +147,52 @@ func (ctrl *SubscriptionController) CreateCustomerSubscription(c *gin.Context) {
 }
 
 func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
-	var newPlan models.SubscriptionPlan
-	if err := c.ShouldBindJSON(&newPlan); err != nil {
+	var req CreateUpdateSubscriptionPlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Frontend sends 'status' string, but model expects 'IsActive' boolean.
-	// Convert it here. Assume "active" means true, anything else means false.
-	// This requires the 'status' field in the incoming JSON to be handled.
-	// We need to adjust the frontend to send IsActive directly, or parse a status field here.
-	// Let's assume the frontend will send 'IsActive' or we need to add a 'Status' field to the `newPlan` struct and convert.
-	// For now, I'll update the frontend's JSON sending logic.
+	newPlan := models.SubscriptionPlan{
+		Name:            req.Name,
+		Description:     req.Description,
+		Price:           req.Price,
+		Duration:        req.Duration,
+		Interval:        req.Interval,
+		MaxFollowers:    req.MaxFollowers,
+		Features:        req.Features,
+		CommissionRate:  req.CommissionRate,
+		AnalyticsAccess: req.AnalyticsAccess,
+		IsTraderPlan:    true,
+		IsActive:        true,
+	}
 
 	if err := ctrl.SubscriptionPlanService.CreateSubscriptionPlan(&newPlan); err != nil {
 		log.Printf("Error creating subscription plan: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create subscription plan"})
 		return
 	}
-	c.JSON(http.StatusCreated, newPlan)
+
+	status := "inactive"
+	if newPlan.IsActive {
+		status = "active"
+	}
+	responsePlan := SubscriptionPlanResponseDTO{
+		ID:              newPlan.ID,
+		Name:            newPlan.Name,
+		Description:     newPlan.Description,
+		Price:           newPlan.Price,
+		Duration:        newPlan.Duration,
+		Interval:        newPlan.Interval,
+		MaxFollowers:    newPlan.MaxFollowers,
+		Status:          status,
+		Features:        newPlan.Features,
+		CommissionRate:  newPlan.CommissionRate,
+		AnalyticsAccess: newPlan.AnalyticsAccess,
+		IsTraderPlan:    newPlan.IsTraderPlan,
+		IsActive:        newPlan.IsActive,
+	}
+	c.JSON(http.StatusCreated, responsePlan)
 }
 
 func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
@@ -160,44 +203,65 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 
-	var updatedPlanData models.SubscriptionPlan // Changed to models.SubscriptionPlan
-	if err := c.ShouldBindJSON(&updatedPlanData); err != nil {
+	var req CreateUpdateSubscriptionPlanRequest // Use the same DTO for update
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	updatedPlanData.ID = uint(id) // Ensure the ID from the URL is used for the update
+	// First, get the existing plan to ensure we're updating it
+	existingPlan, err := ctrl.SubscriptionPlanService.GetSubscriptionPlanByID(uint(id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) { // Assuming service returns this error for not found
+			c.JSON(http.StatusNotFound, gin.H{"error": "Subscription plan not found"})
+			return
+		}
+		log.Printf("Error fetching existing plan for update: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve subscription plan"})
+		return
+	}
 
-	// Fetch existing plan to preserve fields not sent in update (e.g., CreatedAt) if needed
-	// Or ensure frontend sends all fields required for update.
-	// For simplicity, we directly save updatedPlanData assuming it contains all necessary fields or GORM handles zero values.
+	// Update fields from the request DTO
+	existingPlan.Name = req.Name
+	existingPlan.Description = req.Description
+	existingPlan.Price = req.Price
+	existingPlan.Duration = req.Duration
+	existingPlan.Interval = req.Interval
+	existingPlan.MaxFollowers = req.MaxFollowers
+	existingPlan.Features = req.Features
+	existingPlan.CommissionRate = req.CommissionRate
+	existingPlan.AnalyticsAccess = req.AnalyticsAccess
+	existingPlan.IsTraderPlan = req.IsTraderPlan // Crucial update
+	existingPlan.IsActive = req.IsActive         // Crucial update
 
-	if err := ctrl.SubscriptionPlanService.UpdateSubscriptionPlan(&updatedPlanData); err != nil {
+	if err := ctrl.SubscriptionPlanService.UpdateSubscriptionPlan(existingPlan); err != nil {
+		log.Printf("Error updating subscription plan: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update subscription plan"})
 		return
 	}
 
-	// Convert the updated plan back to DTO for consistent response
+	// Respond with the DTO for consistency
 	status := "inactive"
-	if updatedPlanData.IsActive {
+	if existingPlan.IsActive {
 		status = "active"
 	}
 	responsePlan := SubscriptionPlanResponseDTO{
-		ID:              updatedPlanData.ID,
-		Name:            updatedPlanData.Name,
-		Description:     updatedPlanData.Description,
-		Price:           updatedPlanData.Price,
-		Duration:        updatedPlanData.Duration,
-		Interval:        updatedPlanData.Interval,
-		MaxFollowers:    updatedPlanData.MaxFollowers,
+		ID:              existingPlan.ID,
+		Name:            existingPlan.Name,
+		Description:     existingPlan.Description,
+		Price:           existingPlan.Price,
+		Duration:        existingPlan.Duration,
+		Interval:        existingPlan.Interval,
+		MaxFollowers:    existingPlan.MaxFollowers,
 		Status:          status,
-		Features:        updatedPlanData.Features,
-		CommissionRate:  updatedPlanData.CommissionRate,
-		AnalyticsAccess: updatedPlanData.AnalyticsAccess,
-		IsTraderPlan:    updatedPlanData.IsTraderPlan,
+		Features:        existingPlan.Features,
+		CommissionRate:  existingPlan.CommissionRate,
+		AnalyticsAccess: existingPlan.AnalyticsAccess,
+		IsTraderPlan:    existingPlan.IsTraderPlan,
+		IsActive:        existingPlan.IsActive,
 	}
 
-	c.JSON(http.StatusOK, responsePlan) // Return the updated plan as DTO
+	c.JSON(http.StatusOK, responsePlan)
 }
 
 // DeleteSubscriptionPlan deletes a subscription plan

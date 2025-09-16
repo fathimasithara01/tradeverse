@@ -19,3 +19,13 @@ type TraderProfile struct {
 	TotalPnL    float64      `json:"total_pnl"`
 	IsVerified  bool         `gorm:"default:false" json:"is_verified"`
 }
+
+// type TraderProfile struct {
+// 	gorm.Model
+// 	UserID          uint   `gorm:"unique;not null"`
+// 	Bio             string `gorm:"type:text"`
+// 	TradingStrategy string `gorm:"type:text"`
+// 	ExperienceYears int    `gorm:"default:0"`
+// 	IsVerified      bool   `gorm:"default:false"`
+// 	// Add other trader-specific fields like performance metrics, links, etc.
+// }

@@ -47,6 +47,7 @@ func main() {
 	customerRepo := repository.NewCustomerRepository(gormDB)
 	customerService := service.NewCustomerService(customerRepo)
 	customerController := controllers.NewCustomerController(customerService)
+
 	r := router.SetupRouter(cfg, authController, profileController, kycController, walletController, customerController)
 
 	port := cfg.CustomerPort

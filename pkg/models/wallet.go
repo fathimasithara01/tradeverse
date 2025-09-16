@@ -1,3 +1,4 @@
+// pkg/models/wallet.go
 package models
 
 import (
@@ -18,11 +19,12 @@ type Wallet struct {
 type TransactionType string
 
 const (
-	TxTypeDeposit  TransactionType = "DEPOSIT"
-	TxTypeWithdraw TransactionType = "WITHDRAW"
-	TxTypeFee      TransactionType = "FEE"
-	TxTypeTransfer TransactionType = "TRANSFER"
-	TxTypeReversal TransactionType = "REVERSAL"
+	TxTypeDeposit      TransactionType = "DEPOSIT"
+	TxTypeWithdraw     TransactionType = "WITHDRAW"
+	TxTypeFee          TransactionType = "FEE"
+	TxTypeTransfer     TransactionType = "TRANSFER"
+	TxTypeReversal     TransactionType = "REVERSAL"
+	TxTypeSubscription TransactionType = "SUBSCRIPTION_PAYMENT" // Added for clarity
 )
 
 type TransactionStatus string
@@ -43,7 +45,7 @@ type WalletTransaction struct {
 	Amount             float64           `gorm:"type:numeric(18,4);not null"`
 	Currency           string            `gorm:"size:3;not null"`
 	Status             TransactionStatus `gorm:"size:20;not null"`
-	ReferenceID        string            `gorm:"size:100"` // Internal reference ID (e.g., deposit request ID)
+	ReferenceID        string            `gorm:"size:100"` // Internal reference ID (e.g., deposit request ID, subscription ID)
 	PaymentGatewayTxID string            `gorm:"size:100"` // Transaction ID from external payment gateway
 	Description        string            `gorm:"type:text"`
 	BalanceBefore      float64           `gorm:"type:numeric(18,4)"` // Balance before this transaction
@@ -74,6 +76,7 @@ type WithdrawRequest struct {
 	WalletTransactionID *uint             `gorm:"index"`    // Link to the actual wallet transaction (if successful)
 }
 
+// DTOs for API responses/requests
 type WalletSummaryResponse struct {
 	UserID      uint      `json:"user_id"`
 	Balance     float64   `json:"balance"`

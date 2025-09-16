@@ -44,7 +44,7 @@ func SetupRouter(
 	protected.POST("/wallet/withdraw", walletController.CreateWithdrawalRequest)
 	protected.GET("/wallet/transactions", walletController.ListWalletTransactions)
 
-	protected.GET("/trader-plans", customerTraderSubController.ListTraderSubscriptionPlans)
+	protected.GET("/subscriptions/plans", customerTraderSubController.ListTraderSubscriptionPlans) // Alias for clarity
 	protected.POST("/trader-plans/:plan_id/subscribe", customerTraderSubController.SubscribeToTraderPlan)
 	protected.GET("/trader-subscription", customerTraderSubController.GetCustomerTraderSubscription)
 	protected.POST("/trader-subscription/:subscription_id/cancel", customerTraderSubController.CancelCustomerTraderSubscription)

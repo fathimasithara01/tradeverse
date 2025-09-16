@@ -39,18 +39,16 @@ func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {
 		return err
 	}
 
-	// Find the Trader role. This assumes "trader" role exists in your database.
 	traderRole, err := s.userRepo.GetRoleByName(models.RoleTrader) // Assuming GetRoleByName exists
 	if err != nil {
 		log.Printf("Error: Trader role not found: %v", err)
-		return err // Or create the role if it doesn't exist
+		return err
 	}
 
 	user.RoleID = &traderRole.ID
-	user.Role = models.RoleTrader // Explicitly set the string representation
+	user.Role = models.RoleTrader
 
-	// Save the updated user
-	return s.userRepo.UpdateUser(user) // Assuming UpdateUser exists
+	return s.userRepo.UpdateUser(user)
 }
 
 func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.Subscription, error) {

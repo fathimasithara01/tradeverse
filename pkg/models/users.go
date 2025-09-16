@@ -27,17 +27,28 @@ type User struct {
 	CustomerProfile CustomerProfile `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"customer_profile,omitempty"`
 	TraderProfile   TraderProfile   `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"trader_profile,omitempty"`
 
-	Subscriptions       []Subscription       `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"`
+	Subscriptions []Subscription `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"`
+
 	TraderSubscriptions []TraderSubscription `gorm:"foreignKey:UserID" json:"trader_subscriptions,omitempty"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
+	if u.Password != "" { // Only hash if password is provided
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		u.Password = string(hashedPassword)
 	}
-	u.Password = string(hashedPassword)
+	if u.Role == "" {
+		u.Role = RoleCustomer
+	}
 	return nil
+}
+
+func (u *User) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	return err == nil
 }
 
 func (u *User) IsAdmin() bool {
