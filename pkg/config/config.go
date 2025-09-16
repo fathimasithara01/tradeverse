@@ -11,6 +11,7 @@ import (
 type Config struct {
 	AdminPort    string `mapstructure:"ADMIN_PORT"`
 	CustomerPort string `mapstructure:"CUSTOMER_PORT"`
+	TraderPort   string `mapstructure:"TRADER_PORT"`
 	DBHost       string `mapstructure:"DB_HOST"`
 	DBPort       string `mapstructure:"DB_PORT"`
 	DBUser       string `mapstructure:"DB_USER"`

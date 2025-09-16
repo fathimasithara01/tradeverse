@@ -174,7 +174,6 @@
 
 <body>
     <div class="wrapper">
-        <!-- templates/admin_sidebar.html -->
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3>TradeVerse</h3>
@@ -386,7 +385,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            // --- RENDER KPI CARDS ---
             function renderKpis() {
                 fetch('/admin/dashboard/stats')
                     .then(res => {
