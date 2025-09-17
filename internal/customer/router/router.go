@@ -12,9 +12,8 @@ func SetupRouter(
 	authController *controllers.AuthController,
 	profileController *controllers.ProfileController,
 	kycController *controllers.KYCController,
-	walletController *controllers.WalletController,
-	customerTraderSubController controllers.CustomerController,
-
+	walletCtrl *controllers.WalletController,
+	customerTraderSubController *controllers.CustomerController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -38,11 +37,14 @@ func SetupRouter(
 		kycGroup.GET("/kyc/status", kycController.GetKYCStatus)
 	}
 
-	protected.GET("/wallet", walletController.GetWalletSummary)
-	protected.POST("/wallet/deposit", walletController.CreateDepositRequest)
-	protected.POST("/wallet/deposit/verify", walletController.VerifyDeposit)
-	protected.POST("/wallet/withdraw", walletController.CreateWithdrawalRequest)
-	protected.GET("/wallet/transactions", walletController.ListWalletTransactions)
+	walletRoutes := protected.Group("/wallet")
+	{
+		walletRoutes.GET("/summary", walletCtrl.GetWalletSummary)
+		walletRoutes.POST("/deposit/initiate", walletCtrl.InitiateDeposit)
+		walletRoutes.POST("/deposit/:deposit_id/verify", walletCtrl.VerifyDeposit)
+		walletRoutes.POST("/withdraw/request", walletCtrl.RequestWithdrawal)
+		walletRoutes.GET("/transactions", walletCtrl.GetWalletTransactions)
+	}
 
 	protected.GET("/subscriptions/plans", customerTraderSubController.ListTraderSubscriptionPlans)
 	protected.POST("/trader-plans/:plan_id/subscribe", customerTraderSubController.SubscribeToTraderPlan)

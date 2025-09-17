@@ -4,15 +4,14 @@ import (
 	"log"
 
 	repositoryy "github.com/fathimasithara01/tradeverse/internal/admin/repository"
+	servicer "github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
 	"github.com/fathimasithara01/tradeverse/internal/customer/router"
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
+
 	"github.com/fathimasithara01/tradeverse/migrations"
 	"github.com/fathimasithara01/tradeverse/pkg/config"
-
-	servicer "github.com/fathimasithara01/tradeverse/internal/admin/service"
-
 	paymentgateway "github.com/fathimasithara01/tradeverse/pkg/payment_gateway.go"
 )
 
@@ -39,16 +38,17 @@ func main() {
 	kycSvc := service.NewKYCService(kycRepo)
 	kycController := controllers.NewKYCController(kycSvc)
 
+	paymentClient := paymentgateway.NewSimulatedPaymentClient()
+
 	walletRepo := repository.NewWalletRepository(gormDB)
-	pgClient := paymentgateway.NewSimulatedPaymentClient()
-	walletSvc := service.NewWalletService(walletRepo, pgClient)
-	walletController := controllers.NewWalletController(walletSvc)
+	walletService := service.NewWalletService(walletRepo, paymentClient, gormDB)
+	walletCtrl := controllers.NewWalletController(walletService)
 
 	customerRepo := repository.NewCustomerRepository(gormDB)
-	customerService := service.NewCustomerService(customerRepo)
+	customerService := service.NewCustomerService(customerRepo, walletService, walletRepo, gormDB)
 	customerController := controllers.NewCustomerController(customerService)
 
-	r := router.SetupRouter(cfg, authController, profileController, kycController, walletController, customerController)
+	r := router.SetupRouter(cfg, authController, profileController, kycController, walletCtrl, customerController)
 
 	port := cfg.CustomerPort
 	log.Printf("Customer API server starting on port http://localhost:%s", port)

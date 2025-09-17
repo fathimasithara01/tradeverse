@@ -1,4 +1,4 @@
-package repository // Changed package name
+package customerrepo // Changed package name
 
 import (
 	"errors"
