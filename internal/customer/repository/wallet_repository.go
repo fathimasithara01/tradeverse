@@ -1,4 +1,4 @@
-package repository
+package repository // Changed package name
 
 import (
 	"errors"
@@ -6,138 +6,179 @@ import (
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-// WalletRepository defines the interface for wallet data operations.
+var (
+	ErrWalletNotFound          = errors.New("wallet not found for user")
+	ErrInsufficientFunds       = errors.New("insufficient funds")
+	ErrDepositRequestNotFound  = errors.New("deposit request not found")
+	ErrWithdrawRequestNotFound = errors.New("withdrawal request not found")
+)
+
 type WalletRepository interface {
-	GetWalletByUserID(userID uint) (*models.Wallet, error)
+	GetUserWallet(userID uint) (*models.Wallet, error)
 	CreateWallet(wallet *models.Wallet) error
-	UpdateWalletBalance(tx *gorm.DB, wallet *models.Wallet, amount float64) error // Use transaction for update
-	CreateWalletTransaction(tx *gorm.DB, transaction *models.WalletTransaction) error
-	FindWalletTransactions(userID uint, page, limit int) ([]models.WalletTransaction, int64, error)
+	CreditWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
+	DebitWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
+	CreateWalletTransaction(tx *gorm.DB, walletTx *models.WalletTransaction) error
+	GetWalletTransactions(userID uint, pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
+	GetWalletTransactionByID(txID uint) (*models.WalletTransaction, error)
 
 	CreateDepositRequest(req *models.DepositRequest) error
-	FindDepositRequestByPGTxID(pgTxID string) (*models.DepositRequest, error)
+	GetDepositRequestByID(reqID uint) (*models.DepositRequest, error)
 	UpdateDepositRequest(req *models.DepositRequest) error
 
 	CreateWithdrawRequest(req *models.WithdrawRequest) error
-	FindWithdrawRequestByID(withdrawID uint) (*models.WithdrawRequest, error)
+	GetWithdrawRequestByID(reqID uint) (*models.WithdrawRequest, error)
 	UpdateWithdrawRequest(req *models.WithdrawRequest) error
-
-	// New transaction method to begin a database transaction
-	BeginTransaction() *gorm.DB
 }
 
-// walletRepository implements WalletRepository with GORM.
 type walletRepository struct {
 	db *gorm.DB
 }
 
-// NewWalletRepository creates a new WalletRepository instance.
 func NewWalletRepository(db *gorm.DB) WalletRepository {
 	return &walletRepository{db: db}
 }
 
-// BeginTransaction starts a new database transaction.
-func (r *walletRepository) BeginTransaction() *gorm.DB {
-	return r.db.Begin()
-}
-
-// GetWalletByUserID retrieves a user's wallet.
-func (r *walletRepository) GetWalletByUserID(userID uint) (*models.Wallet, error) {
+// ... (Rest of your walletRepository methods remain the same) ...
+func (r *walletRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
 	var wallet models.Wallet
 	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil // Wallet not found, not an error
+			return nil, ErrWalletNotFound
 		}
 		return nil, err
 	}
 	return &wallet, nil
 }
 
-// CreateWallet creates a new wallet for a user.
 func (r *walletRepository) CreateWallet(wallet *models.Wallet) error {
 	return r.db.Create(wallet).Error
 }
 
-// UpdateWalletBalance updates the wallet balance within a transaction.
-func (r *walletRepository) UpdateWalletBalance(tx *gorm.DB, wallet *models.Wallet, amount float64) error {
-	// IMPORTANT: In a real-world scenario, you would likely use a database-level
-	// atomic update like "UPDATE wallets SET balance = balance + ? WHERE id = ? AND version = ?"
-	// to prevent race conditions without explicit locking.
-	// For simplicity, this example updates the balance directly on the model and saves it.
-	// GORM's .Save() will update all fields.
+func (r *walletRepository) CreditWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
+	var wallet models.Wallet
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&wallet, walletID).Error; err != nil {
+		return err
+	}
+
+	balanceBefore := wallet.Balance
 	wallet.Balance += amount
 	wallet.LastUpdated = time.Now()
-	return tx.Save(wallet).Error
+	if err := tx.Save(&wallet).Error; err != nil {
+		return err
+	}
+
+	walletTx := &models.WalletTransaction{
+		WalletID:        walletID,
+		UserID:          wallet.UserID,
+		TransactionType: transactionType,
+		Amount:          amount,
+		Currency:        wallet.Currency,
+		Status:          models.TxStatusSuccess,
+		ReferenceID:     referenceID,
+		Description:     description,
+		BalanceBefore:   balanceBefore,
+		BalanceAfter:    wallet.Balance,
+	}
+	return r.CreateWalletTransaction(tx, walletTx)
 }
 
-// CreateWalletTransaction records a new transaction.
-func (r *walletRepository) CreateWalletTransaction(tx *gorm.DB, transaction *models.WalletTransaction) error {
-	return tx.Create(transaction).Error
+func (r *walletRepository) DebitWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
+	var wallet models.Wallet
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&wallet, walletID).Error; err != nil {
+		return err
+	}
+
+	if wallet.Balance < amount {
+		return ErrInsufficientFunds
+	}
+
+	balanceBefore := wallet.Balance
+	wallet.Balance -= amount
+	wallet.LastUpdated = time.Now()
+	if err := tx.Save(&wallet).Error; err != nil {
+		return err
+	}
+
+	walletTx := &models.WalletTransaction{
+		WalletID:        walletID,
+		UserID:          wallet.UserID,
+		TransactionType: transactionType,
+		Amount:          amount,
+		Currency:        wallet.Currency,
+		Status:          models.TxStatusSuccess,
+		ReferenceID:     referenceID,
+		Description:     description,
+		BalanceBefore:   balanceBefore,
+		BalanceAfter:    wallet.Balance,
+	}
+	return r.CreateWalletTransaction(tx, walletTx)
 }
 
-// FindWalletTransactions lists a user's wallet transactions with pagination.
-func (r *walletRepository) FindWalletTransactions(userID uint, page, limit int) ([]models.WalletTransaction, int64, error) {
+func (r *walletRepository) CreateWalletTransaction(tx *gorm.DB, walletTx *models.WalletTransaction) error {
+	return tx.Create(walletTx).Error
+}
+
+func (r *walletRepository) GetWalletTransactions(userID uint, pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
 	var transactions []models.WalletTransaction
 	var total int64
 
-	offset := (page - 1) * limit
+	query := r.db.Where("user_id = ?", userID)
 
-	// Count total transactions for pagination metadata
-	err := r.db.Model(&models.WalletTransaction{}).Where("user_id = ?", userID).Count(&total).Error
-	if err != nil {
+	if err := query.Model(&models.WalletTransaction{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Fetch paginated transactions
-	err = r.db.Where("user_id = ?", userID).
-		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&transactions).Error
-	if err != nil {
+	if err := query.Limit(pagination.Limit).Offset((pagination.Page - 1) * pagination.Limit).Order("created_at DESC").Find(&transactions).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return transactions, total, nil
 }
 
-// CreateDepositRequest saves a new deposit request.
+func (r *walletRepository) GetWalletTransactionByID(txID uint) (*models.WalletTransaction, error) {
+	var transaction models.WalletTransaction
+	if err := r.db.First(&transaction, txID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("transaction not found")
+		}
+		return nil, err
+	}
+	return &transaction, nil
+}
+
 func (r *walletRepository) CreateDepositRequest(req *models.DepositRequest) error {
 	return r.db.Create(req).Error
 }
 
-// FindDepositRequestByPGTxID finds a deposit request by the payment gateway's transaction ID.
-func (r *walletRepository) FindDepositRequestByPGTxID(pgTxID string) (*models.DepositRequest, error) {
+func (r *walletRepository) GetDepositRequestByID(reqID uint) (*models.DepositRequest, error) {
 	var req models.DepositRequest
-	err := r.db.Where("payment_gateway_tx_id = ?", pgTxID).First(&req).Error
-	if err != nil {
+	if err := r.db.First(&req, reqID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, ErrDepositRequestNotFound
 		}
 		return nil, err
 	}
 	return &req, nil
 }
 
-// UpdateDepositRequest updates an existing deposit request.
 func (r *walletRepository) UpdateDepositRequest(req *models.DepositRequest) error {
-	return r.db.Save(req).Error // Save updates all fields
+	return r.db.Save(req).Error
 }
 
-// CreateWithdrawRequest saves a new withdrawal request.
 func (r *walletRepository) CreateWithdrawRequest(req *models.WithdrawRequest) error {
 	return r.db.Create(req).Error
 }
 
-func (r *walletRepository) FindWithdrawRequestByID(withdrawID uint) (*models.WithdrawRequest, error) {
+func (r *walletRepository) GetWithdrawRequestByID(reqID uint) (*models.WithdrawRequest, error) {
 	var req models.WithdrawRequest
-	err := r.db.First(&req, withdrawID).Error
-	if err != nil {
+	if err := r.db.First(&req, reqID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, ErrWithdrawRequestNotFound
 		}
 		return nil, err
 	}

@@ -19,10 +19,9 @@ type User struct {
 	Email    string `gorm:"size:100;uniqueIndex;not null" json:"email"`
 	Password string `gorm:"size:255;not null" json:"-"`
 
-	// FIXED: no foreignKey here (it broke GORM)
-	Role   UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
-	RoleID *uint    `gorm:"index" json:"role_id"`
+	Role UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
 
+	RoleID    *uint
 	IsBlocked bool `gorm:"default:false" json:"is_blocked"`
 
 	CustomerProfile     CustomerProfile      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"customer_profile,omitempty"`
@@ -31,35 +30,31 @@ type User struct {
 	TraderSubscriptions []TraderSubscription `gorm:"foreignKey:UserID" json:"trader_subscriptions,omitempty"`
 }
 
-// Before creating user → hash password
-func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
-	if u.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
-		u.Password = string(hashedPassword)
-	}
-	if u.Role == "" {
-		u.Role = RoleCustomer
-	}
-	return nil
-}
-
-// After creating user → auto-create wallet
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {
+	// Ensure a wallet is created for every new user
 	wallet := Wallet{
 		UserID:   u.ID,
 		Balance:  0,
-		Currency: "INR",
+		Currency: "INR", // Default currency
 	}
 	if err := tx.Create(&wallet).Error; err != nil {
 		return err
 	}
+
+	// Create a CustomerProfile by default for new users
+	if u.Role == RoleCustomer {
+		customerProfile := CustomerProfile{
+			UserID: u.ID,
+			// ShippingAddress: "", // Can be filled later
+			// PhoneNumber:     "", // Can be filled later
+		}
+		if err := tx.Create(&customerProfile).Error; err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-// Helpers
 func (u *User) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) == nil
 }

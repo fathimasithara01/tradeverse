@@ -9,7 +9,6 @@ import (
 func SetupRouter(
 	cfg *config.Config,
 	authController *controllers.TraderController,
-
 ) *gin.Engine {
 	r := gin.Default()
 

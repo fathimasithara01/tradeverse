@@ -1,4 +1,3 @@
-// internal/customer/controllers/customer_controller.go
 package controllers
 
 import (
@@ -9,23 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CustomerController interface {
-	ListTraderSubscriptionPlans(c *gin.Context)
-	SubscribeToTraderPlan(c *gin.Context)
-	GetCustomerTraderSubscription(c *gin.Context)
-	CancelCustomerTraderSubscription(c *gin.Context)
+type CustomerController struct {
+	Service service.CustomerService
 }
 
-type customerController struct {
-	service service.CustomerService
+func NewCustomerController(service service.CustomerService) *CustomerController {
+	return &CustomerController{Service: service}
 }
 
-func NewCustomerController(s service.CustomerService) CustomerController {
-	return &customerController{service: s}
-}
-
-func (ctrl *customerController) ListTraderSubscriptionPlans(c *gin.Context) {
-	plans, err := ctrl.service.ListTraderSubscriptionPlans() // Calls the correct service method
+func (ctrl *CustomerController) ListTraderSubscriptionPlans(c *gin.Context) {
+	plans, err := ctrl.Service.ListTraderSubscriptionPlans() // Calls the correct service method
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -33,7 +25,7 @@ func (ctrl *customerController) ListTraderSubscriptionPlans(c *gin.Context) {
 	c.JSON(http.StatusOK, plans)
 }
 
-func (ctrl *customerController) SubscribeToTraderPlan(c *gin.Context) {
+func (ctrl *CustomerController) SubscribeToTraderPlan(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
 	planIDStr := c.Param("plan_id")
@@ -43,7 +35,7 @@ func (ctrl *customerController) SubscribeToTraderPlan(c *gin.Context) {
 		return
 	}
 
-	sub, err := ctrl.service.SubscribeToTraderPlan(userID, uint(planID))
+	sub, err := ctrl.Service.SubscribeToTraderPlan(userID, uint(planID))
 	if err != nil {
 		switch err {
 		case service.ErrPlanNotFound:
@@ -58,11 +50,10 @@ func (ctrl *customerController) SubscribeToTraderPlan(c *gin.Context) {
 
 	c.JSON(http.StatusOK, sub)
 }
-
-func (ctrl *customerController) GetCustomerTraderSubscription(c *gin.Context) {
+func (ctrl *CustomerController) GetCustomerTraderSubscription(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
-	sub, err := ctrl.service.GetCustomerTraderSubscription(userID)
+	sub, err := ctrl.Service.GetCustomerTraderSubscription(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to retrieve subscription: " + err.Error()})
 		return
@@ -73,8 +64,7 @@ func (ctrl *customerController) GetCustomerTraderSubscription(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, sub)
 }
-
-func (ctrl *customerController) CancelCustomerTraderSubscription(c *gin.Context) {
+func (ctrl *CustomerController) CancelCustomerTraderSubscription(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
 	subIDStr := c.Param("subscription_id")
@@ -84,7 +74,7 @@ func (ctrl *customerController) CancelCustomerTraderSubscription(c *gin.Context)
 		return
 	}
 
-	err = ctrl.service.CancelCustomerTraderSubscription(userID, uint(subID))
+	err = ctrl.Service.CancelCustomerTraderSubscription(userID, uint(subID))
 	if err != nil {
 		if err == service.ErrNoActiveTraderSubscription {
 			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
