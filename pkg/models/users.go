@@ -21,17 +21,21 @@ type User struct {
 
 	Role UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
 
-	RoleID    *uint
+	RoleID *uint `json:"role_id"`
+
+	RoleModel Role `gorm:"foreignKey:RoleID" json:"role_model,omitempty"` // Renamed from RoleAssociation to RoleModel for clarity
+
 	IsBlocked bool `gorm:"default:false" json:"is_blocked"`
 
 	CustomerProfile     CustomerProfile      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"customer_profile,omitempty"`
 	TraderProfile       TraderProfile        `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"trader_profile,omitempty"`
 	Subscriptions       []Subscription       `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"`
 	TraderSubscriptions []TraderSubscription `gorm:"foreignKey:UserID" json:"trader_subscriptions,omitempty"`
+	Wallet              Wallet               `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"wallet,omitempty"`
 }
 
+// AfterCreate hook to create a wallet for every new user.
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {
-	// Ensure a wallet is created for every new user
 	wallet := Wallet{
 		UserID:   u.ID,
 		Balance:  0,
@@ -40,24 +44,24 @@ func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	if err := tx.Create(&wallet).Error; err != nil {
 		return err
 	}
-
-	// Create a CustomerProfile by default for new users
-	if u.Role == RoleCustomer {
-		customerProfile := CustomerProfile{
-			UserID: u.ID,
-			// ShippingAddress: "", // Can be filled later
-			// PhoneNumber:     "", // Can be filled later
-		}
-		if err := tx.Create(&customerProfile).Error; err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
+// SetPassword hashes the user's password using bcrypt.
+func (u *User) SetPassword(password string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.Password = string(hashedPassword)
+	return nil
+}
+
+// CheckPassword verifies the provided password against the stored hashed password.
 func (u *User) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) == nil
 }
+
 func (u *User) IsAdmin() bool    { return u.Role == RoleAdmin }
 func (u *User) IsTrader() bool   { return u.Role == RoleTrader }
 func (u *User) IsCustomer() bool { return u.Role == RoleCustomer }

@@ -2,6 +2,8 @@ package repository
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"math"
 	"time"
 
@@ -9,11 +11,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// IUserRepository defines the interface for user data operations.
 type IUserRepository interface {
 	Create(user *models.User) error
+	CreateCustomerWithProfile(user *models.User, profile *models.CustomerProfile) error
+	CreateTraderWithProfile(user *models.User, profile *models.TraderProfile) error
+
 	FindByID(id uint) (models.User, error)
 	FindByEmail(email string) (models.User, error)
-	FindByRole(role models.UserRole) ([]models.User, error)
+	FindByRole(role models.UserRole) ([]models.User, error) // Added this method
 	FindAllNonAdmins() ([]models.User, error)
 	FindAllAdvanced(options UserQueryOptions) (PaginatedUsers, error)
 	Update(user *models.User) error
@@ -26,215 +32,338 @@ type IUserRepository interface {
 	FindTradersByStatus(status models.TraderStatus) ([]models.User, error)
 	GetLatestOpenTradeForUser(userID uint) (models.Trade, error)
 
-	GetUserByIDWithProfile(id uint) (*models.User, error) // New
-	UpdateUserAndProfile(user *models.User) error         // New
+	GetUserByIDWithProfile(id uint) (*models.User, error)
+	UpdateUserAndProfile(user *models.User) error
 	DeleteUser(id uint) error
 
+	// These methods seem redundant given FindByID and FindByEmail,
+	// but kept if there's a specific reason for them returning *models.User.
+	// Consider consolidating.
 	GetUserByID(id uint) (*models.User, error)
-	GetRoleByName(name models.UserRole) (*models.Role, error) // New method
+	GetRoleByName(name models.UserRole) (*models.Role, error)
 	UpdateUser(user *models.User) error
+	GetUserByEmail(email string) (*models.User, error)
 }
 
+// UserRepository implements IUserRepository using GORM.
 type UserRepository struct {
 	DB *gorm.DB
 }
 
+// NewUserRepository creates a new UserRepository instance.
 func NewUserRepository(db *gorm.DB) IUserRepository {
 	return &UserRepository{DB: db}
 }
 
-func (r *UserRepository) CreateUser(user models.User, profile models.CustomerProfile) error {
+// CreateCustomerWithProfile creates a user and their customer profile within a transaction.
+func (r *UserRepository) CreateCustomerWithProfile(user *models.User, profile *models.CustomerProfile) error {
 	tx := r.DB.Begin()
 	defer func() {
-		if r := recover(); r != nil {
+		if rec := recover(); rec != nil {
 			tx.Rollback()
 		}
 	}()
 
-	if err := tx.Create(&user).Error; err != nil {
+	if err := tx.Create(user).Error; err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 
-	profile.UserID = user.ID // Link profile to the newly created user
-	if err := tx.Create(&profile).Error; err != nil {
+	profile.UserID = user.ID
+	if err := tx.Create(profile).Error; err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("failed to create customer profile: %w", err)
 	}
 
 	return tx.Commit().Error
 }
 
-func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
-	var user models.User
-	err := r.DB.Preload("Role").First(&user, id).Error
-	return &user, err
+// CreateTraderWithProfile creates a user and their trader profile within a transaction.
+func (r *UserRepository) CreateTraderWithProfile(user *models.User, profile *models.TraderProfile) error {
+	tx := r.DB.Begin()
+	defer func() {
+		if rec := recover(); rec != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Create(user).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	profile.UserID = user.ID
+	if err := tx.Create(profile).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to create trader profile: %w", err)
+	}
+
+	return tx.Commit().Error
 }
 
+// GetUserByID retrieves a user by ID, preloading their role.
+func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+	var user models.User
+	err := r.DB.Preload("RoleModel").First(&user, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[DEBUG Repo] GetUserByID: User ID %d not found.", id)
+			return nil, errors.New("user not found")
+		}
+		log.Printf("[ERROR Repo] GetUserByID: Failed to find user ID %d: %v", id, err)
+		return nil, fmt.Errorf("failed to find user by ID: %w", err)
+	}
+	log.Printf("[DEBUG Repo] GetUserByID: Found user ID %d, Email '%s'.", id, user.Email)
+	return &user, nil
+}
+
+// GetRoleByName retrieves a role by its name.
 func (r *UserRepository) GetRoleByName(name models.UserRole) (*models.Role, error) {
 	var role models.Role
 	err := r.DB.Where("name = ?", string(name)).First(&role).Error
-	return &role, err
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[DEBUG Repo] GetRoleByName: Role '%s' not found.", name)
+			return nil, errors.New("role not found")
+		}
+		log.Printf("[ERROR Repo] GetRoleByName: Failed to find role '%s': %v", name, err)
+		return nil, fmt.Errorf("failed to find role by name: %w", err)
+	}
+	log.Printf("[DEBUG Repo] GetRoleByName: Found role '%s', ID %d.", name, role.ID)
+	return &role, nil
 }
 
+// UpdateUser updates user details.
 func (r *UserRepository) UpdateUser(user *models.User) error {
 	return r.DB.Save(user).Error
 }
 
+// GetUserByEmail retrieves a user by email, preloading their role.
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
-	if err := r.DB.Where("email = ?", email).First(&user).Error; err != nil {
-		return nil, err
+	err := r.DB.Preload("RoleModel").Where("LOWER(email) = LOWER(?)", email).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[DEBUG Repo] GetUserByEmail: User email '%s' not found.", email)
+			return nil, errors.New("user not found")
+		}
+		log.Printf("[ERROR Repo] GetUserByEmail: Failed to find user by email '%s': %v", email, err)
+		return nil, fmt.Errorf("failed to find user by email: %w", err)
 	}
+	log.Printf("[DEBUG Repo] GetUserByEmail: Found user with email '%s', ID %d.", email, user.ID)
 	return &user, nil
 }
 
-// func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
-// 	var user models.User
-// 	if err := r.DB.First(&user, id).Error; err != nil {
-// 		return nil, err
-// 	}
-// 	return &user, nil
-// }
+// FindByID retrieves a user by ID, preloading customer, trader, and role profiles.
+func (r *UserRepository) FindByID(id uint) (models.User, error) {
+	var user models.User
+	err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").Preload("RoleModel").First(&user, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[DEBUG Repo] FindByID: User ID %d not found.", id)
+			return models.User{}, errors.New("user not found")
+		}
+		log.Printf("[ERROR Repo] FindByID: Failed to find user ID %d: %v", id, err)
+		return models.User{}, fmt.Errorf("database error finding user by ID: %w", err)
+	}
+	log.Printf("[DEBUG Repo] FindByID: Found user ID %d, Email '%s'.", id, user.Email)
+	return user, nil
+}
 
+// GetUserByIDWithProfile retrieves a user by ID, preloading customer and trader profiles.
 func (r *UserRepository) GetUserByIDWithProfile(id uint) (*models.User, error) {
 	var user models.User
-	if err := r.DB.Preload("CustomerProfile").First(&user, id).Error; err != nil {
+	if err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").First(&user, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
 		return nil, err
 	}
 	return &user, nil
 }
 
+// UpdateUserAndProfile updates a user and their associated profile within a transaction.
 func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 	tx := r.DB.Begin()
 	defer func() {
-		if r := recover(); r != nil {
+		if rec := recover(); rec != nil {
 			tx.Rollback()
 		}
 	}()
 
 	if err := tx.Save(user).Error; err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("failed to update user: %w", err)
 	}
 
-	if user.CustomerProfile.ID != 0 { // Check if a profile exists and has an ID
-		if err := tx.Save(&user.CustomerProfile).Error; err != nil {
-			tx.Rollback()
-			return err
+	// Update Customer Profile if present
+	if user.CustomerProfile.UserID != 0 {
+		if user.CustomerProfile.ID != 0 {
+			if err := tx.Save(&user.CustomerProfile).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("failed to update customer profile: %w", err)
+			}
+		} else { // Create if it's a new profile for an existing user
+			if err := tx.Create(&user.CustomerProfile).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("failed to create customer profile: %w", err)
+			}
 		}
-	} else if user.CustomerProfile.UserID != 0 { // If no ID but UserID is set, it might be a new profile for an existing user
+	}
 
-		if err := tx.Create(&user.CustomerProfile).Error; err != nil {
-			tx.Rollback()
-			return err
+	// Update Trader Profile if present
+	if user.TraderProfile.UserID != 0 {
+		if user.TraderProfile.ID != 0 {
+			if err := tx.Save(&user.TraderProfile).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("failed to update trader profile: %w", err)
+			}
+		} else { // Create if it's a new profile for an existing user
+			if err := tx.Create(&user.TraderProfile).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("failed to create trader profile: %w", err)
+			}
+			// Important: Ensure the UserID is set for new profiles
+			user.TraderProfile.UserID = user.ID
 		}
 	}
 
 	return tx.Commit().Error
 }
 
+// DeleteUser performs a soft delete on the user and cascades to profiles if applicable.
+// Using Unscoped().Delete for hard deleting the user row, which then cascades to profiles.
 func (r *UserRepository) DeleteUser(id uint) error {
 	tx := r.DB.Begin()
 	defer func() {
-		if r := recover(); r != nil {
+		if rec := recover(); rec != nil {
 			tx.Rollback()
 		}
 	}()
 
-	if err := tx.Where("user_id = ?", id).Delete(&models.CustomerProfile{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
+	// GORM's CASCADE will handle associated profiles if properly configured in models.
+	// If not, you'd explicitly delete profiles first. Assuming CASCADE is set.
 	if err := tx.Unscoped().Delete(&models.User{}, id).Error; err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("failed to delete user: %w", err)
 	}
 
 	return tx.Commit().Error
 }
 
+// Create is a generic create method for a user. It relies on the AfterCreate hook in models.User
+// to create default profiles and wallets.
 func (r *UserRepository) Create(user *models.User) error {
 	return r.DB.Create(user).Error
 }
 
-func (r *UserRepository) FindByID(id uint) (models.User, error) {
+func (r *UserRepository) FindByEmail(email string) (models.User, error) {
 	var user models.User
-	err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").First(&user, id).Error
+
+	err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").Preload("RoleModel").Where("LOWER(email) = LOWER(?)", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[DEBUG Repo] FindByEmail: User email '%s' not found.", email)
 			return models.User{}, errors.New("user not found")
 		}
-		return models.User{}, err
+		log.Printf("[ERROR Repo] FindByEmail: Failed to find user by email '%s': %v", email, err)
+		return models.User{}, fmt.Errorf("database error finding user by email: %w", err)
 	}
+	log.Printf("[DEBUG Repo] FindByEmail: Found user with email '%s', ID %d.", email, user.ID)
 	return user, nil
 }
 
-func (r *UserRepository) FindByEmail(email string) (models.User, error) {
-	var user models.User
-	err := r.DB.Where("LOWER(email) = LOWER(?)", email).First(&user).Error
-
-	return user, err
-}
-
+// FindByRole retrieves a list of users by their role.
 func (r *UserRepository) FindByRole(role models.UserRole) ([]models.User, error) {
 	var users []models.User
-	if err := r.DB.
+	err := r.DB.
 		Preload("CustomerProfile").
 		Preload("TraderProfile").
-		Where("role = ?", role).
-		Order("id asc").
-		Find(&users).Error; err != nil {
-		return nil, err
+		Preload("RoleModel").
+		Joins("JOIN roles ON users.role_id = roles.id").
+		Where("roles.name = ?", string(role)).
+		Order("users.id asc").
+		Find(&users).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to find users by role '%s': %w", role, err)
 	}
-
 	return users, nil
 }
 
+// FindAllNonAdmins retrieves all users that are not administrators.
 func (r *UserRepository) FindAllNonAdmins() ([]models.User, error) {
 	var users []models.User
 	err := r.DB.
+		Preload("CustomerProfile").
+		Preload("TraderProfile").
+		Preload("RoleModel").
 		Where("role <> ?", models.RoleAdmin).
 		Order("id asc").
 		Find(&users).Error
-	return users, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to find non-admin users: %w", err)
+	}
+	return users, nil
 }
 
+// FindTradersByStatus retrieves all traders with a specific status.
 func (r *UserRepository) FindTradersByStatus(status models.TraderStatus) ([]models.User, error) {
 	var users []models.User
 	err := r.DB.Joins("JOIN trader_profiles ON users.id = trader_profiles.user_id").
 		Where("users.role = ? AND trader_profiles.status = ?", models.RoleTrader, status).
-		Preload("TraderProfile"). // IMPORTANT: Preload the profile data.
+		Preload("TraderProfile").
+		Preload("RoleModel"). // Preload the Role association
 		Order("users.id asc").
 		Find(&users).Error
-
-	return users, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to find traders by status '%s': %w", status, err)
+	}
+	return users, nil
 }
 
+// FindByIDs retrieves a list of users by their IDs.
 func (r *UserRepository) FindByIDs(ids []uint) ([]models.User, error) {
 	var users []models.User
 	if len(ids) == 0 {
 		return users, nil // Return empty slice if no IDs are provided
 	}
-	if err := r.DB.Where("id IN ?", ids).Find(&users).Error; err != nil {
-		return nil, err
+	if err := r.DB.Preload("RoleModel").Where("id IN ?", ids).Find(&users).Error; err != nil {
+		return nil, fmt.Errorf("failed to find users by IDs: %w", err)
 	}
 	return users, nil
 }
 
+// UpdateTraderStatus updates the status of a trader's profile.
 func (r *UserRepository) UpdateTraderStatus(userID uint, newStatus models.TraderStatus) error {
-	return r.DB.Model(&models.TraderProfile{}).Where("user_id = ?", userID).Update("status", newStatus).Error
+	res := r.DB.Model(&models.TraderProfile{}).Where("user_id = ?", userID).Update("status", newStatus)
+	if res.Error != nil {
+		return fmt.Errorf("failed to update trader status: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("trader profile not found or status already set")
+	}
+	return nil
 }
 
+// Update updates a user, ensuring associations are saved.
 func (r *UserRepository) Update(user *models.User) error {
 	return r.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(user).Error
 }
 
+// Delete performs a hard delete for a user. Be careful with this!
 func (r *UserRepository) Delete(id uint) error {
-	return r.DB.Unscoped().Delete(&models.User{}, id).Error
+	// Assuming CASCADE is set up in your models for profiles.
+	res := r.DB.Unscoped().Delete(&models.User{}, id)
+	if res.Error != nil {
+		return fmt.Errorf("failed to delete user (hard delete): %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("user not found for deletion")
+	}
+	return nil
 }
 
+// UserQueryOptions defines options for advanced user queries.
 type UserQueryOptions struct {
 	Search string          `form:"search"`
 	Role   models.UserRole `form:"role"`
@@ -243,17 +372,19 @@ type UserQueryOptions struct {
 	Limit  int             `form:"limit"`
 }
 
+// PaginatedUsers holds paginated user results.
 type PaginatedUsers struct {
 	Users      []models.User `json:"users"`
 	TotalPages int           `json:"total_pages"`
 	Page       int           `json:"page"`
 }
 
+// FindAllAdvanced retrieves users with advanced filtering and pagination.
 func (r *UserRepository) FindAllAdvanced(options UserQueryOptions) (PaginatedUsers, error) {
 	var users []models.User
 	var totalUsers int64
 
-	query := r.DB.Model(&models.User{})
+	query := r.DB.Model(&models.User{}).Preload("RoleModel")
 
 	if options.Search != "" {
 		searchQuery := "%" + options.Search + "%"
@@ -278,7 +409,7 @@ func (r *UserRepository) FindAllAdvanced(options UserQueryOptions) (PaginatedUse
 	}
 
 	if err := query.Count(&totalUsers).Error; err != nil {
-		return PaginatedUsers{}, err
+		return PaginatedUsers{}, fmt.Errorf("failed to count users for advanced query: %w", err)
 	}
 
 	if options.Page <= 0 {
@@ -292,7 +423,7 @@ func (r *UserRepository) FindAllAdvanced(options UserQueryOptions) (PaginatedUse
 
 	err := query.Order("id asc").Limit(options.Limit).Offset(offset).Find(&users).Error
 	if err != nil {
-		return PaginatedUsers{}, err
+		return PaginatedUsers{}, fmt.Errorf("failed to fetch paginated users for advanced query: %w", err)
 	}
 
 	totalPages := int(math.Ceil(float64(totalUsers) / float64(options.Limit)))
@@ -304,29 +435,45 @@ func (r *UserRepository) FindAllAdvanced(options UserQueryOptions) (PaginatedUse
 	}, nil
 }
 
+// FindAllWithRole retrieves all non-admin users with their roles preloaded.
 func (r *UserRepository) FindAllWithRole() ([]models.User, error) {
 	var users []models.User
 	err := r.DB.
-		Preload("Role").
+		Preload("RoleModel").
 		Where("role <> ?", models.RoleAdmin).
 		Order("id asc").
 		Find(&users).Error
 	return users, err
 }
 
+// AssignRoleToUser assigns a specific role to a user.
 func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint, roleName models.UserRole) error {
 	updates := map[string]interface{}{
 		"role_id": roleID,
 		"role":    roleName,
 	}
 
-	return r.DB.Model(&models.User{}).Where("id = ?", userID).UpdateColumns(updates).Error
+	res := r.DB.Model(&models.User{}).Where("id = ?", userID).Updates(updates)
+	if res.Error != nil {
+		return fmt.Errorf("failed to assign role to user: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("user not found for role assignment")
+	}
+	return nil
 }
 
+// GetLatestOpenTradeForUser retrieves the most recent open trade for a given user.
 func (r *UserRepository) GetLatestOpenTradeForUser(userID uint) (models.Trade, error) {
 	var trade models.Trade
 	err := r.DB.Where("master_user_id = ? AND status = ?", userID, "open").
 		Order("opened_at desc").
 		First(&trade).Error
-	return trade, err
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.Trade{}, errors.New("no open trade found for user")
+		}
+		return models.Trade{}, fmt.Errorf("failed to get latest open trade: %w", err)
+	}
+	return trade, nil
 }

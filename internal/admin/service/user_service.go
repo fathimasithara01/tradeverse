@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log" // Import log for service-level logging
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/auth"
@@ -28,10 +29,7 @@ type IUserService interface {
 	GetAllUsersWithRole() ([]models.User, error)
 	AssignRoleToUser(userID, roleID uint) error
 
-	// GetUserByID(id uint) (*models.User, error)                                                 // New
-	UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error // New
-	// DeleteUser(id uint) error                                                                  // New
-
+	UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error
 }
 
 type UserService struct {
@@ -48,21 +46,25 @@ func NewUserService(userRepo repository.IUserRepository, roleRepo repository.IRo
 	}
 }
 
-type UserWithRoleName struct {
-	models.User
-	RoleName string `json:"role_name"`
-}
-
+// UpdateCustomerProfile updates an existing user's details and customer profile.
 func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error {
 	existingUser, err := s.UserRepo.GetUserByIDWithProfile(userID)
 	if err != nil {
-		return errors.New("user not found")
+		return fmt.Errorf("user not found for update: %w", err)
+	}
+
+	if existingUser.Role != models.RoleCustomer {
+		return errors.New("cannot update customer profile for a non-customer user")
 	}
 
 	if user.Name != "" {
 		existingUser.Name = user.Name
 	}
-	if user.Email != "" {
+	if user.Email != "" && existingUser.Email != user.Email {
+		_, err := s.UserRepo.FindByEmail(user.Email)
+		if err == nil { // User with this email already exists
+			return errors.New("email already registered by another user")
+		}
 		existingUser.Email = user.Email
 	}
 
@@ -72,95 +74,208 @@ func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profi
 
 	return s.UserRepo.UpdateUserAndProfile(existingUser)
 }
+
 func (s *UserService) Login(email, password string) (string, models.User, error) {
-	user, err := s.UserRepo.FindByEmail(email)
+	user, err := s.UserRepo.FindByEmail(email) // Find user by email, preloads Role
 	if err != nil {
+		log.Printf("[LOGIN SERVICE] User '%s' not found or other error: %v", email, err)
 		return "", models.User{}, errors.New("invalid credentials")
+	}
+
+	log.Printf("[DEBUG-PASSWORD] User %s: Received plain password: '%s'", email, password)
+	log.Printf("[DEBUG-PASSWORD] User %s: Stored hashed password: '%s'", email, user.Password)
+
+	if user.IsBlocked {
+		return "", models.User{}, errors.New("account is blocked")
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		log.Printf("[LOGIN SERVICE] Password mismatch for user '%s'", email)
+		log.Printf("[DEBUG-PASSWORD-ERROR] bcrypt comparison failed for user '%s': %v", email, err)
 		return "", models.User{}, errors.New("invalid credentials")
 	}
 
-	var roleID uint
-	if user.RoleID != nil {
-		roleID = *user.RoleID
-	} else {
-		fmt.Printf("[WARN] User '%s' (ID: %d) has a nil RoleID during login.\n", user.Email, user.ID)
+	if user.RoleID == nil {
+		log.Printf("[LOGIN SERVICE] User '%s' has a nil RoleID. This should not happen.", email)
+		// Attempt to fetch the role and assign RoleID if possible, or return an error
+		role, err := s.UserRepo.GetRoleByName(user.Role)
+		if err != nil {
+			return "", models.User{}, fmt.Errorf("failed to get role details for user %s: %w", email, err)
+		}
+		user.RoleID = &role.ID
+		// Consider updating the user in the database here if RoleID was missing
+		if err := s.UserRepo.UpdateUser(&user); err != nil {
+			log.Printf("[LOGIN SERVICE] Failed to update user '%s' with missing RoleID: %v", email, err)
+			return "", models.User{}, fmt.Errorf("failed to update user role information")
+		}
 	}
 
-	fmt.Printf("[DEBUG-LOGIN] Generating JWT for UserID: %d, Role: %s, RoleID: %d\n", user.ID, user.Role, roleID)
-
-	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role), roleID, s.JWTSecret)
-	return token, user, err
+	// Generate JWT using the user's details, including the dereferenced RoleID
+	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role), *user.RoleID, s.JWTSecret)
+	if err != nil {
+		return "", models.User{}, fmt.Errorf("failed to generate JWT: %w", err)
+	}
+	return token, user, nil
 }
 
+// RegisterCustomer registers a new customer.
 func (s *UserService) RegisterCustomer(user models.User, profile models.CustomerProfile) error {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return errors.New("email already registered")
 	}
+
+	customerRole, err := s.UserRepo.GetRoleByName(models.RoleCustomer)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve customer role: %w", err)
+	}
+
 	user.Role = models.RoleCustomer
-	user.CustomerProfile = profile
-	return s.UserRepo.Create(&user)
+	user.RoleID = &customerRole.ID // Assign the actual RoleID
+	profile.UserID = user.ID       // Ensure UserID is set on the profile before creation
+
+	// Use the specific repository method for creating user with customer profile
+	return s.UserRepo.CreateCustomerWithProfile(&user, &profile)
 }
 
+// RegisterTrader registers a new trader. By default, traders are pending approval.
 func (s *UserService) RegisterTrader(user models.User, profile models.TraderProfile) error {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return errors.New("email already registered")
 	}
+
+	traderRole, err := s.UserRepo.GetRoleByName(models.RoleTrader)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve trader role: %w", err)
+	}
+
 	user.Role = models.RoleTrader
-	user.TraderProfile = profile
-	return s.UserRepo.Create(&user)
+	user.RoleID = &traderRole.ID // Assign the actual RoleID
+	profile.Status = models.StatusPending
+	profile.UserID = user.ID // Ensure UserID is set on the profile before creation
+
+	// Use the specific repository method for creating user with trader profile
+	return s.UserRepo.CreateTraderWithProfile(&user, &profile)
 }
 
+// CreateTraderByAdmin creates a new trader, bypassing pending status as it's admin-approved.
 func (s *UserService) CreateTraderByAdmin(user models.User, profile models.TraderProfile) error {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return errors.New("email is already registered")
 	}
+
+	traderRole, err := s.UserRepo.GetRoleByName(models.RoleTrader)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve trader role: %w", err)
+	}
+
 	user.Role = models.RoleTrader
+	user.RoleID = &traderRole.ID // Assign the actual RoleID
 	profile.Status = models.StatusApproved
-	user.TraderProfile = profile
-	return s.UserRepo.Create(&user)
+	profile.UserID = user.ID // Ensure UserID is set on the profile before creation
+
+	return s.UserRepo.CreateTraderWithProfile(&user, &profile)
 }
+
+// CreateInternalUser creates a new internal user (e.g., admin, without specific profile).
 func (s *UserService) CreateInternalUser(user models.User) (models.User, error) {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return models.User{}, errors.New("a user with this email already exists")
 	}
 
-	err = s.UserRepo.Create(&user)
-	return user, err
+	// Ensure RoleID is set for internal users as well if a role is provided
+	if user.Role != "" {
+		role, err := s.UserRepo.GetRoleByName(user.Role)
+		if err != nil {
+			return models.User{}, fmt.Errorf("failed to retrieve role '%s': %w", user.Role, err)
+		}
+		user.RoleID = &role.ID
+	}
+
+	err = s.UserRepo.Create(&user) // Use the generic Create method
+	if err != nil {
+		return models.User{}, fmt.Errorf("failed to create internal user: %w", err)
+	}
+	return user, nil
 }
 
-func (s *UserService) GetUserByID(id uint) (models.User, error) { return s.UserRepo.FindByID(id) }
-func (s *UserService) GetUsersByRole(role models.UserRole) ([]models.User, error) {
-	return s.UserRepo.FindByRole(role)
+func (s *UserService) GetUserByID(id uint) (models.User, error) {
+	user, err := s.UserRepo.FindByID(id) // FindByID now preloads roles
+	if err != nil {
+		return models.User{}, fmt.Errorf("failed to get user by ID %d: %w", id, err)
+	}
+	return user, nil
 }
-func (s *UserService) GetAllUsers() ([]models.User, error) { return s.UserRepo.FindAllNonAdmins() }
-func (s *UserService) DeleteUser(id uint) error            { return s.UserRepo.Delete(id) }
+func (s *UserService) GetUsersByRole(role models.UserRole) ([]models.User, error) {
+	users, err := s.UserRepo.FindByRole(role)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users by role '%s': %w", role, err)
+	}
+	return users, nil
+}
+func (s *UserService) GetAllUsers() ([]models.User, error) {
+	users, err := s.UserRepo.FindAllNonAdmins()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all non-admin users: %w", err)
+	}
+	return users, nil
+}
+func (s *UserService) DeleteUser(id uint) error {
+	err := s.UserRepo.Delete(id) // This will trigger CASCADE if configured
+	if err != nil {
+		return fmt.Errorf("failed to delete user %d: %w", id, err)
+	}
+	return nil
+}
 func (s *UserService) UpdateUser(userToUpdate *models.User) error {
-	return s.UserRepo.Update(userToUpdate)
+	err := s.UserRepo.Update(userToUpdate)
+	if err != nil {
+		return fmt.Errorf("failed to update user %d: %w", userToUpdate.ID, err)
+	}
+	return nil
 }
 func (s *UserService) GetAllUsersAdvanced(options repository.UserQueryOptions) (repository.PaginatedUsers, error) {
-	return s.UserRepo.FindAllAdvanced(options)
+	paginatedUsers, err := s.UserRepo.FindAllAdvanced(options)
+	if err != nil {
+		return repository.PaginatedUsers{}, fmt.Errorf("failed to get advanced paginated users: %w", err)
+	}
+	return paginatedUsers, nil
 }
 
 func (s *UserService) GetTradersByStatus(status models.TraderStatus) ([]models.User, error) {
-	return s.UserRepo.FindTradersByStatus(status)
+	traders, err := s.UserRepo.FindTradersByStatus(status)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get traders by status '%s': %w", status, err)
+	}
+	return traders, nil
 }
 func (s *UserService) ApproveTrader(traderID uint) error {
-	return s.UserRepo.UpdateTraderStatus(traderID, models.StatusApproved)
+	err := s.UserRepo.UpdateTraderStatus(traderID, models.StatusApproved)
+	if err != nil {
+		return fmt.Errorf("failed to approve trader %d: %w", traderID, err)
+	}
+	return nil
 }
 func (s *UserService) RejectTrader(traderID uint) error {
-	return s.UserRepo.UpdateTraderStatus(traderID, models.StatusRejected)
-
+	err := s.UserRepo.UpdateTraderStatus(traderID, models.StatusRejected)
+	if err != nil {
+		return fmt.Errorf("failed to reject trader %d: %w", traderID, err)
+	}
+	return nil
 }
 
 func (s *UserService) GetAllUsersWithRole() ([]models.User, error) {
-	return s.UserRepo.FindAllNonAdmins()
+	// This method name implies getting ALL users including admins, and with their role association.
+	// FindAllNonAdmins might not be the correct underlying call here if 'AllUsersWithRole' means all.
+	// Let's assume for now it means non-admins, but if you need all, a new repo method would be needed.
+	users, err := s.UserRepo.FindAllWithRole() // This method in repo already preloads Role
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all users with role: %w", err)
+	}
+	return users, nil
 }
 
 func (s *UserService) AssignRoleToUser(userID, roleID uint) error {
@@ -169,8 +284,12 @@ func (s *UserService) AssignRoleToUser(userID, roleID uint) error {
 		return errors.New("invalid role selected: role not found in database")
 	}
 
-	fmt.Printf("==> ATTEMPTING TO ASSIGN ROLE: UserID=%d, RoleID=%d, RoleName='%s'\n", userID, roleID, role.Name)
+	log.Printf("==> ATTEMPTING TO ASSIGN ROLE: UserID=%d, RoleID=%d, RoleName='%s'\n", userID, roleID, role.Name)
 
-	return s.UserRepo.AssignRoleToUser(userID, roleID, models.UserRole(role.Name))
-
+	err = s.UserRepo.AssignRoleToUser(userID, roleID, models.UserRole(role.Name))
+	if err != nil {
+		return fmt.Errorf("failed to assign role %s to user %d: %w", role.Name, userID, err)
+	}
+	log.Printf("==> SUCCESSFULLY ASSIGNED ROLE: UserID=%d, RoleID=%d, RoleName='%s'\n", userID, roleID, role.Name)
+	return nil
 }

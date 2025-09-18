@@ -37,20 +37,25 @@ func LoadConfig() (*Config, error) {
 	fmt.Printf("[DEBUG] Current Working Directory: %s\n", wd)
 
 	viper.SetConfigFile(".env")
-	viper.AutomaticEnv()
+	viper.AutomaticEnv() // Enable reading environment variables
 
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
+		// Handle the case where .env file is not found gracefully,
+		// especially if env vars are expected to take precedence
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			log.Println("WARNING: .env file not found, relying on environment variables.")
+		} else {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
+		}
 	}
 
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	fmt.Println("[DEBUG] Viper has successfully read the .env file.")
-	// fmt.Printf("[DEBUG] Value found for PORT is: '%s'\n", cfg.Port)
-
+	fmt.Println("[DEBUG] Viper has successfully loaded configuration.")
 	log.Println("Configuration loaded successfully.")
+	AppConfig = cfg // Assign to global AppConfig
 	return &cfg, nil
 }
