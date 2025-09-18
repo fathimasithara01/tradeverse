@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/admin_style.css">
+    <style>
+        :root {
+            --sidebar-bg: #ffffff;
+            --sidebar-width: 280px;
+            --main-bg: #f7f9fc;
+            --brand-color: #1a73e8;
+            --text-color: #343a40;
+            --link-color: #5f6368;
+            --link-hover-bg: #f1f3f4;
+            --link-active-bg: #e8f0fe;
+            --link-active-color: #1967d2;
+            --border-color: #e9ecef;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background-color: var(--main-bg);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            transition: all 0.3s;
+            box-shadow: 0 0 25px var(--shadow-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h3 {
+            color: var(--brand-color);
+            font-weight: 700;
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
+
+        #sidebar-nav {
+            flex-grow: 1;
+            padding: 1rem 0;
+        }
+
+        #sidebar-nav .nav-heading {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #adb5bd;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        #sidebar-nav .nav-item a {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            color: var(--link-color);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        #sidebar-nav .nav-item a:hover {
+            background: var(--link-hover-bg);
+            color: var(--text-color);
+        }
+
+        #sidebar-nav .nav-item.active>a,
+        #sidebar-nav .nav-item a[aria-expanded="true"] {
+            background: var(--link-active-bg);
+            color: var(--link-active-color);
+            border-left-color: var(--link-active-color);
+        }
+
+        #sidebar-nav .nav-item a i {
+            margin-right: 1rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .collapse-arrow {
+            margin-left: auto;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        a[aria-expanded="true"] .collapse-arrow {
+            transform: rotate(90deg);
+        }
+
+        .nav-collapse .nav-item a {
+            padding-left: 3.8rem !important;
+            font-size: 0.9rem;
+            border-left: none;
+            position: relative;
+            color: #6c757d;
+        }
+
+        .nav-collapse .nav-item.active a {
+            color: var(--link-active-color);
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+        }
+
+        #content {
+            flex-grow: 1;
+            padding: 2.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+
+        .wallet-summary-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--brand-color);
+        }
+
+        .wallet-summary-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .wallet-summary-card .title {
+            font-size: 1.1rem;
+            color: #6c757d;
+        }
+
+        .transaction-table img {
+            max-width: 50px;
+            height: auto;
+        }
+
+        /* Ensure modals are above other elements */
+        #depositModal,
+        #withdrawModal,
+        #pendingWithdrawalsModal,
+        #rejectWithdrawalConfirmModal {
+            z-index: 1050;
+        }
+
+        /* Toast styles for notifications */
+        #toastContainer {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1060;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        {{template "admin_sidebar" .}}
+
+        <div id="content">
+            <h2 class="mb-4">{{.Title}}</h2>
+
+            <div class="row mb-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card stat-card text-center wallet-summary-card">
+                        <div class="icon"><i class="fas fa-wallet"></i></div>
+                        <div class="value" id="walletBalance">--</div>
+                        <div class="title">Current Balance</div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-8 d-flex align-items-center justify-content-end">
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#depositModal">
+                        <i class="fas fa-plus-circle me-1"></i> Deposit Funds
+                    </button>
+                    <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                        <i class="fas fa-minus-circle me-1"></i> Withdraw Funds
+                    </button>
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#pendingWithdrawalsModal">
+                        <i class="fas fa-hand-holding-usd me-1"></i> Pending Customer Withdrawals
+                    </button>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Admin Wallet Transactions
+                    <input type="text" id="transactionSearch" class="form-control w-auto"
+                        placeholder="Search transactions...">
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped transaction-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Currency</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <nav>
+                        <ul class="pagination justify-content-center" id="transactionPagination">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="depositModalLabel">Deposit Funds</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="depositForm">
+                                <div class="mb-3">
+                                    <label for="depositAmount" class="form-label">Amount</label>
+                                    <input type="number" step="0.01" class="form-control" id="depositAmount"
+                                        name="amount" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="depositCurrency" class="form-label">Currency</label>
+                                    <select class="form-select" id="depositCurrency" name="currency" required>
+                                        <option value="INR">INR</option>
+                                        <option value="USD">USD</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Initiate Deposit</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Withdraw Modal -->
+            <div class="modal fade" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="withdrawModalLabel">Withdraw Funds</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="withdrawForm">
+                                <div class="mb-3">
+                                    <label for="withdrawAmount" class="form-label">Amount</label>
+                                    <input type="number" step="0.01" class="form-control" id="withdrawAmount"
+                                        name="amount" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="withdrawCurrency" class="form-label">Currency</label>
+                                    <select class="form-select" id="withdrawCurrency" name="currency" required>
+                                        <option value="INR">INR</option>
+                                        <option value="USD">USD</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="beneficiaryAccount" class="form-label">Beneficiary Account
+                                        Details</label>
+                                    <textarea class="form-control" id="beneficiaryAccount" name="beneficiary_account"
+                                        rows="3" required></textarea>
+                                    <div class="form-text">e.g., Bank Account Number, UPI ID, Crypto Wallet Address
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Request Withdrawal</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Withdrawals Modal -->
+            <div class="modal fade" id="pendingWithdrawalsModal" tabindex="-1"
+                aria-labelledby="pendingWithdrawalsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="pendingWithdrawalsModalLabel">Pending Customer Withdrawals</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>User ID</th>
+                                            <th>Amount</th>
+                                            <th>Currency</th>
+                                            <th>Account</th>
+                                            <th>Requested On</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pendingWithdrawalsTableBody">
+                                        <!-- Pending withdrawals will be loaded here via JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav>
+                                <ul class="pagination justify-content-center" id="pendingWithdrawalsPagination">
+                                    <!-- Pagination for pending withdrawals -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reject Withdrawal Confirmation Modal -->
+            <div class="modal fade" id="rejectWithdrawalConfirmModal" tabindex="-1"
+                aria-labelledby="rejectWithdrawalConfirmModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="rejectWithdrawalConfirmModalLabel">Confirm Rejection</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to reject this withdrawal request (ID: <span
+                                id="rejectWithdrawalId"></span>)? Funds will be returned to the customer's wallet.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmRejectWithdrawalBtn">Reject</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div aria-live="polite" aria-atomic="true" class="position-fixed" id="toastContainer">
+        <!-- Toasts will be appended here -->
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const walletBalanceEl = document.getElementById('walletBalance');
+            const transactionTableBody = document.getElementById('transactionTableBody');
+            const transactionPagination = document.getElementById('transactionPagination');
+            const transactionSearch = document.getElementById('transactionSearch');
+            const depositForm = document.getElementById('depositForm');
+            const withdrawForm = document.getElementById('withdrawForm');
+            const pendingWithdrawalsTableBody = document.getElementById('pendingWithdrawalsTableBody');
+            const pendingWithdrawalsModal = new bootstrap.Modal(document.getElementById('pendingWithdrawalsModal'));
+            const pendingWithdrawalsPagination = document.getElementById('pendingWithdrawalsPagination');
+            const rejectWithdrawalConfirmModal = new bootstrap.Modal(document.getElementById('rejectWithdrawalConfirmModal'));
+            const rejectWithdrawalIdSpan = document.getElementById('rejectWithdrawalId');
+            const confirmRejectWithdrawalBtn = document.getElementById('confirmRejectWithdrawalBtn');
+
+            let currentTransactionPage = 1;
+            let currentPendingWithdrawalPage = 1;
+            let currentRejectWithdrawalID = null;
+
+            // --- Utility for Toast Notifications ---
+            function showToast(message, type = 'success') {
+                const toastContainer = document.getElementById('toastContainer');
+                const toastId = `toast-${Date.now()}`;
+                const toastHtml = `
+                    <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                `;
+                toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+                const newToast = new bootstrap.Toast(document.getElementById(toastId));
+                newToast.show();
+
+                // Remove toast from DOM after it's hidden to prevent accumulation
+                document.getElementById(toastId).addEventListener('hidden.bs.toast', function () {
+                    this.remove();
+                });
+            }
+
+
+            function fetchAdminWalletSummary() {
+                // Corrected API endpoint
+                fetch('/admin/financials/api/wallet/summary')
+                    .then(response => {
+                        if (!response.ok) {
+                            // Handle HTTP errors
+                            return response.json().then(err => { throw new Error(err.details || 'Failed to fetch wallet summary'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        walletBalanceEl.textContent = `${data.currency} ${data.balance.toFixed(2)}`;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching wallet summary:', error);
+                        walletBalanceEl.textContent = 'N/A';
+                        showToast(`Failed to load wallet summary: ${error.message}`, 'danger');
+                    });
+            }
+
+            function fetchAdminWalletTransactions(page = 1, limit = 10, searchQuery = '') {
+                // Corrected API endpoint
+                let url = `/admin/financials/api/wallet/transactions?page=${page}&limit=${limit}`;
+                if (searchQuery) {
+                    url += `&search=${encodeURIComponent(searchQuery)}`; // Add search parameter and encode
+                }
+
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.details || 'Failed to fetch transactions'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        transactionTableBody.innerHTML = '';
+                        if (data.transactions && data.transactions.length > 0) {
+                            data.transactions.forEach(tx => {
+                                const row = `
+                                    <tr>
+                                        <td>${tx.ID}</td>
+                                        <td>${tx.transaction_type}</td>
+                                        <td>${tx.amount.toFixed(2)}</td>
+                                        <td>${tx.currency}</td>
+                                        <td><span class="badge bg-${getStatusBadgeClass(tx.status)}">${tx.status}</span></td>
+                                        <td>${tx.description || 'N/A'}</td>
+                                        <td>${new Date(tx.CreatedAt).toLocaleString()}</td>
+                                    </tr>
+                                `;
+                                transactionTableBody.insertAdjacentHTML('beforeend', row);
+                            });
+                            renderPagination(transactionPagination, data.total, data.limit, data.page, fetchAdminWalletTransactions);
+                        } else {
+                            transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center">No transactions found.</td></tr>`;
+                            transactionPagination.innerHTML = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching transactions:', error);
+                        transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+                        transactionPagination.innerHTML = '';
+                        showToast(`Failed to load transactions: ${error.message}`, 'danger');
+                    });
+            }
+
+            function getStatusBadgeClass(status) {
+                switch (status.toLowerCase()) { // Ensure case insensitivity
+                    case 'success':
+                    case 'completed':
+                        return 'success';
+                    case 'pending':
+                        return 'warning';
+                    case 'failed':
+                    case 'rejected':
+                    case 'reversed':
+                        return 'danger';
+                    case 'cancelled':
+                        return 'info';
+                    default:
+                        return 'secondary';
+                }
+            }
+
+            function renderPagination(paginationElement, totalItems, limit, currentPage, fetchDataFunction) {
+                paginationElement.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / limit);
+
+                if (totalPages <= 1) {
+                    return; // No need for pagination if only one page
+                }
+
+                const maxPagesToShow = 5; // Number of page links to show
+                let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+                if (endPage - startPage + 1 < maxPagesToShow) {
+                    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                }
+
+                // Previous button
+                const prevDisabled = currentPage === 1 ? 'disabled' : '';
+                paginationElement.insertAdjacentHTML('beforeend',
+                    `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`);
+
+                // Page numbers
+                for (let i = startPage; i <= endPage; i++) {
+                    const activeClass = i === currentPage ? 'active' : '';
+                    paginationElement.insertAdjacentHTML('beforeend', `<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
+                }
+
+                // Next button
+                const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+                paginationElement.insertAdjacentHTML('beforeend', `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`);
+
+                // Add event listeners for pagination links
+                paginationElement.querySelectorAll('.page-link').forEach(link => {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const page = parseInt(this.dataset.page);
+                        if (!isNaN(page) && page > 0 && page <= totalPages) {
+                            if (fetchDataFunction === fetchAdminWalletTransactions) {
+                                currentTransactionPage = page;
+                                fetchDataFunction(page, limit, transactionSearch.value); // Pass search query for transactions
+                            } else if (fetchDataFunction === fetchPendingWithdrawals) {
+                                currentPendingWithdrawalPage = page;
+                                fetchDataFunction(page, limit); // Pending withdrawals don't have search
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Deposit Funds
+            depositForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const amount = parseFloat(document.getElementById('depositAmount').value);
+                const currency = document.getElementById('depositCurrency').value;
+
+                fetch('/admin/financials/api/wallet/deposit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ amount: amount, currency: currency })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.details || 'Deposit initiation failed'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        showToast('Deposit initiated. Simulating immediate verification...', 'info');
+                        // Simulate immediate verification for admin manual deposit
+                        simulateDepositVerification(data.deposit_id, amount);
+                        depositForm.reset();
+                        bootstrap.Modal.getInstance(document.getElementById('depositModal')).hide();
+                    })
+                    .catch(error => {
+                        console.error('Error during deposit initiation:', error);
+                        showToast(`Deposit initiation failed: ${error.message}`, 'danger');
+                    });
+            });
+
+            // Simulate Deposit Verification (for manual admin deposits)
+            function simulateDepositVerification(depositID, amount) {
+                const mockTxID = `ADM-DEP-TX-${Date.now()}`; // A mock transaction ID
+                fetch(`/admin/financials/api/wallet/deposit/${depositID}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        payment_gateway_tx_id: mockTxID,
+                        amount: amount,
+                        status: 'SUCCESS' // Hardcoded success for simulation
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.details || 'Deposit verification failed'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        showToast('Deposit successfully verified and credited!', 'success');
+                        fetchAdminWalletSummary();
+                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+                    })
+                    .catch(error => {
+                        console.error('Error during deposit verification simulation:', error);
+                        showToast(`Deposit verification failed: ${error.message}`, 'danger');
+                    });
+            }
+
+
+            // Withdraw Funds
+            withdrawForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                const currency = document.getElementById('withdrawCurrency').value;
+                const beneficiaryAccount = document.getElementById('beneficiaryAccount').value;
+
+                fetch('/admin/financials/api/wallet/withdraw', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        currency: currency,
+                        beneficiary_account: beneficiaryAccount
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.details || 'Withdrawal failed'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        showToast('Withdrawal request submitted for processing.', 'success');
+                        withdrawForm.reset();
+                        bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
+                        fetchAdminWalletSummary();
+                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+                    })
+                    .catch(error => {
+                        console.error('Error during withdrawal request:', error);
+                        showToast(`Withdrawal failed: ${error.message}`, 'danger');
+                    });
+            });
+
+            // Fetch Pending Customer Withdrawals
+            function fetchPendingWithdrawals(page = 1, limit = 10) {
+                fetch(`/admin/financials/api/withdrawals/pending?page=${page}&limit=${limit}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.details || 'Failed to fetch pending withdrawals'); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        pendingWithdrawalsTableBody.innerHTML = '';
+                        if (data.withdrawals && data.withdrawals.length > 0) {
+                            data.withdrawals.forEach(withdrawal => {
+                                const row = `
+                                    <tr>
+                                        <td>${withdrawal.ID}</td>
+                                        <td>${withdrawal.user_id}</td>
+                                        <td>${withdrawal.amount.toFixed(2)}</td>
+                                        <td>${withdrawal.currency}</td>
+                                        <td><pre style="white-space: pre-wrap; margin-bottom: 0;">${withdrawal.beneficiary_account}</pre></td>
+                                        <td>${new Date(withdrawal.CreatedAt).toLocaleString()}</td>
+                                        <td>
+                                            <button class="btn btn-success btn-sm approve-withdrawal-btn me-2" data-id="${withdrawal.ID}">Approve</button>
+                                            <button class="btn btn-danger btn-sm reject-withdrawal-btn" data-id="${withdrawal.ID}">Reject</button>
+                                        </td>
+                                    </tr>
+                                `;
+                                pendingWithdrawalsTableBody.insertAdjacentHTML('beforeend', row);
+                            });
+                            renderPagination(pendingWithdrawalsPagination, data.total, data.limit, data.page, fetchPendingWithdrawals);
+
+                            // Attach event listeners for approve/reject buttons
+                            document.querySelectorAll('.approve-withdrawal-btn').forEach(button => {
+                                button.addEventListener('click', function () {
+                                    const withdrawalID = this.dataset.id;
+                                    if (confirm(`Are you sure you want to APPROVE withdrawal ID ${withdrawalID}?`)) {
+                                        processWithdrawal(withdrawalID, 'approve');
+                                    }
+                                });
+                            });
+
+                            document.querySelectorAll('.reject-withdrawal-btn').forEach(button => {
+                                button.addEventListener('click', function () {
+                                    const withdrawalID = this.dataset.id;
+                                    // Store the ID for the confirmation modal
+                                    currentRejectWithdrawalID = withdrawalID;
+                                    rejectWithdrawalIdSpan.textContent = withdrawalID;
+                                    rejectWithdrawalConfirmModal.show();
+                                });
+                            });
+
+                        } else {
+                            pendingWithdrawalsTableBody.innerHTML = `<tr><td colspan="7" class="text-center">No pending withdrawals.</td></tr>`;
+                            pendingWithdrawalsPagination.innerHTML = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching pending withdrawals:', error);
+                        pendingWithdrawalsTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+                        pendingWithdrawalsPagination.innerHTML = '';
+                        showToast(`Failed to load pending withdrawals: ${error.message}`, 'danger');
+                    });
+            }
+
+            confirmRejectWithdrawalBtn.addEventListener('click', function () {
+                if (currentRejectWithdrawalID) {
+                    processWithdrawal(currentRejectWithdrawalID, 'reject');
+                    rejectWithdrawalConfirmModal.hide();
+                    currentRejectWithdrawalID = null; // Clear the stored ID
+                }
+            });
+
+            // Process withdrawal (approve/reject)
+            function processWithdrawal(withdrawalID, action) {
+                fetch(`/admin/financials/api/withdrawals/${withdrawalID}/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: action })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.details || `Failed to ${action} withdrawal`); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        showToast(`Withdrawal ${action}d successfully!`, 'success');
+                        fetchPendingWithdrawals(currentPendingWithdrawalPage, 10); // Refresh pending list
+                        fetchAdminWalletSummary(); // Refresh admin balance in case of rejection/approval
+                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value); // Refresh admin transactions
+                    })
+                    .catch(error => {
+                        console.error('Error processing withdrawal:', error);
+                        showToast(`Failed to ${action} withdrawal: ${error.message}`, 'danger');
+                    });
+            }
+
+
+            // Initial data load
+            fetchAdminWalletSummary();
+            fetchAdminWalletTransactions(); // Load initial transactions
+
+            // Event listener for search input
+            let searchTimeout;
+            transactionSearch.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentTransactionPage = 1; // Reset to first page on new search
+                    fetchAdminWalletTransactions(currentTransactionPage, 10, this.value);
+                }, 500); // Debounce search to prevent excessive API calls
+            });
+
+            // Event listener for pending withdrawals modal show
+            document.getElementById('pendingWithdrawalsModal').addEventListener('show.bs.modal', function () {
+                fetchPendingWithdrawals(); // Load pending withdrawals when modal is opened
+            });
+
+            // Optional: If you want to refresh admin wallet summary/transactions after any modal closes
+            document.getElementById('depositModal').addEventListener('hidden.bs.modal', function () {
+                // Actions already handled by simulateDepositVerification
+            });
+            document.getElementById('withdrawModal').addEventListener('hidden.bs.modal', function () {
+                fetchAdminWalletSummary();
+                fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+            });
+            document.getElementById('pendingWithdrawalsModal').addEventListener('hidden.bs.modal', function () {
+                fetchAdminWalletSummary(); // Refresh in case a withdrawal was approved/rejected
+                fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+            });
+
+
+        });
+    </script>
+</body>
+
+</html>

@@ -82,6 +82,7 @@
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
             <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "financials"}}show{{end}}" id="financialsSubmenu">
+                <li class="nav-item {{if eq .ActiveSubTab "admin_wallet"}}active{{end}}"><a href="/admin/wallet">Admin Wallet</a></li> <!-- New Admin Wallet Link -->
                 <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a href="/admin/financials/subscriptions">Subscriptions</a></li>
                 <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a href="/admin/financials/subscription-plans">Subscription Plans</a></li>
                 <li class="nav-item {{if eq .ActiveSubTab "trader_payouts"}}active{{end}}"><a href="#">Trader Payouts</a></li>

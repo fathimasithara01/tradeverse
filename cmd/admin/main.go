@@ -39,8 +39,9 @@ func main() {
 	permissionRepo := repository.NewPermissionRepository(DB)
 	activityRepo := repository.NewActivityRepository(DB)
 	copyRepo := repository.NewCopyRepository(DB)
-	subscriptionPlanRepo := repository.NewSubscriptionPlanRepository(DB) // New
+	subscriptionPlanRepo := repository.NewSubscriptionPlanRepository(DB)
 	subscriptionRepo := repository.NewSubscriptionRepository(DB)
+	adminWalletRepo := repository.NewAdminWalletRepository(DB) // New: Admin Wallet Repository
 
 	userService := service.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	roleService := service.NewRoleService(roleRepo, permissionRepo, userRepo)
@@ -50,7 +51,8 @@ func main() {
 	copyService := service.NewCopyService(copyRepo)
 	liveSignalService := service.NewLiveSignalService(userRepo)
 	subscriptionPlanService := service.NewSubscriptionPlanService(subscriptionPlanRepo)
-	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriptionPlanRepo, userRepo)
+	adminWalletService := service.NewAdminWalletService(adminWalletRepo, DB)
+	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriptionPlanRepo, userRepo, adminWalletService, DB)
 
 	authController := controllers.NewAuthController(userService)
 	userController := controllers.NewUserController(userService)
@@ -60,6 +62,7 @@ func main() {
 	activityController := controllers.NewActivityController(activityService)
 	copyController := controllers.NewCopyController(copyService)
 	signalController := controllers.NewSignalController(liveSignalService)
+	adminWalletController := controllers.NewAdminWalletController(adminWalletService)
 	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService)
 
 	routes.WirePublicRoutes(r, authController, signalController)
@@ -75,6 +78,7 @@ func main() {
 		activityController,
 		roleService,
 		signalController,
+		adminWalletController,
 		subscriptionController,
 	)
 

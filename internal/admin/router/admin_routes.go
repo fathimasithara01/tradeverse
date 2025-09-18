@@ -19,7 +19,8 @@ func WireAdminRoutes(
 	activityCtrl *controllers.ActivityController,
 	roleService service.IRoleService,
 	signalCtrl *controllers.SignalController,
-	subscriptionCtrl *controllers.SubscriptionController,
+	adminWalletController *controllers.AdminWalletController,
+	subscriptionController *controllers.SubscriptionController,
 
 ) {
 	authz := middleware.NewAuthzMiddleware(roleService)
@@ -31,19 +32,6 @@ func WireAdminRoutes(
 		protected.Use(middleware.JWTMiddleware(cfg))
 
 		{
-
-			protected.GET("/financials/subscriptions", authz.RequirePermission("view_subscriptions"), subscriptionCtrl.ShowSubscriptionsPage)
-			protected.GET("/api/subscriptions", subscriptionCtrl.GetSubscriptions)
-			protected.POST("/api/customer/subscribe-to-trader-plan", subscriptionCtrl.CreateCustomerSubscription)
-
-			protected.GET("/financials/subscription-plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.ShowSubscriptionPlansPage)
-
-			// API for Subscription Plans (GET, POST, PUT, DELETE)
-			protected.GET("/api/subscriptions/plans", subscriptionCtrl.GetSubscriptionPlans)
-			protected.POST("/api/subscriptions/plans", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.CreateSubscriptionPlan)
-			protected.PUT("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.UpdateSubscriptionPlan)
-			protected.DELETE("/api/subscriptions/plans/:id", authz.RequirePermission("manage_subscription_plans"), subscriptionCtrl.DeleteSubscriptionPlan)
-
 			protected.GET("/dashboard", authz.RequirePermission("view_dashboard"), dashCtrl.ShowDashboardPage)
 			protected.GET("/dashboard/stats", dashCtrl.GetDashboardStats)
 			protected.GET("/dashboard/charts", dashCtrl.GetChartData)
@@ -102,9 +90,31 @@ func WireAdminRoutes(
 			protected.GET("/activity/live", activityCtrl.ShowLiveCopyingPage)
 			protected.GET("/activity/logs", activityCtrl.ShowTradeErrorsPage)
 
-			// API routes for the frontend
 			protected.GET("/api/activity/live", activityCtrl.GetActiveSessions)
 			protected.GET("/api/activity/logs", activityCtrl.GetTradeLogs)
+
+			financials := admin.Group("/financials")
+			{
+				financials.GET("/subscriptions", subscriptionController.ShowSubscriptionsPage)
+				financials.GET("/api/subscriptions", subscriptionController.GetSubscriptions)
+
+				financials.GET("/subscription-plans", subscriptionController.ShowSubscriptionPlansPage)
+				financials.GET("/api/subscription-plans", subscriptionController.GetSubscriptionPlans)
+				financials.POST("/api/subscription-plans", subscriptionController.CreateSubscriptionPlan)
+				financials.PUT("/api/subscription-plans/:id", subscriptionController.UpdateSubscriptionPlan)
+				financials.DELETE("/api/subscription-plans/:id", subscriptionController.DeleteSubscriptionPlan)
+
+				financials.GET("/wallet", adminWalletController.ShowAdminWalletPage)
+				financials.GET("/api/wallet/summary", adminWalletController.GetAdminWalletSummary)
+				financials.POST("/api/wallet/deposit", adminWalletController.AdminInitiateDeposit)
+				financials.POST("/api/wallet/deposit/:deposit_id/verify", adminWalletController.AdminVerifyDeposit) // Or integrate with a real webhook
+				financials.POST("/api/wallet/withdraw", adminWalletController.AdminRequestWithdrawal)
+				financials.GET("/api/wallet/transactions", adminWalletController.AdminGetWalletTransactions)
+
+				financials.GET("/api/withdrawals/pending", adminWalletController.GetPendingWithdrawals)
+				financials.POST("/api/withdrawals/:id/action", adminWalletController.AdminApproveOrRejectWithdrawal)
+			}
 		}
+
 	}
 }
