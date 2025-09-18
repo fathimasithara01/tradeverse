@@ -3,13 +3,13 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/fathimasithara01/tradeverse/internal/admin/service"
+	"github.com/fathimasithara01/tradeverse/internal/admin/service" // This import might be incorrect if you have a customer-specific user service
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
-	UserSvc service.IUserService
+	UserSvc service.IUserService // Assuming this is the shared user service, otherwise correct the import
 }
 
 func NewAuthController(userSvc service.IUserService) *AuthController {
@@ -31,10 +31,17 @@ func (ctrl *AuthController) Signup(c *gin.Context) {
 	}
 
 	user := models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: req.Password,
+		Name:  req.Name,
+		Email: req.Email,
+		// Do NOT directly assign req.Password here. It must be hashed.
 	}
+
+	// Hash the password before passing it to the service
+	if err := user.SetPassword(req.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
 	profile := models.CustomerProfile{
 		PhoneNumber: req.PhoneNumber,
 	}
@@ -59,9 +66,10 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	// The UserSvc.Login method should handle password comparison using bcrypt
 	token, user, err := ctrl.UserSvc.Login(req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()}) // Return the actual error from service
 		return
 	}
 

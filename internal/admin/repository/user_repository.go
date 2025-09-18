@@ -56,6 +56,7 @@ func NewUserRepository(db *gorm.DB) IUserRepository {
 }
 
 // CreateCustomerWithProfile creates a user and their customer profile within a transaction.
+// Expects user.Password to be ALREADY HASHED.
 func (r *UserRepository) CreateCustomerWithProfile(user *models.User, profile *models.CustomerProfile) error {
 	tx := r.DB.Begin()
 	defer func() {
@@ -79,6 +80,7 @@ func (r *UserRepository) CreateCustomerWithProfile(user *models.User, profile *m
 }
 
 // CreateTraderWithProfile creates a user and their trader profile within a transaction.
+// Expects user.Password to be ALREADY HASHED.
 func (r *UserRepository) CreateTraderWithProfile(user *models.User, profile *models.TraderProfile) error {
 	tx := r.DB.Begin()
 	defer func() {
@@ -134,6 +136,7 @@ func (r *UserRepository) GetRoleByName(name models.UserRole) (*models.Role, erro
 }
 
 // UpdateUser updates user details.
+// Expects user.Password to be ALREADY HASHED if it's being updated.
 func (r *UserRepository) UpdateUser(user *models.User) error {
 	return r.DB.Save(user).Error
 }
@@ -183,6 +186,7 @@ func (r *UserRepository) GetUserByIDWithProfile(id uint) (*models.User, error) {
 }
 
 // UpdateUserAndProfile updates a user and their associated profile within a transaction.
+// Expects user.Password to be ALREADY HASHED if it's being updated.
 func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 	tx := r.DB.Begin()
 	defer func() {
@@ -191,19 +195,23 @@ func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 		}
 	}()
 
+	// Save the user itself (this will update password if it's been changed and hashed)
 	if err := tx.Save(user).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
 	// Update Customer Profile if present
+	// Check if the profile actually exists by ID before saving, otherwise create or handle it.
+	// GORM's Save can create if ID is 0, but it's safer to be explicit.
 	if user.CustomerProfile.UserID != 0 {
-		if user.CustomerProfile.ID != 0 {
+		if user.CustomerProfile.ID != 0 { // Existing profile
 			if err := tx.Save(&user.CustomerProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to update customer profile: %w", err)
 			}
-		} else { // Create if it's a new profile for an existing user
+		} else { // New profile for an existing user
+			user.CustomerProfile.UserID = user.ID // Ensure association
 			if err := tx.Create(&user.CustomerProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to create customer profile: %w", err)
@@ -213,18 +221,17 @@ func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 
 	// Update Trader Profile if present
 	if user.TraderProfile.UserID != 0 {
-		if user.TraderProfile.ID != 0 {
+		if user.TraderProfile.ID != 0 { // Existing profile
 			if err := tx.Save(&user.TraderProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to update trader profile: %w", err)
 			}
-		} else { // Create if it's a new profile for an existing user
+		} else { // New profile for an existing user
+			user.TraderProfile.UserID = user.ID // Ensure association
 			if err := tx.Create(&user.TraderProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to create trader profile: %w", err)
 			}
-			// Important: Ensure the UserID is set for new profiles
-			user.TraderProfile.UserID = user.ID
 		}
 	}
 
@@ -253,6 +260,7 @@ func (r *UserRepository) DeleteUser(id uint) error {
 
 // Create is a generic create method for a user. It relies on the AfterCreate hook in models.User
 // to create default profiles and wallets.
+// Expects user.Password to be ALREADY HASHED.
 func (r *UserRepository) Create(user *models.User) error {
 	return r.DB.Create(user).Error
 }
@@ -346,6 +354,7 @@ func (r *UserRepository) UpdateTraderStatus(userID uint, newStatus models.Trader
 }
 
 // Update updates a user, ensuring associations are saved.
+// Expects user.Password to be ALREADY HASHED if it's being updated.
 func (r *UserRepository) Update(user *models.User) error {
 	return r.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(user).Error
 }

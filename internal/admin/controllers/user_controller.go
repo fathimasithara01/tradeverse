@@ -64,7 +64,13 @@ func (ctrl *UserController) CreateTrader(c *gin.Context) {
 
 	user.Name = c.PostForm("Name")
 	user.Email = c.PostForm("Email")
-	user.Password = c.PostForm("Password")
+	rawPassword := c.PostForm("Password") // Get raw password
+
+	// Hash the password
+	if err := user.SetPassword(rawPassword); err != nil {
+		c.HTML(http.StatusInternalServerError, "add_trader.html", gin.H{"error": "Failed to process password."})
+		return
+	}
 
 	profile.CompanyName = c.PostForm("CompanyName")
 	profile.Bio = c.PostForm("Bio")
@@ -80,7 +86,15 @@ func (ctrl *UserController) CreateTrader(c *gin.Context) {
 func (ctrl *UserController) CreateCustomer(c *gin.Context) {
 	var user models.User
 	var profile models.CustomerProfile
-	user.Name, user.Email, user.Password = c.PostForm("Name"), c.PostForm("Email"), c.PostForm("Password")
+	user.Name, user.Email = c.PostForm("Name"), c.PostForm("Email")
+	rawPassword := c.PostForm("Password") // Get raw password
+
+	// Hash the password
+	if err := user.SetPassword(rawPassword); err != nil {
+		c.HTML(http.StatusInternalServerError, "add_customer.html", gin.H{"error": "Failed to process password."})
+		return
+	}
+
 	profile.PhoneNumber = c.PostForm("PhoneNumber")
 
 	if err := ctrl.UserSvc.RegisterCustomer(user, profile); err != nil {
@@ -94,7 +108,13 @@ func (ctrl *UserController) CreateInternalUser(c *gin.Context) {
 	var user models.User
 	user.Name = c.PostForm("Name")
 	user.Email = c.PostForm("Email")
-	user.Password = c.PostForm("Password")
+	rawPassword := c.PostForm("Password") // Get raw password
+
+	// Hash the password
+	if err := user.SetPassword(rawPassword); err != nil {
+		c.HTML(http.StatusInternalServerError, "add_internal_user.html", gin.H{"error": "Failed to process password."})
+		return
+	}
 
 	if _, err := ctrl.UserSvc.CreateInternalUser(user); err != nil {
 		c.HTML(http.StatusBadRequest, "add_internal_user.html", gin.H{"error": err.Error()})
@@ -119,12 +139,31 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 
 	userToUpdate.Name = c.PostForm("Name")
 	userToUpdate.Email = c.PostForm("Email")
-	userToUpdate.Password = c.PostForm("Password")
+	newPassword := c.PostForm("Password") // Get new password if provided
 
+	if newPassword != "" { // Only update password if a new one is provided
+		if err := userToUpdate.SetPassword(newPassword); err != nil {
+			c.HTML(http.StatusInternalServerError, "edit_user.html", gin.H{
+				"error": "Failed to process new password.",
+				"User":  userToUpdate,
+			})
+			return
+		}
+	}
+
+	// Load profile data if it exists and then update
 	if userToUpdate.Role == models.RoleCustomer {
+		if userToUpdate.CustomerProfile.ID == 0 {
+			// If CustomerProfile is not preloaded (e.g., if UserSvc.GetUserByID doesn't preload it fully)
+			// you might need to fetch it explicitly or update the GetUserByID method.
+			// For now, assuming it's loaded if present, or will be created/updated by UpdateUser method logic.
+		}
 		userToUpdate.CustomerProfile.PhoneNumber = c.PostForm("PhoneNumber")
 		userToUpdate.CustomerProfile.ShippingAddress = c.PostForm("ShippingAddress")
 	} else if userToUpdate.Role == models.RoleTrader {
+		if userToUpdate.TraderProfile.ID == 0 {
+			// Similar to CustomerProfile, ensure TraderProfile is loaded.
+		}
 		userToUpdate.TraderProfile.CompanyName = c.PostForm("CompanyName")
 		userToUpdate.TraderProfile.Bio = c.PostForm("Bio")
 	}
@@ -136,11 +175,8 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		})
 		return
 	}
-	if userToUpdate.Role == models.RoleTrader {
-		c.Redirect(http.StatusFound, "/admin/users/all")
-	} else {
-		c.Redirect(http.StatusFound, "/admin/users/all")
-	}
+	// Decide redirect based on user role or a generic path
+	c.Redirect(http.StatusFound, "/admin/users/all")
 }
 
 func (ctrl *UserController) DeleteUser(c *gin.Context) {

@@ -17,7 +17,7 @@ type User struct {
 	gorm.Model
 	Name     string `gorm:"size:100;not null" json:"name"`
 	Email    string `gorm:"size:100;uniqueIndex;not null" json:"email"`
-	Password string `gorm:"size:255;not null" json:"-"`
+	Password string `gorm:"size:255;not null" json:"-"` // This field stores the HASHED password
 
 	Role UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
 
@@ -53,13 +53,22 @@ func (u *User) SetPassword(password string) error {
 	if err != nil {
 		return err
 	}
-	u.Password = string(hashedPassword)
+	u.Password = string(hashedPassword) // Store the HASH
 	return nil
 }
 
 // CheckPassword verifies the provided password against the stored hashed password.
 func (u *User) CheckPassword(password string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) == nil
+	// Debug logging for password comparison
+	// fmt.Printf("[DEBUG-PASSWORD] User %s: Received plain password: '%s'\n", u.Email, password)
+	// fmt.Printf("[DEBUG-PASSWORD] User %s: Stored hashed password: '%s'\n", u.Email, u.Password)
+
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	if err != nil {
+		// fmt.Printf("[DEBUG-PASSWORD-ERROR] bcrypt comparison failed for user '%s': %v \n", u.Email, err)
+		return false
+	}
+	return true
 }
 
 func (u *User) IsAdmin() bool    { return u.Role == RoleAdmin }

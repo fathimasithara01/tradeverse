@@ -46,7 +46,51 @@ func NewUserService(userRepo repository.IUserRepository, roleRepo repository.IRo
 	}
 }
 
-// UpdateCustomerProfile updates an existing user's details and customer profile.
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func (s *UserService) Login(email, password string) (string, models.User, error) {
+	user, err := s.UserRepo.FindByEmail(email) // Find user by email, preloads Role
+	if err != nil {
+		log.Printf("[LOGIN SERVICE] User '%s' not found or other error: %v", email, err)
+		return "", models.User{}, errors.New("invalid credentials")
+	}
+
+	if user.IsBlocked {
+		return "", models.User{}, errors.New("account is blocked")
+	}
+
+	if !checkPasswordHash(password, user.Password) {
+		log.Printf("[LOGIN SERVICE] Password mismatch for user '%s'", email)
+		return "", models.User{}, errors.New("invalid credentials")
+	}
+
+	if user.RoleID == nil {
+		log.Printf("[LOGIN SERVICE] User '%s' has nil RoleID, fixing...", email)
+		role, err := s.UserRepo.GetRoleByName(user.Role)
+		if err != nil {
+			return "", models.User{}, fmt.Errorf("failed to get role for user %s: %w", email, err)
+		}
+		user.RoleID = &role.ID
+		if err := s.UserRepo.UpdateUser(&user); err != nil {
+			return "", models.User{}, fmt.Errorf("failed to update user role info")
+		}
+	}
+
+	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role), *user.RoleID, s.JWTSecret)
+	if err != nil {
+		return "", models.User{}, fmt.Errorf("failed to generate JWT: %w", err)
+	}
+	return token, user, nil
+
+}
 func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error {
 	existingUser, err := s.UserRepo.GetUserByIDWithProfile(userID)
 	if err != nil {
@@ -75,50 +119,6 @@ func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profi
 	return s.UserRepo.UpdateUserAndProfile(existingUser)
 }
 
-func (s *UserService) Login(email, password string) (string, models.User, error) {
-	user, err := s.UserRepo.FindByEmail(email) // Find user by email, preloads Role
-	if err != nil {
-		log.Printf("[LOGIN SERVICE] User '%s' not found or other error: %v", email, err)
-		return "", models.User{}, errors.New("invalid credentials")
-	}
-
-	log.Printf("[DEBUG-PASSWORD] User %s: Received plain password: '%s'", email, password)
-	log.Printf("[DEBUG-PASSWORD] User %s: Stored hashed password: '%s'", email, user.Password)
-
-	if user.IsBlocked {
-		return "", models.User{}, errors.New("account is blocked")
-	}
-
-	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		log.Printf("[LOGIN SERVICE] Password mismatch for user '%s'", email)
-		log.Printf("[DEBUG-PASSWORD-ERROR] bcrypt comparison failed for user '%s': %v", email, err)
-		return "", models.User{}, errors.New("invalid credentials")
-	}
-
-	if user.RoleID == nil {
-		log.Printf("[LOGIN SERVICE] User '%s' has a nil RoleID. This should not happen.", email)
-		// Attempt to fetch the role and assign RoleID if possible, or return an error
-		role, err := s.UserRepo.GetRoleByName(user.Role)
-		if err != nil {
-			return "", models.User{}, fmt.Errorf("failed to get role details for user %s: %w", email, err)
-		}
-		user.RoleID = &role.ID
-		// Consider updating the user in the database here if RoleID was missing
-		if err := s.UserRepo.UpdateUser(&user); err != nil {
-			log.Printf("[LOGIN SERVICE] Failed to update user '%s' with missing RoleID: %v", email, err)
-			return "", models.User{}, fmt.Errorf("failed to update user role information")
-		}
-	}
-
-	// Generate JWT using the user's details, including the dereferenced RoleID
-	token, err := auth.GenerateJWT(user.ID, user.Email, string(user.Role), *user.RoleID, s.JWTSecret)
-	if err != nil {
-		return "", models.User{}, fmt.Errorf("failed to generate JWT: %w", err)
-	}
-	return token, user, nil
-}
-
-// RegisterCustomer registers a new customer.
 func (s *UserService) RegisterCustomer(user models.User, profile models.CustomerProfile) error {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
@@ -134,11 +134,9 @@ func (s *UserService) RegisterCustomer(user models.User, profile models.Customer
 	user.RoleID = &customerRole.ID // Assign the actual RoleID
 	profile.UserID = user.ID       // Ensure UserID is set on the profile before creation
 
-	// Use the specific repository method for creating user with customer profile
 	return s.UserRepo.CreateCustomerWithProfile(&user, &profile)
 }
 
-// RegisterTrader registers a new trader. By default, traders are pending approval.
 func (s *UserService) RegisterTrader(user models.User, profile models.TraderProfile) error {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
@@ -156,10 +154,11 @@ func (s *UserService) RegisterTrader(user models.User, profile models.TraderProf
 	profile.UserID = user.ID // Ensure UserID is set on the profile before creation
 
 	// Use the specific repository method for creating user with trader profile
+	// user.Password should already be hashed by the controller
 	return s.UserRepo.CreateTraderWithProfile(&user, &profile)
 }
 
-// CreateTraderByAdmin creates a new trader, bypassing pending status as it's admin-approved.
+// CreateTraderByAdmin creates a new trader, bypassing pending status as it's admin-approved. The user object's password should already be hashed.
 func (s *UserService) CreateTraderByAdmin(user models.User, profile models.TraderProfile) error {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
@@ -176,10 +175,11 @@ func (s *UserService) CreateTraderByAdmin(user models.User, profile models.Trade
 	profile.Status = models.StatusApproved
 	profile.UserID = user.ID // Ensure UserID is set on the profile before creation
 
+	// user.Password should already be hashed by the controller
 	return s.UserRepo.CreateTraderWithProfile(&user, &profile)
 }
 
-// CreateInternalUser creates a new internal user (e.g., admin, without specific profile).
+// CreateInternalUser creates a new internal user (e.g., admin, without specific profile). The user object's password should already be hashed.
 func (s *UserService) CreateInternalUser(user models.User) (models.User, error) {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
@@ -195,6 +195,7 @@ func (s *UserService) CreateInternalUser(user models.User) (models.User, error) 
 		user.RoleID = &role.ID
 	}
 
+	// user.Password should already be hashed by the controller
 	err = s.UserRepo.Create(&user) // Use the generic Create method
 	if err != nil {
 		return models.User{}, fmt.Errorf("failed to create internal user: %w", err)
@@ -230,8 +231,10 @@ func (s *UserService) DeleteUser(id uint) error {
 	}
 	return nil
 }
+
+// UpdateUser updates a user. The userToUpdate object's password should already be hashed if it's being updated.
 func (s *UserService) UpdateUser(userToUpdate *models.User) error {
-	err := s.UserRepo.Update(userToUpdate)
+	err := s.UserRepo.UpdateUserAndProfile(userToUpdate) // Ensure this method handles saving of profiles
 	if err != nil {
 		return fmt.Errorf("failed to update user %d: %w", userToUpdate.ID, err)
 	}
@@ -268,10 +271,7 @@ func (s *UserService) RejectTrader(traderID uint) error {
 }
 
 func (s *UserService) GetAllUsersWithRole() ([]models.User, error) {
-	// This method name implies getting ALL users including admins, and with their role association.
-	// FindAllNonAdmins might not be the correct underlying call here if 'AllUsersWithRole' means all.
-	// Let's assume for now it means non-admins, but if you need all, a new repo method would be needed.
-	users, err := s.UserRepo.FindAllWithRole() // This method in repo already preloads Role
+	users, err := s.UserRepo.FindAllWithRole()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all users with role: %w", err)
 	}
