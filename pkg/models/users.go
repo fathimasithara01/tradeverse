@@ -32,6 +32,15 @@ type User struct {
 	Subscriptions       []Subscription       `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"`
 	TraderSubscriptions []TraderSubscription `gorm:"foreignKey:UserID" json:"trader_subscriptions,omitempty"`
 	Wallet              Wallet               `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"wallet,omitempty"`
+
+	Trades []Trade `gorm:"foreignKey:TraderID" json:"trades,omitempty"` // Trades initiated by this user if they are a trader
+	// CopiedTrades      []CopyTrade           `gorm:"foreignKey:CustomerID" json:"copied_trades,omitempty"`    // Trades copied by this user if they are a customer
+	// CopySettings      []CustomerCopySetting `gorm:"foreignKey:CustomerID" json:"copy_settings,omitempty"`    // Copy settings for various traders
+	TraderPerformance *TraderPerformance `gorm:"foreignKey:TraderID" json:"trader_performance,omitempty"` // Performance metrics if this user is a trader
+	Notifications     []Notification     `gorm:"foreignKey:UserID" json:"notifications,omitempty"`
+	Referrals         []Referral         `gorm:"foreignKey:ReferrerID" json:"referrals,omitempty"`      // Referrals made by this user
+	ReferredBy        *Referral          `gorm:"foreignKey:RefereeID" json:"referred_by,omitempty"`     // If this user was referred by someone
+	AdminActionLogs   []AdminActionLog   `gorm:"foreignKey:AdminID" json:"admin_action_logs,omitempty"` // Actions performed by this user if they are an admin
 }
 
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {

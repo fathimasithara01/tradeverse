@@ -16,20 +16,23 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
-
 	gormDB, err := migrations.ConnectDB(*cfg)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	repo := repository.NewTraderRepository(gormDB)
-	svc := service.NewTraderService(repo)
-	ctrl := controllers.NewTraderController(svc)
+	tradeRepo := repository.NewTradeRepository(gormDB)
+	walletRepo := repository.NewWalletRepository(gormDB)
+	transactionRepo := repository.NewTransactionRepository(gormDB)
 
-	r := router.SetupRouter(cfg, ctrl)
+	tradeService := service.NewTradeService(tradeRepo, walletRepo, transactionRepo, gormDB)
+
+	tradeController := controllers.NewTradeController(tradeService)
+
+	r := router.SetupRouter(cfg, tradeController)
 
 	port := cfg.TraderPort
-	log.Printf("Customer API server starting on port http://localhost:%s", port)
+	log.Printf("Server is running on port %s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start customer server: %v", err)
 	}
