@@ -12,7 +12,7 @@
 
 <body>
     <div class="container mt-5">
-      
+
         <h2 class="text-center mb-4">Trader Subscription Plans</h2>
 
         <div class="d-flex justify-content-end mb-3">
@@ -215,7 +215,6 @@
             document.getElementById("planModalLabel").textContent = "Add New Plan";
         }
 
-        // Populate form for editing an existing plan
         async function editPlan(planId) {
             try {
                 const res = await fetch(`${API_BASE}/${planId}`, {
@@ -224,21 +223,30 @@
                 });
 
                 if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(`Failed to fetch plan for edit: ${res.status} - ${errorData.error || res.statusText}`);
+                    // Try to parse error message if available
+                    let errorData = {};
+                    try {
+                        errorData = await res.json();
+                    } catch (e) {
+                        console.warn("Could not parse error response as JSON:", await res.text());
+                    }
+                    throw new Error(`Failed to fetch plan for edit: ${res.status} - ${errorData.error || res.statusText || 'Unknown error'}`);
                 }
 
-                const plan = await res.json();
+                const responseText = await res.text();
+                console.log("Raw API response for edit:", responseText);
+
+                const plan = JSON.parse(responseText); // Parse manually after logging raw text
 
                 document.getElementById("planId").value = plan.ID;
                 document.getElementById("planName").value = plan.name;
-                document.getElementById("planDescription").value = plan.description;
+                document.getElementById("planDescription").value = plan.description || ""; // Add || "" for safety
                 document.getElementById("planPrice").value = plan.price;
                 document.getElementById("planDuration").value = plan.duration;
                 document.getElementById("planInterval").value = plan.interval;
-                document.getElementById("planMaxFollowers").value = plan.max_followers;
-                document.getElementById("planIsTraderPlan").value = String(plan.is_trader_plan); // Convert boolean to string
-                document.getElementById("planIsActive").value = String(plan.is_active);       // Convert boolean to string
+                document.getElementById("planMaxFollowers").value = plan.max_followers || 0; // Add || 0 for safety
+                document.getElementById("planIsTraderPlan").value = String(plan.is_trader_plan);
+                document.getElementById("planIsActive").value = String(plan.is_active);
                 document.getElementById("planFeatures").value = plan.features || "";
                 document.getElementById("planCommissionRate").value = plan.commission_rate || "0.00";
                 document.getElementById("planAnalyticsAccess").value = plan.analytics_access || "";
@@ -250,7 +258,6 @@
                 alert("Failed to load plan for editing: " + err.message);
             }
         }
-
 
         // Add or Update plan
         async function savePlan(planData, planId = null) {
