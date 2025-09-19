@@ -7,6 +7,9 @@ import (
 	servicer "github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
+
+	TraderRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
+
 	"github.com/fathimasithara01/tradeverse/internal/customer/router"
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
 
@@ -48,7 +51,11 @@ func main() {
 	customerService := service.NewCustomerService(customerRepo, walletService, walletRepo, gormDB)
 	customerController := controllers.NewCustomerController(customerService)
 
-	r := router.SetupRouter(cfg, authController, profileController, kycController, walletCtrl, customerController)
+	traderRepo := TraderRepo.NewTraderRepository(gormDB)
+	traderService := service.NewTraderService(traderRepo, gormDB)
+	traderController := controllers.NewTraderController(traderService)
+
+	r := router.SetupRouter(cfg, authController, profileController, kycController, walletCtrl, customerController, traderController)
 
 	port := cfg.CustomerPort
 	log.Printf("Customer API server starting on port http://localhost:%s", port)

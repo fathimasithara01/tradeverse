@@ -17,13 +17,13 @@ type User struct {
 	gorm.Model
 	Name     string `gorm:"size:100;not null" json:"name"`
 	Email    string `gorm:"size:100;uniqueIndex;not null" json:"email"`
-	Password string `gorm:"size:255;not null" json:"-"` // This field stores the HASHED password
+	Password string `gorm:"size:255;not null" json:"-"`
 
 	Role UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
 
 	RoleID *uint `json:"role_id"`
 
-	RoleModel Role `gorm:"foreignKey:RoleID" json:"role_model,omitempty"` // Renamed from RoleAssociation to RoleModel for clarity
+	RoleModel Role `gorm:"foreignKey:RoleID" json:"role_model,omitempty"`
 
 	IsBlocked bool `gorm:"default:false" json:"is_blocked"`
 
@@ -34,7 +34,6 @@ type User struct {
 	Wallet              Wallet               `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"wallet,omitempty"`
 }
 
-// AfterCreate hook to create a wallet for every new user.
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	wallet := Wallet{
 		UserID:   u.ID,
@@ -47,25 +46,19 @@ func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// SetPassword hashes the user's password using bcrypt.
 func (u *User) SetPassword(password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	u.Password = string(hashedPassword) // Store the HASH
+	u.Password = string(hashedPassword)
 	return nil
 }
 
-// CheckPassword verifies the provided password against the stored hashed password.
 func (u *User) CheckPassword(password string) bool {
-	// Debug logging for password comparison
-	// fmt.Printf("[DEBUG-PASSWORD] User %s: Received plain password: '%s'\n", u.Email, password)
-	// fmt.Printf("[DEBUG-PASSWORD] User %s: Stored hashed password: '%s'\n", u.Email, u.Password)
 
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 	if err != nil {
-		// fmt.Printf("[DEBUG-PASSWORD-ERROR] bcrypt comparison failed for user '%s': %v \n", u.Email, err)
 		return false
 	}
 	return true
