@@ -20,13 +20,14 @@ func NewAdminWalletController(adminWalletService service.IAdminWalletService) *A
 	}
 }
 
-// ShowAdminWalletPage renders the admin wallet management page
 func (ctrl *AdminWalletController) ShowAdminWalletPage(c *gin.Context) {
+	fmt.Println("Attempting to render admin_wallet.html") // Add this line for debugging
 	c.HTML(http.StatusOK, "admin_wallet.html", gin.H{
 		"Title":        "Admin Wallet",
 		"ActiveTab":    "financials",
 		"ActiveSubTab": "admin_wallet",
 	})
+	fmt.Println("Finished rendering admin_wallet.html (if no error occurred)") // Add this line
 }
 
 // GetAdminWalletSummary retrieves the admin's wallet balance and details.

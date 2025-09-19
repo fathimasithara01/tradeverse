@@ -149,7 +149,7 @@ func (ctrl *SubscriptionController) CreateCustomerSubscription(c *gin.Context) {
 func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
 	var req CreateUpdateSubscriptionPlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"Message": err.Error()})
 		return
 	}
 
@@ -163,21 +163,17 @@ func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
 		Features:        req.Features,
 		CommissionRate:  req.CommissionRate,
 		AnalyticsAccess: req.AnalyticsAccess,
-		IsTraderPlan:    true,
-		IsActive:        true,
+		IsTraderPlan:    req.IsTraderPlan,
+		IsActive:        req.IsActive,
 	}
 
 	if err := ctrl.SubscriptionPlanService.CreateSubscriptionPlan(&newPlan); err != nil {
-		log.Printf("Error creating subscription plan: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create subscription plan"})
+		log.Printf("Error creating subscription plan: %v", err)                                                        // Log the actual error
+		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to create subscription plan: " + err.Error()}) // More detailed error
 		return
 	}
 
-	status := "inactive"
-	if newPlan.IsActive {
-		status = "active"
-	}
-	responsePlan := SubscriptionPlanResponseDTO{
+	c.JSON(http.StatusCreated, SubscriptionPlanResponseDTO{
 		ID:              newPlan.ID,
 		Name:            newPlan.Name,
 		Description:     newPlan.Description,
@@ -185,14 +181,13 @@ func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
 		Duration:        newPlan.Duration,
 		Interval:        newPlan.Interval,
 		MaxFollowers:    newPlan.MaxFollowers,
-		Status:          status,
+		Status:          map[bool]string{true: "active", false: "inactive"}[newPlan.IsActive],
 		Features:        newPlan.Features,
 		CommissionRate:  newPlan.CommissionRate,
 		AnalyticsAccess: newPlan.AnalyticsAccess,
 		IsTraderPlan:    newPlan.IsTraderPlan,
 		IsActive:        newPlan.IsActive,
-	}
-	c.JSON(http.StatusCreated, responsePlan)
+	})
 }
 
 func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
