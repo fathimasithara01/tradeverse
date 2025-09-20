@@ -8,7 +8,8 @@ import (
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
 
-	TraderRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
+	customerrepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
+	walletrepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/router"
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
@@ -37,13 +38,13 @@ func main() {
 	authController := controllers.NewAuthController(userService)
 	profileController := controllers.NewProfileController(userService)
 
-	kycRepo := repository.NewKYCRepository(gormDB)
+	kycRepo := customerrepo.NewKYCRepository(gormDB)
 	kycSvc := service.NewKYCService(kycRepo)
 	kycController := controllers.NewKYCController(kycSvc)
 
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 
-	walletRepo := repository.NewWalletRepository(gormDB)
+	walletRepo := walletrepo.NewWalletRepository(gormDB)
 	walletService := service.NewWalletService(walletRepo, paymentClient, gormDB)
 	walletCtrl := controllers.NewWalletController(walletService)
 
@@ -51,11 +52,29 @@ func main() {
 	customerService := service.NewCustomerService(customerRepo, walletService, walletRepo, gormDB)
 	customerController := controllers.NewCustomerController(customerService)
 
-	traderRepo := TraderRepo.NewTraderRepository(gormDB)
+	traderRepo := customerrepo.NewTraderRepository(gormDB)
 	traderService := service.NewTraderService(traderRepo, gormDB)
 	traderController := controllers.NewTraderController(traderService)
 
-	r := router.SetupRouter(cfg, authController, profileController, kycController, walletCtrl, customerController, traderController)
+	subRepo := customerrepo.NewSubscriptionRepository(gormDB)
+	subSvc := service.NewSubscriptionService(gormDB, subRepo)
+	subCntrl := controllers.NewSubscriptionController(subSvc)
+
+	trderSubRepo := walletrepo.NewCustomerWalletRepository(gormDB)
+	trdrSubSvc := service.NewCustomerWalletService(trderSubRepo, paymentClient)
+	trderSubCntrl := controllers.NewCustomerWalletController(trdrSubSvc)
+
+	r := router.SetupRouter(
+		cfg,
+		authController,
+		profileController,
+		kycController,
+		walletCtrl,
+		customerController,
+		traderController,
+		subCntrl,
+		trderSubCntrl,
+	)
 
 	port := cfg.CustomerPort
 	log.Printf("Customer API server starting on port http://localhost:%s", port)

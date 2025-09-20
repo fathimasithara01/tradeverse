@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
+	"github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"github.com/gin-gonic/gin"
@@ -66,7 +66,7 @@ func (ctrl *WalletController) VerifyDeposit(c *gin.Context) {
 		statusCode := http.StatusInternalServerError
 		if errors.Is(err, service.ErrDepositAlreadyProcessed) || errors.Is(err, service.ErrInvalidDepositStatus) {
 			statusCode = http.StatusBadRequest
-		} else if errors.Is(err, service.ErrUserWalletNotFound) || errors.Is(err, repository.ErrDepositRequestNotFound) {
+		} else if errors.Is(err, service.ErrUserWalletNotFound) || errors.Is(err, walletrepo.ErrDepositRequestNotFound) {
 			statusCode = http.StatusNotFound
 		}
 		c.JSON(statusCode, gin.H{"message": err.Error()})
@@ -87,7 +87,7 @@ func (ctrl *WalletController) RequestWithdrawal(c *gin.Context) {
 	resp, err := ctrl.WalletSvc.RequestWithdrawal(userID, input)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if errors.Is(err, repository.ErrInsufficientFunds) {
+		if errors.Is(err, walletrepo.ErrInsufficientFunds) {
 			statusCode = http.StatusBadRequest
 		} else if errors.Is(err, service.ErrUserWalletNotFound) {
 			statusCode = http.StatusNotFound

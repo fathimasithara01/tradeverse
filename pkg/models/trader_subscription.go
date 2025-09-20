@@ -8,14 +8,16 @@ import (
 
 type TraderSubscription struct {
 	gorm.Model
-	UserID                   uint             `gorm:"not null;index" json:"user_id"` // User who subscribed
+	UserID                   uint             `gorm:"not null;index" json:"user_id"` // User who subscribed (this is a customer subscribing to a trader's plan)
 	User                     User             `gorm:"foreignKey:UserID" json:"user"`
 	TraderSubscriptionPlanID uint             `gorm:"not null;index" json:"trader_subscription_plan_id"` // The specific plan subscribed to
 	TraderSubscriptionPlan   SubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID" json:"trader_subscription_plan"`
 	StartDate                time.Time        `gorm:"not null" json:"start_date"`
 	EndDate                  time.Time        `gorm:"not null" json:"end_date"`
-	IsActive                 bool             `gorm:"default:true" json:"is_active"`          // Whether the subscription is currently active
-	PaymentStatus            string           `gorm:"size:50;not null" json:"payment_status"` // e.g., "paid", "pending", "failed"
+	IsActive                 bool             `gorm:"default:true" json:"is_active"`
+	PaymentStatus            string           `gorm:"size:50;not null" json:"payment_status"`
 	AmountPaid               float64          `gorm:"type:numeric(18,4);not null" json:"amount_paid"`
-	TransactionID            string           `gorm:"size:255" json:"transaction_id"` // Reference ID for the payment transaction
+	TransactionID            string           `gorm:"size:255" json:"transaction_id"`
+	// Assuming you have a SubscriptionPlan model
+	// TraderSubscriptionPlan *SubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID"` // Example
 }

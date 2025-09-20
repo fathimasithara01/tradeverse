@@ -8,27 +8,28 @@ import (
 
 type Wallet struct {
 	gorm.Model
-	UserID  uint    `gorm:"uniqueIndex;not null"`
-	Balance float64 `gorm:"type:numeric(18,4);default:0.00"`
-	// Currency    string  `gorm:"size:3;default:'INR'"`
-	Currency string `gorm:"size:10;not null;default:'USD'" json:"currency"`
+	UserID   uint    `gorm:"uniqueIndex;not null"`
+	Balance  float64 `gorm:"type:numeric(18,4);default:0.00"`
+	Currency string  `gorm:"size:10;not null;default:'USD'" json:"currency"` // Changed default to USD, as common for trading platforms
 
 	LastUpdated time.Time
+	// User        User    `gorm:"foreignKey:UserID"` // Optional: If you need to eager load user with wallet
 }
 
 type TransactionType string
 
 const (
-	TxTypeDeposit      TransactionType = "DEPOSIT"
-	TxTypeWithdraw     TransactionType = "WITHDRAW"
-	TxTypeFee          TransactionType = "FEE"
-	TxTypeTransfer     TransactionType = "TRANSFER"
-	TxTypeReversal     TransactionType = "REVERSAL"
-	TxTypeSubscription TransactionType = "SUBSCRIPTION_PAYMENT"
-
-	TxTypeTradeProfit        TransactionType = "TRADE_PROFIT"   // NEW
-	TxTypeTradeLoss          TransactionType = "TRADE_LOSS"     // NEW
-	TxTypeCopyTradeFee       TransactionType = "COPY_TRADE_FEE" // NEW (paid by customer to trader)
+	TxTypeDeposit            TransactionType = "DEPOSIT"
+	TxTypeWithdraw           TransactionType = "WITHDRAW"
+	TxTypeFee                TransactionType = "FEE"
+	TxTypeTransfer           TransactionType = "TRANSFER"
+	TxTypeReversal           TransactionType = "REVERSAL"
+	TxTypeSubscription       TransactionType = "SUBSCRIPTION_PAYMENT"
+	TxTypeTradeOpeningFunds  TransactionType = "TRADE_OPENING_FUNDS" // NEW: Funds reserved/deducted for opening a trade
+	TxTypeTradeClosingFunds  TransactionType = "TRADE_CLOSING_FUNDS" // NEW: Funds released/returned/adjusted on trade close
+	TxTypeTradeProfit        TransactionType = "TRADE_PROFIT"
+	TxTypeTradeLoss          TransactionType = "TRADE_LOSS"
+	TxTypeCopyTradeFee       TransactionType = "COPY_TRADE_FEE"
 	TxTypeReferralCommission TransactionType = "REFERRAL_COMMISSION"
 )
 
@@ -40,29 +41,30 @@ const (
 	TxStatusFailed    TransactionStatus = "FAILED"
 	TxStatusCancelled TransactionStatus = "CANCELLED"
 	TxStatusReversed  TransactionStatus = "REVERSED"
-	TxStatusRejected  TransactionStatus = "REJECTED" // <--- ADD THIS LINE
+	TxStatusRejected  TransactionStatus = "REJECTED"
 )
 
 type WalletTransaction struct {
 	gorm.Model
 	WalletID           uint              `gorm:"index;not null"`
 	UserID             uint              `gorm:"index;not null"`
-	TransactionType    TransactionType   `gorm:"size:20;not null"`
+	TransactionType    TransactionType   `gorm:"size:30;not null"` // Increased size for new types
 	Amount             float64           `gorm:"type:numeric(18,4);not null"`
 	Currency           string            `gorm:"size:3;not null"`
 	Status             TransactionStatus `gorm:"size:20;not null"`
-	ReferenceID        string            `gorm:"size:100"` // General reference (e.g., related trade ID, subscription ID)
+	ReferenceID        string            `gorm:"size:100"`
 	PaymentGatewayTxID string            `gorm:"size:100"`
 	Description        string            `gorm:"type:text"`
 	BalanceBefore      float64           `gorm:"type:numeric(18,4)"`
 	BalanceAfter       float64           `gorm:"type:numeric(18,4)"`
-	// New field for associating with a specific trade or copy trade
-	TradeID              *uint `gorm:"index" json:"trade_id,omitempty"`               // For TxTypeTradeProfit/Loss
-	CopyTradeID          *uint `gorm:"index" json:"copy_trade_id,omitempty"`          // For TxTypeCopyTradeFee
-	ReferralID           *uint `gorm:"index" json:"referral_id,omitempty"`            // For TxTypeReferralCommission
-	SubscriptionID       *uint `gorm:"index" json:"subscription_id,omitempty"`        // For TxTypeSubscription
-	TraderSubscriptionID *uint `gorm:"index" json:"trader_subscription_id,omitempty"` // For TxTypeSubscription
+
+	TradeID              *uint `gorm:"index" json:"trade_id,omitempty"`
+	CopyTradeID          *uint `gorm:"index" json:"copy_trade_id,omitempty"`
+	ReferralID           *uint `gorm:"index" json:"referral_id,omitempty"`
+	SubscriptionID       *uint `gorm:"index" json:"subscription_id,omitempty"`
+	TraderSubscriptionID *uint `gorm:"index" json:"trader_subscription_id,omitempty"`
 }
+
 type DepositRequest struct {
 	gorm.Model
 	UserID              uint              `gorm:"index;not null"`
@@ -73,7 +75,7 @@ type DepositRequest struct {
 	PaymentGatewayTxID  string            `gorm:"size:100"`
 	RedirectURL         string            `gorm:"size:255"`
 	WalletTransactionID *uint             `gorm:"index"`
-	AdminNotes          string            `gorm:"type:text" json:"admin_notes,omitempty"` // NEW
+	AdminNotes          string            `gorm:"type:text" json:"admin_notes,omitempty"`
 }
 
 type WithdrawRequest struct {
@@ -86,12 +88,12 @@ type WithdrawRequest struct {
 	PaymentGateway      string            `gorm:"size:50"`
 	PaymentGatewayTxID  string            `gorm:"size:100"`
 	WalletTransactionID *uint             `gorm:"index"`
-	AdminNotes          string            `gorm:"type:text" json:"admin_notes,omitempty"` // NEW
+	AdminNotes          string            `gorm:"type:text" json:"admin_notes,omitempty"`
 }
 
 type WalletSummaryResponse struct {
 	UserID      uint      `json:"user_id"`
-	WalletID    uint      `json:"wallet_id"` // Added WalletID
+	WalletID    uint      `json:"wallet_id"`
 	Balance     float64   `json:"balance"`
 	Currency    string    `json:"currency"`
 	LastUpdated time.Time `json:"last_updated"`
@@ -99,7 +101,7 @@ type WalletSummaryResponse struct {
 
 type DepositRequestInput struct {
 	Amount   float64 `json:"amount" binding:"required,gt=0"`
-	Currency string  `json:"currency" binding:"required,oneof=INR USD"`
+	Currency string  `json:"currency" binding:"required,oneof=INR USD"` // Assuming INR and USD
 }
 
 type DepositResponse struct {
@@ -114,15 +116,15 @@ type DepositResponse struct {
 
 type DepositVerifyInput struct {
 	PaymentGatewayTxID string  `json:"payment_gateway_tx_id" binding:"required"`
-	Amount             float64 `json:"amount"` // Can be optional if gateway webhook provides it reliably
-	Status             string  `json:"status"` // E.g., "success", "failed"
+	Amount             float64 `json:"amount"`
+	Status             string  `json:"status"`
 	WebhookSignature   string  `json:"webhook_signature,omitempty"`
 }
 
 type WithdrawalRequestInput struct {
 	Amount             float64 `json:"amount" binding:"required,gt=0"`
 	Currency           string  `json:"currency" binding:"required,oneof=INR USD"`
-	BeneficiaryAccount string  `json:"beneficiary_account" binding:"required"` // Can be a JSON object for more details
+	BeneficiaryAccount string  `json:"beneficiary_account" binding:"required"`
 }
 
 type WithdrawalResponse struct {

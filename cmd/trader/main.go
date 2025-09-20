@@ -3,7 +3,10 @@ package main
 import (
 	"log"
 
+	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
+	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/internal/trader/controllers"
+
 	"github.com/fathimasithara01/tradeverse/internal/trader/repository"
 	"github.com/fathimasithara01/tradeverse/internal/trader/router"
 	"github.com/fathimasithara01/tradeverse/internal/trader/service"
@@ -21,15 +24,25 @@ func main() {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	tradeRepo := repository.NewTradeRepository(gormDB)
-	walletRepo := repository.NewWalletRepository(gormDB)
-	transactionRepo := repository.NewTransactionRepository(gormDB)
+	userRepo := adminRepo.NewUserRepository(gormDB)
+	roleRepo := adminRepo.NewRoleRepository(gormDB)
+	userService := adminService.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 
-	tradeService := service.NewTradeService(tradeRepo, walletRepo, transactionRepo, gormDB)
+	authController := controllers.NewAuthController(userService)
+
+	tradeRepo := repository.NewTradeRepository(gormDB)
+	subRepo := repository.NewSubscriberRepository(gormDB)
+	liveRepo := repository.NewLiveTradeRepository(gormDB)
+
+	tradeService := service.NewTradeService(tradeRepo)
+	subService := service.NewSubscriberService(subRepo)
+	liveService := service.NewLiveTradeService(liveRepo)
 
 	tradeController := controllers.NewTradeController(tradeService)
+	subController := controllers.NewSubscriberController(subService)
+	liveController := controllers.NewLiveTradeController(liveService)
 
-	r := router.SetupRouter(cfg, tradeController)
+	r := router.SetupRouter(cfg, authController, tradeController, subController, liveController)
 
 	port := cfg.TraderPort
 	log.Printf("Server is running on port %s", port)

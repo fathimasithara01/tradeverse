@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
+	"github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 )
 
@@ -14,10 +14,10 @@ type KYCServicer interface {
 }
 
 type kycService struct {
-	kycRepo repository.KYCRepository
+	kycRepo customerrepo.KYCRepository
 }
 
-func NewKYCService(kycRepo repository.KYCRepository) KYCServicer {
+func NewKYCService(kycRepo customerrepo.KYCRepository) KYCServicer {
 	return &kycService{kycRepo: kycRepo}
 }
 
@@ -60,8 +60,6 @@ func (s *kycService) SubmitKYCDocuments(userID uint, docType, docURL string) err
 			return errors.New("failed to update user KYC status: " + err.Error())
 		}
 	}
-	// If it's already approved, submitting more documents doesn't change the overall APPROVED status,
-	// though the individual document will be pending. An admin would re-review.
 
 	return nil
 }

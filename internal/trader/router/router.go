@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/fathimasithara01/tradeverse/internal/customer/middleware" // Make sure this path is correct
+	"github.com/fathimasithara01/tradeverse/internal/customer/middleware"
 	"github.com/fathimasithara01/tradeverse/internal/trader/controllers"
 	"github.com/fathimasithara01/tradeverse/pkg/config"
 	"github.com/gin-gonic/gin"
@@ -9,9 +9,18 @@ import (
 
 func SetupRouter(
 	cfg *config.Config,
+	authController *controllers.AuthController,
 	tradeController *controllers.TradeController,
+	subscriberController *controllers.SubscriberController,
+	liveCtrl *controllers.LiveTradeController,
 ) *gin.Engine {
 	r := gin.Default()
+
+	public := r.Group("/api/v1")
+	{
+		public.POST("/login", authController.Login)
+
+	}
 
 	protected := r.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
@@ -19,9 +28,16 @@ func SetupRouter(
 
 		protected.POST("/trader/trades", tradeController.CreateTrade)
 		protected.GET("/trader/trades", tradeController.ListTrades)
-		protected.GET("/trader/trades/:id", tradeController.GetTradeByID)
+		protected.GET("/trader/trades/:id", tradeController.GetTrade)
 		protected.PUT("/trader/trades/:id", tradeController.UpdateTrade)
 		protected.DELETE("/trader/trades/:id", tradeController.DeleteTrade)
+
+		protected.GET("/trader/subscribers", subscriberController.ListSubscribers)
+		protected.GET("/trader/subscribers/:id", subscriberController.GetSubscriber)
+
+		protected.POST("/trader/live", liveCtrl.PublishLiveTrade)
+		protected.GET("/trader/live", liveCtrl.GetActiveTrades)
+
 	}
 
 	return r

@@ -1,81 +1,86 @@
 package repository
 
 import (
+	"context"
+	"errors"
+	"time"
+
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
 )
 
-// TradeRepository defines methods for interacting with trade data
 type TradeRepository interface {
-	CreateTrade(trade *models.Trade) error
-	GetTradeByID(tradeID uint, traderID uint) (*models.Trade, error)
-	ListTrades(traderID uint, pagination *models.PaginationParams) ([]models.Trade, int64, error)
+	GetAllTrades(traderID uint, limit, offset int) ([]models.Trade, int64, error)
+	GetTradeByID(id uint, traderID uint) (*models.Trade, error)
+	CreateTrade(ctx context.Context, req models.TradeRequest) (models.Trade, error)
 	UpdateTrade(trade *models.Trade) error
-	DeleteTrade(tradeID uint, traderID uint) error                // Soft delete is preferred
-	FindOpenTradesByTrader(traderID uint) ([]models.Trade, error) // New: For copy trading logic, to check open positions
+	DeleteTrade(id uint, traderID uint) error
 }
 
-// tradeRepository implements TradeRepository using GORM
 type tradeRepository struct {
 	db *gorm.DB
 }
 
-// NewTradeRepository creates a new instance of TradeRepository
 func NewTradeRepository(db *gorm.DB) TradeRepository {
 	return &tradeRepository{db: db}
 }
 
-// CreateTrade inserts a new trade into the database
-func (r *tradeRepository) CreateTrade(trade *models.Trade) error {
-	return r.db.Create(trade).Error
+func (r *tradeRepository) GetAllTrades(traderID uint, limit, offset int) ([]models.Trade, int64, error) {
+	var trades []models.Trade
+	var count int64
+
+	err := r.db.Model(&models.Trade{}).
+		Where("trader_id = ?", traderID).
+		Count(&count).
+		Limit(limit).Offset(offset).
+		Order("created_at desc").
+		Find(&trades).Error
+	return trades, count, err
 }
 
-// GetTradeByID retrieves a single trade by its ID and ensures it belongs to the given trader
-func (r *tradeRepository) GetTradeByID(tradeID uint, traderID uint) (*models.Trade, error) {
+func (r *tradeRepository) GetTradeByID(id uint, traderID uint) (*models.Trade, error) {
 	var trade models.Trade
-	err := r.db.Where("id = ? AND trader_id = ?", tradeID, traderID).First(&trade).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil // Or return a custom error like ErrTradeNotFound
+	err := r.db.Where("id = ? AND trader_id = ?", id, traderID).First(&trade).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
 	}
 	return &trade, err
 }
 
-// ListTrades retrieves a list of trades for a specific trader with pagination
-func (r *tradeRepository) ListTrades(traderID uint, pagination *models.PaginationParams) ([]models.Trade, int64, error) {
-	var trades []models.Trade
-	var total int64
-
-	query := r.db.Where("trader_id = ?", traderID)
-
-	// Count total records
-	if err := query.Model(&models.Trade{}).Count(&total).Error; err != nil {
-		return nil, 0, err
+func (r *tradeRepository) CreateTrade(ctx context.Context, req models.TradeRequest) (models.Trade, error) {
+	trade := models.Trade{
+		TraderID:        req.TraderID,
+		Symbol:          req.Symbol,
+		TradeType:       models.TradeType(req.TradeType), // string → TradeType
+		Side:            models.TradeSide(req.Side),      // string → TradeSide
+		EntryPrice:      req.EntryPrice,
+		Quantity:        req.Quantity,
+		Leverage:        uint(req.Leverage),            // int → uint
+		StopLossPrice:   floatPtr(req.StopLossPrice),   // float64 → *float64
+		TakeProfitPrice: floatPtr(req.TakeProfitPrice), // float64 → *float64
+		Status:          "OPEN",
+		OpenedAt:        timePtr(time.Now()), // time.Time → *time.Time
 	}
 
-	// Apply pagination
-	if pagination.Limit > 0 {
-		query = query.Limit(pagination.Limit).Offset((pagination.Page - 1) * pagination.Limit)
+	if err := r.db.WithContext(ctx).Create(&trade).Error; err != nil {
+		return models.Trade{}, err
 	}
-
-	// Order by creation date descending
-	err := query.Order("created_at DESC").Find(&trades).Error
-	return trades, total, err
+	return trade, nil
 }
 
-// UpdateTrade updates an existing trade in the database
 func (r *tradeRepository) UpdateTrade(trade *models.Trade) error {
-	return r.db.Save(trade).Error // Save updates all fields. Use r.db.Model(trade).Updates(...) for partial updates
+	return r.db.Save(trade).Error
 }
 
-// DeleteTrade soft deletes a trade (sets DeletedAt timestamp)
-func (r *tradeRepository) DeleteTrade(tradeID uint, traderID uint) error {
-	// Ensure the trade belongs to the trader before deleting
-	return r.db.Where("id = ? AND trader_id = ?", tradeID, traderID).Delete(&models.Trade{}).Error
+func (r *tradeRepository) DeleteTrade(id uint, traderID uint) error {
+	return r.db.Where("id = ? AND trader_id = ?", id, traderID).
+		Delete(&models.Trade{}).Error
 }
 
-// FindOpenTradesByTrader retrieves all open trades for a specific trader
-func (r *tradeRepository) FindOpenTradesByTrader(traderID uint) ([]models.Trade, error) {
-	var trades []models.Trade
-	err := r.db.Where("trader_id = ? AND status = ?", traderID, models.TradeStatusOpen).Find(&trades).Error
-	return trades, err
+func floatPtr(f float64) *float64 {
+	return &f
+}
+
+func timePtr(t time.Time) *time.Time {
+	return &t
 }

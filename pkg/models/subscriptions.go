@@ -6,20 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// type Subscription struct {
-// 	gorm.Model
-// 	UserID             uint             `gorm:"not null" json:"user_id"`
-// 	User               User             `gorm:"foreignKey:UserID" json:"user"`
-// 	SubscriptionPlanID uint             `gorm:"not null" json:"subscription_plan_id"`
-// 	SubscriptionPlan   SubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID" json:"subscription_plan"`
-// 	StartDate          time.Time        `gorm:"not null" json:"start_date"`
-// 	EndDate            time.Time        `gorm:"not null" json:"end_date"`
-// 	IsActive           bool             `gorm:"default:true" json:"is_active"`
-// 	PaymentStatus      string           `gorm:"size:50;not null" json:"payment_status"` // e.g., "paid", "pending", "failed"
-// 	AmountPaid         float64          `gorm:"not null" json:"amount_paid"`
-// 	TransactionID      string           `gorm:"size:255" json:"transaction_id"` // For payment gateway reference
-// }
-
 type Subscription struct {
 	gorm.Model
 	UserID             uint             `gorm:"not null;index" json:"user_id"`

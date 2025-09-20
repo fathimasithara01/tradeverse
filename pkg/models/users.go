@@ -38,16 +38,16 @@ type User struct {
 	// CopySettings      []CustomerCopySetting `gorm:"foreignKey:CustomerID" json:"copy_settings,omitempty"`    // Copy settings for various traders
 	TraderPerformance *TraderPerformance `gorm:"foreignKey:TraderID" json:"trader_performance,omitempty"` // Performance metrics if this user is a trader
 	Notifications     []Notification     `gorm:"foreignKey:UserID" json:"notifications,omitempty"`
-	Referrals         []Referral         `gorm:"foreignKey:ReferrerID" json:"referrals,omitempty"`      // Referrals made by this user
-	ReferredBy        *Referral          `gorm:"foreignKey:RefereeID" json:"referred_by,omitempty"`     // If this user was referred by someone
-	AdminActionLogs   []AdminActionLog   `gorm:"foreignKey:AdminID" json:"admin_action_logs,omitempty"` // Actions performed by this user if they are an admin
+	Referrals         []Referral         `gorm:"foreignKey:ReferrerID" json:"referrals,omitempty"`  // Referrals made by this user
+	ReferredBy        *Referral          `gorm:"foreignKey:RefereeID" json:"referred_by,omitempty"` // If this user was referred by someone
+	AdminActionLogs   []AdminActionLog   `gorm:"foreignKey:AdminID" json:"admin_action_logs,omitempty"`
 }
 
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	wallet := Wallet{
 		UserID:   u.ID,
 		Balance:  0,
-		Currency: "INR", // Default currency
+		Currency: "USD",
 	}
 	if err := tx.Create(&wallet).Error; err != nil {
 		return err
