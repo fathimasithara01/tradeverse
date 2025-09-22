@@ -18,6 +18,4 @@ type TraderSubscription struct {
 	PaymentStatus            string           `gorm:"size:50;not null" json:"payment_status"`
 	AmountPaid               float64          `gorm:"type:numeric(18,4);not null" json:"amount_paid"`
 	TransactionID            string           `gorm:"size:255" json:"transaction_id"`
-	// Assuming you have a SubscriptionPlan model
-	// TraderSubscriptionPlan *SubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID"` // Example
 }

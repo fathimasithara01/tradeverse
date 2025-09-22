@@ -17,7 +17,6 @@ func NewKYCController(kycSvc service.KYCServicer) *KYCController {
 }
 
 func (ctrl *KYCController) SubmitKYCDocuments(c *gin.Context) {
-	// Get userID from authenticated context set by AuthMiddleware
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context. Authentication required."})

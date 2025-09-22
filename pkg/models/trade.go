@@ -38,7 +38,6 @@ type Trader struct {
 	Username string `gorm:"unique;not null"`
 	Email    string `gorm:"unique;not null"`
 	Password string `gorm:"not null"`
-	// Other trader specific fields
 }
 
 type Trade struct {

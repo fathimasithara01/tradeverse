@@ -60,9 +60,9 @@ func main() {
 	subSvc := service.NewSubscriptionService(gormDB, subRepo)
 	subCntrl := controllers.NewSubscriptionController(subSvc)
 
-	trderSubRepo := walletrepo.NewCustomerWalletRepository(gormDB)
-	trdrSubSvc := service.NewCustomerWalletService(trderSubRepo, paymentClient)
-	trderSubCntrl := controllers.NewCustomerWalletController(trdrSubSvc)
+	subTradRepo := walletrepo.NewTraderWalletRepository(gormDB)
+	subTradeSvc := service.NewTraderWalletService(gormDB, subTradRepo)
+	subTradeCntrl := controllers.NewTraderWalletController(subTradeSvc)
 
 	r := router.SetupRouter(
 		cfg,
@@ -73,7 +73,7 @@ func main() {
 		customerController,
 		traderController,
 		subCntrl,
-		trderSubCntrl,
+		subTradeCntrl,
 	)
 
 	port := cfg.CustomerPort

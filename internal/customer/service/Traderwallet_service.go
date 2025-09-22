@@ -2,137 +2,103 @@ package service
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	paymentgateway "github.com/fathimasithara01/tradeverse/pkg/payment_gateway.go"
+	"gorm.io/gorm"
 )
 
-type CustomerWalletService interface {
-	GetBalance(userID uint) (*models.WalletSummaryResponse, error)
-	Deposit(userID uint, input models.DepositRequestInput) (*models.DepositResponse, error)
-	VerifyDeposit(pgTxID string, userID uint) error
-	Withdraw(userID uint, input models.WithdrawalRequestInput) (*models.WithdrawalResponse, error)
+type TraderWalletService struct {
+	db         *gorm.DB
+	walletRepo walletrepo.TraderWalletRepository
 }
 
-type customerWalletService struct {
-	repo walletrepo.CustomerWalletRepository
-	pg   paymentgateway.SimulatedPaymentClient
+func NewTraderWalletService(db *gorm.DB, walletRepo walletrepo.TraderWalletRepository) *TraderWalletService {
+	return &TraderWalletService{db: db, walletRepo: walletRepo}
 }
 
-func NewCustomerWalletService(repo walletrepo.CustomerWalletRepository, pg paymentgateway.SimulatedPaymentClient) CustomerWalletService {
-	return &customerWalletService{repo: repo, pg: pg}
+// SubscribeCustomer handles subscription payment
+func (s *TraderWalletService) SubscribeCustomer(customerID, traderID uint, price float64, currency string) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Get wallets
+		customerWallet, err := s.walletRepo.GetByUserID(customerID)
+		if err != nil {
+			return errors.New("customer wallet not found")
+		}
+		traderWallet, err := s.walletRepo.GetByUserID(traderID)
+		if err != nil {
+			return errors.New("trader wallet not found")
+		}
+		adminWallet, err := s.walletRepo.GetByUserID(1) // admin assumed user_id=1
+		if err != nil {
+			return errors.New("admin wallet not found")
+		}
+
+		if customerWallet.Balance < price {
+			return errors.New("insufficient balance")
+		}
+
+		// Split amounts
+		adminShare := price * 0.20
+		traderShare := price * 0.80
+
+		// Deduct customer
+		if err := s.walletRepo.UpdateBalance(customerWallet.ID, -price); err != nil {
+			return err
+		}
+		_ = s.walletRepo.AddTransaction(&models.WalletTransaction{
+			WalletID:        customerWallet.ID,
+			UserID:          customerID,
+			TransactionType: models.TxTypeSubscription,
+			Amount:          -price,
+			Currency:        currency,
+			Status:          models.TxStatusSuccess,
+			Description:     "subscription payment",
+		})
+
+		// Credit admin
+		if err := s.walletRepo.UpdateBalance(adminWallet.ID, adminShare); err != nil {
+			return err
+		}
+		_ = s.walletRepo.AddTransaction(&models.WalletTransaction{
+			WalletID:        adminWallet.ID,
+			UserID:          1,
+			TransactionType: models.TxTypeSubscription,
+			Amount:          adminShare,
+			Currency:        currency,
+			Status:          models.TxStatusSuccess,
+			Description:     "subscription share",
+		})
+
+		// Credit trader
+		if err := s.walletRepo.UpdateBalance(traderWallet.ID, traderShare); err != nil {
+			return err
+		}
+		_ = s.walletRepo.AddTransaction(&models.WalletTransaction{
+			WalletID:        traderWallet.ID,
+			UserID:          traderID,
+			TransactionType: models.TxTypeSubscription,
+			Amount:          traderShare,
+			Currency:        currency,
+			Status:          models.TxStatusSuccess,
+			Description:     "subscription earnings",
+		})
+
+		return nil
+	})
 }
 
-func (s *customerWalletService) GetBalance(userID uint) (*models.WalletSummaryResponse, error) {
-	wallet, err := s.repo.GetWalletByUserID(userID)
+func (s *TraderWalletService) GetBalance(userID uint) (*models.WalletSummaryResponse, error) {
+	wallet, err := s.walletRepo.GetByUserID(userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("wallet not found")
 	}
+
 	return &models.WalletSummaryResponse{
-		UserID:      wallet.UserID,
+		UserID:      userID,
 		WalletID:    wallet.ID,
 		Balance:     wallet.Balance,
 		Currency:    wallet.Currency,
-		LastUpdated: wallet.LastUpdated,
-	}, nil
-}
-
-func (s *customerWalletService) Deposit(userID uint, input models.DepositRequestInput) (*models.DepositResponse, error) {
-	pgTxID, redirectURL, err := s.pg.CreateDepositInitiation(input.Amount, input.Currency, fmt.Sprint(userID))
-	if err != nil {
-		return nil, err
-	}
-
-	dr := &models.DepositRequest{
-		UserID:             userID,
-		Amount:             input.Amount,
-		Currency:           input.Currency,
-		Status:             models.TxStatusPending,
-		PaymentGateway:     "SimulatedPG",
-		PaymentGatewayTxID: pgTxID,
-		RedirectURL:        redirectURL,
-	}
-
-	if err := s.repo.CreateDepositRequest(dr); err != nil {
-		return nil, err
-	}
-
-	return &models.DepositResponse{
-		DepositID:          dr.ID,
-		Amount:             dr.Amount,
-		Currency:           dr.Currency,
-		Status:             dr.Status,
-		RedirectURL:        dr.RedirectURL,
-		PaymentGatewayTxID: pgTxID,
-		Message:            "Deposit initiated",
-	}, nil
-}
-
-func (s *customerWalletService) VerifyDeposit(pgTxID string, userID uint) error {
-	verified, err := s.pg.VerifyDeposit(pgTxID)
-	if err != nil || !verified {
-		return errors.New("deposit verification failed")
-	}
-
-	// Credit wallet
-	if err := s.repo.UpdateWalletBalance(userID, 100); err != nil { // Amount should be fetched from DepositRequest
-		return err
-	}
-
-	// Record transaction
-	tx := &models.WalletTransaction{
-		WalletID:        userID,
-		UserID:          userID,
-		TransactionType: models.TxTypeDeposit,
-		Amount:          100, // Example
-		Currency:        "USD",
-		Status:          models.TxStatusSuccess,
-		Description:     "Deposit verified",
-	}
-	return s.repo.CreateTransaction(tx)
-}
-
-func (s *customerWalletService) Withdraw(userID uint, input models.WithdrawalRequestInput) (*models.WithdrawalResponse, error) {
-	wallet, err := s.repo.GetWalletByUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-	if wallet.Balance < input.Amount {
-		return nil, errors.New("insufficient funds")
-	}
-
-	pgTxID, err := s.pg.ProcessWithdrawal(input.Amount, input.Currency, input.BeneficiaryAccount)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deduct balance
-	if err := s.repo.UpdateWalletBalance(userID, -input.Amount); err != nil {
-		return nil, err
-	}
-
-	// Record withdrawal
-	wr := &models.WithdrawRequest{
-		UserID:             userID,
-		Amount:             input.Amount,
-		Currency:           input.Currency,
-		Status:             models.TxStatusSuccess,
-		BeneficiaryAccount: input.BeneficiaryAccount,
-		PaymentGateway:     "SimulatedPG",
-		PaymentGatewayTxID: pgTxID,
-	}
-	if err := s.repo.CreateWithdrawRequest(wr); err != nil {
-		return nil, err
-	}
-
-	return &models.WithdrawalResponse{
-		WithdrawalID:       wr.ID,
-		Amount:             wr.Amount,
-		Currency:           wr.Currency,
-		Status:             wr.Status,
-		PaymentGatewayTxID: wr.PaymentGatewayTxID,
-		Message:            "Withdrawal successful",
+		LastUpdated: wallet.UpdatedAt,
 	}, nil
 }

@@ -16,7 +16,6 @@ func NewLiveTradeController(svc service.LiveTradeService) *LiveTradeController {
 	return &LiveTradeController{svc: svc}
 }
 
-// POST /api/v1/trader/live
 func (c *LiveTradeController) PublishLiveTrade(ctx *gin.Context) {
 	var req models.LiveTrade
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -36,7 +35,6 @@ func (c *LiveTradeController) PublishLiveTrade(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Live trade published", "trade": req})
 }
 
-// GET /api/v1/trader/live
 func (c *LiveTradeController) GetActiveTrades(ctx *gin.Context) {
 	traderID, _ := ctx.Get("userID")
 	trades, err := c.svc.GetActiveTrades(traderID.(uint))

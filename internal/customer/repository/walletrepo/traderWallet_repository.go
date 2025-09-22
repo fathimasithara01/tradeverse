@@ -1,30 +1,25 @@
 package walletrepo
 
 import (
-	"time"
-
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
 )
 
-type CustomerWalletRepository interface {
-	GetWalletByUserID(userID uint) (*models.Wallet, error)
-	UpdateWalletBalance(userID uint, amount float64) error
-	CreateTransaction(tx *models.WalletTransaction) error
-	CreateDepositRequest(dr *models.DepositRequest) error
-	UpdateDepositRequest(dr *models.DepositRequest) error
-	CreateWithdrawRequest(wr *models.WithdrawRequest) error
+type TraderWalletRepository interface {
+	GetByUserID(userID uint) (*models.Wallet, error)
+	UpdateBalance(walletID uint, amount float64) error
+	AddTransaction(tx *models.WalletTransaction) error
 }
-
-type customerWalletRepository struct {
+	
+type traderwalletRepository struct {
 	db *gorm.DB
 }
 
-func NewCustomerWalletRepository(db *gorm.DB) CustomerWalletRepository {
-	return &customerWalletRepository{db: db}
+func NewTraderWalletRepository(db *gorm.DB) TraderWalletRepository {
+	return &traderwalletRepository{db}
 }
 
-func (r *customerWalletRepository) GetWalletByUserID(userID uint) (*models.Wallet, error) {
+func (r *traderwalletRepository) GetByUserID(userID uint) (*models.Wallet, error) {
 	var wallet models.Wallet
 	if err := r.db.Where("user_id = ?", userID).First(&wallet).Error; err != nil {
 		return nil, err
@@ -32,28 +27,12 @@ func (r *customerWalletRepository) GetWalletByUserID(userID uint) (*models.Walle
 	return &wallet, nil
 }
 
-func (r *customerWalletRepository) UpdateWalletBalance(userID uint, amount float64) error {
-	var wallet models.Wallet
-	if err := r.db.Where("user_id = ?", userID).First(&wallet).Error; err != nil {
-		return err
-	}
-	wallet.Balance += amount
-	wallet.LastUpdated = time.Now()
-	return r.db.Save(&wallet).Error
+func (r *traderwalletRepository) UpdateBalance(walletID uint, amount float64) error {
+	return r.db.Model(&models.Wallet{}).
+		Where("id = ?", walletID).
+		Update("balance", gorm.Expr("balance + ?", amount)).Error
 }
 
-func (r *customerWalletRepository) CreateTransaction(tx *models.WalletTransaction) error {
-	return r.db.Create(tx).Error
-}
-
-func (r *customerWalletRepository) CreateDepositRequest(dr *models.DepositRequest) error {
-	return r.db.Create(dr).Error
-}
-
-func (r *customerWalletRepository) UpdateDepositRequest(dr *models.DepositRequest) error {
-	return r.db.Save(dr).Error
-}
-
-func (r *customerWalletRepository) CreateWithdrawRequest(wr *models.WithdrawRequest) error {
-	return r.db.Create(wr).Error
+func (r *traderwalletRepository) AddTransaction(txn *models.WalletTransaction) error {
+	return r.db.Create(txn).Error
 }

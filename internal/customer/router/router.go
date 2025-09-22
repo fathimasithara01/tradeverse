@@ -16,7 +16,7 @@ func SetupRouter(
 	customerTraderSubController *controllers.CustomerController,
 	traderController *controllers.TraderController,
 	subCtrl *controllers.SubscriptionController,
-	traderwalletCtrl *controllers.CustomerWalletController,
+	traderWalletCtrl *controllers.TraderWalletController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -59,12 +59,8 @@ func SetupRouter(
 	protected.GET("/trader-subscription", customerTraderSubController.GetCustomerTraderSubscription)
 	protected.POST("/trader-subscription/:subscription_id/cancel", customerTraderSubController.CancelCustomerTraderSubscription)
 
-	protected.POST("/subscribe/:plan_id", subCtrl.SubscribeCustomer)
-
-	protected.GET("/balance", traderwalletCtrl.GetBalance)
-	protected.POST("/deposit", traderwalletCtrl.Deposit)
-	protected.POST("/deposit/verify", traderwalletCtrl.VerifyDeposit)
-	protected.POST("/withdraw", traderwalletCtrl.Withdraw)
+	protected.POST("/subscribe", traderWalletCtrl.SubscribeCustomer)
+	protected.GET("/balance", traderWalletCtrl.GetBalance)
 
 	return r
 }

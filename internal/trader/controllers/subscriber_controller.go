@@ -17,7 +17,7 @@ func NewSubscriberController(svc service.SubscriberService) *SubscriberControlle
 }
 
 func (c *SubscriberController) ListSubscribers(ctx *gin.Context) {
-	traderIDStr := ctx.GetString("userID") // from JWT
+	traderIDStr := ctx.GetString("userID") 
 	traderID, _ := strconv.ParseUint(traderIDStr, 10, 64)
 
 	subs, err := c.svc.ListSubscribers(uint(traderID))
