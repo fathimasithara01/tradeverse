@@ -27,7 +27,7 @@ type WalletService interface {
 }
 
 type walletService struct {
-	repo          walletrepo.WalletRepository // Changed type
+	repo          walletrepo.WalletRepository
 	paymentClient paymentgateway.SimulatedPaymentClient
 	db            *gorm.DB
 }
@@ -43,7 +43,7 @@ func NewWalletService(repo walletrepo.WalletRepository, paymentClient paymentgat
 func (s *walletService) GetWalletSummary(userID uint) (*models.WalletSummaryResponse, error) {
 	wallet, err := s.repo.GetUserWallet(userID)
 	if err != nil {
-		if errors.Is(err, walletrepo.ErrWalletNotFound) { // Correctly reference from the 'walletrepo' package
+		if errors.Is(err, walletrepo.ErrWalletNotFound) { 
 			newWallet := &models.Wallet{
 				UserID:   userID,
 				Balance:  0,
@@ -70,7 +70,7 @@ func (s *walletService) GetWalletSummary(userID uint) (*models.WalletSummaryResp
 func (s *walletService) InitiateDeposit(userID uint, input models.DepositRequestInput) (*models.DepositResponse, error) {
 	_, err := s.repo.GetUserWallet(userID)
 	if err != nil {
-		if errors.Is(err, walletrepo.ErrWalletNotFound) { // Correctly reference from the 'walletrepo' package
+		if errors.Is(err, walletrepo.ErrWalletNotFound) { 
 			return nil, ErrUserWalletNotFound
 		}
 		return nil, fmt.Errorf("failed to get user wallet: %w", err)
@@ -170,14 +170,14 @@ func (s *walletService) VerifyDeposit(depositID uint, input models.DepositVerify
 func (s *walletService) RequestWithdrawal(userID uint, input models.WithdrawalRequestInput) (*models.WithdrawalResponse, error) {
 	wallet, err := s.repo.GetUserWallet(userID)
 	if err != nil {
-		if errors.Is(err, walletrepo.ErrWalletNotFound) { // Correctly reference from the 'walletrepo' package
+		if errors.Is(err, walletrepo.ErrWalletNotFound) {
 			return nil, ErrUserWalletNotFound
 		}
 		return nil, fmt.Errorf("failed to get user wallet: %w", err)
 	}
 
 	if wallet.Balance < input.Amount {
-		return nil, walletrepo.ErrInsufficientFunds // Correctly reference from the 'walletrepo' package
+		return nil, walletrepo.ErrInsufficientFunds 
 	}
 
 	withdrawReq := &models.WithdrawRequest{
@@ -199,22 +199,19 @@ func (s *walletService) RequestWithdrawal(userID uint, input models.WithdrawalRe
 		)
 		if err != nil {
 			withdrawReq.Status = models.TxStatusFailed
-			tx.Save(withdrawReq) // Save the failed status
+			tx.Save(withdrawReq)
 			return err
 		}
 
-		// At this point, funds are debited from the user's wallet.
-		// Now, attempt to process with the payment gateway.
 		pgTxID, pgErr := s.paymentClient.ProcessWithdrawal(input.Amount, input.Currency, input.BeneficiaryAccount)
 		if pgErr != nil {
-			// If PG processing fails, mark withdrawal request as failed.
-			// Ideally, in a real system, you might also have a mechanism to reverse the debit.
+		
 			withdrawReq.Status = models.TxStatusFailed
-			tx.Save(withdrawReq) // Save the failed status due to PG error
+			tx.Save(withdrawReq) 
 			return fmt.Errorf("payment gateway withdrawal processing failed: %w", pgErr)
 		}
 		withdrawReq.PaymentGatewayTxID = pgTxID
-		withdrawReq.Status = models.TxStatusSuccess // Mark as successful if PG call went through
+		withdrawReq.Status = models.TxStatusSuccess
 
 		if err := tx.Save(withdrawReq).Error; err != nil {
 			return fmt.Errorf("failed to update withdrawal request status: %w", err)

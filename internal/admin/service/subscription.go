@@ -25,8 +25,8 @@ type SubscriptionService struct {
 	subscriptionRepo   repository.ISubscriptionRepository
 	planRepo           repository.ISubscriptionPlanRepository
 	userRepo           repository.IUserRepository
-	adminWalletService IAdminWalletService // Add AdminWalletService
-	DB                 *gorm.DB            // Add DB for transaction management
+	adminWalletService IAdminWalletService
+	DB                 *gorm.DB
 }
 
 func NewSubscriptionService(subRepo repository.ISubscriptionRepository, planRepo repository.ISubscriptionPlanRepository, userRepo repository.IUserRepository, adminWalletService IAdminWalletService, db *gorm.DB) *SubscriptionService {
@@ -45,7 +45,7 @@ func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {
 		return err
 	}
 
-	traderRole, err := s.userRepo.GetRoleByName(models.RoleTrader) // Assuming GetRoleByName exists
+	traderRole, err := s.userRepo.GetRoleByName(models.RoleTrader)
 	if err != nil {
 		log.Printf("Error: Trader role not found: %v", err)
 		return err
@@ -54,24 +54,20 @@ func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {
 	user.RoleID = &traderRole.ID
 	user.Role = models.RoleTrader
 
-	// If a trader profile doesn't exist, create one
-	if user.TraderProfile.UserID == 0 { // Check if default/zero value, indicating no profile
+	if user.TraderProfile.UserID == 0 {
 		user.TraderProfile = models.TraderProfile{
 			UserID: user.ID,
-			Status: models.StatusApproved, // Automatically approved if upgraded via subscription
+			Status: models.StatusApproved,
 		}
 	} else {
-		user.TraderProfile.Status = models.StatusApproved // Ensure status is approved
+		user.TraderProfile.Status = models.StatusApproved
 	}
 
-	// Ensure to save the TraderProfile as well
-	// Depending on your GORM setup, this might require a separate call or could be handled by `UpdateUser` if relations are set for `Save`.
-	// For explicit handling:
-	if user.TraderProfile.ID == 0 { // New profile
+	if user.TraderProfile.ID == 0 {
 		if err := s.DB.Create(&user.TraderProfile).Error; err != nil {
 			return fmt.Errorf("failed to create trader profile for user %d: %w", userID, err)
 		}
-	} else { // Existing profile
+	} else {
 		if err := s.DB.Save(&user.TraderProfile).Error; err != nil {
 			return fmt.Errorf("failed to update trader profile for user %d: %w", userID, err)
 		}
@@ -99,7 +95,7 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 		case "yearly":
 			endDate = startDate.AddDate(plan.Duration, 0, 0)
 		default:
-			endDate = startDate.AddDate(0, 1, 0) // Default to 1 month
+			endDate = startDate.AddDate(0, 1, 0)
 		}
 
 		newSubscription := &models.Subscription{
@@ -116,9 +112,8 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 		if err := s.subscriptionRepo.CreateSubscription(newSubscription); err != nil {
 			return err
 		}
-		subscription = newSubscription // Assign to outer variable
+		subscription = newSubscription
 
-		// Credit the admin's wallet with the subscription amount
 		creditDescription := fmt.Sprintf("Subscription payment from User %d for Plan %d (Amount: %.2f)", userID, planID, amount)
 		if err := s.adminWalletService.CreditAdminWallet(tx, amount, "INR", creditDescription); err != nil { // Assuming INR as default currency
 			log.Printf("Error crediting admin wallet for subscription: %v", err)

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	customerrepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo" // Changed import path
-	walletrepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"     // Changed import path
+	customerrepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
+	walletrepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
 )
@@ -17,9 +17,9 @@ var (
 	ErrNotTraderPlan                = errors.New("this is not a trader subscription plan")
 	ErrAlreadyHasTraderSubscription = errors.New("user already has an active trader subscription")
 	ErrNoActiveTraderSubscription   = errors.New("active trader subscription not found for this user and ID")
-	ErrInsufficientFunds            = errors.New("insufficient funds in user's wallet") // This is distinct from repository.ErrInsufficientFunds
+	ErrInsufficientFunds            = errors.New("insufficient funds in user's wallet")
 	ErrUserIsAlreadyTrader          = errors.New("user is already a trader")
-	ErrAdminWalletNotFound          = errors.New("admin wallet not found") // This is a specific scenario, will handle in code
+	ErrAdminWalletNotFound          = errors.New("admin wallet not found")
 )
 
 type TraderSubscriptionPlanResponse struct {
@@ -53,9 +53,9 @@ type CustomerService interface {
 }
 
 type customerService struct {
-	repo       customerrepo.CustomerRepository // Changed type
+	repo       customerrepo.CustomerRepository
 	walletSvc  WalletService
-	walletRepo walletrepo.WalletRepository // Changed type
+	walletRepo walletrepo.WalletRepository
 	db         *gorm.DB
 }
 
@@ -92,10 +92,9 @@ func (s *customerService) ListTraderSubscriptionPlans() ([]TraderSubscriptionPla
 	return responses, nil
 }
 
-const AdminUserID uint = 1 // Assuming admin user ID is 1 (Can be configured)
+const AdminUserID uint = 1
 
 func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error) {
-	// 1. Fetch User and Plan
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -116,7 +115,6 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 		return nil, ErrNotTraderPlan
 	}
 
-	// 2. Check for existing active trader subscription
 	existingSub, err := s.repo.GetUserTraderSubscription(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check existing trader subscription: %w", err)
@@ -125,10 +123,9 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 		return nil, ErrAlreadyHasTraderSubscription
 	}
 
-	// 3. Get Wallets (Customer's and Admin's) - via walletSvc and walletRepo
 	customerWalletSummary, err := s.walletSvc.GetWalletSummary(userID)
 	if err != nil {
-		if errors.Is(err, ErrUserWalletNotFound) { // ErrUserWalletNotFound is in THIS service package (wallet_service.go)
+		if errors.Is(err, ErrUserWalletNotFound) {
 			return nil, fmt.Errorf("customer wallet not found, please create one or contact support: %w", err)
 		}
 		return nil, fmt.Errorf("failed to retrieve customer wallet summary: %w", err)
@@ -138,10 +135,9 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 		return nil, ErrInsufficientFunds
 	}
 
-	// Get admin's wallet (directly from walletRepo as it's an internal transfer, not external payment)
 	adminWallet, err := s.walletRepo.GetUserWallet(AdminUserID)
 	if err != nil {
-		if errors.Is(err, walletrepo.ErrWalletNotFound) { // Correct: walletrepo.ErrWalletNotFound
+		if errors.Is(err, walletrepo.ErrWalletNotFound) {
 			newAdminWallet := &models.Wallet{
 				UserID:   AdminUserID,
 				Balance:  0,
@@ -162,8 +158,8 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		err = s.walletRepo.DebitWallet(tx, customerWalletSummary.WalletID, plan.Price, models.TxTypeSubscription, paymentReferenceID, "Trader subscription payment (debit)")
 		if err != nil {
-			if errors.Is(err, walletrepo.ErrInsufficientFunds) { // Correct: walletrepo.ErrInsufficientFunds
-				return ErrInsufficientFunds // Return your service's specific ErrInsufficientFunds
+			if errors.Is(err, walletrepo.ErrInsufficientFunds) {
+				return ErrInsufficientFunds
 			}
 			return fmt.Errorf("failed to debit customer wallet in transaction: %w", err)
 		}
@@ -208,7 +204,7 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 	})
 
 	if err != nil {
-		if errors.Is(err, ErrInsufficientFunds) { // This error is local to customer service
+		if errors.Is(err, ErrInsufficientFunds) {
 			return nil, ErrInsufficientFunds
 		}
 		return nil, err

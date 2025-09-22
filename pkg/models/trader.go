@@ -19,6 +19,6 @@ type TraderProfile struct {
 	CompanyName string       `gorm:"size:100" json:"company_name"`
 	Bio         string       `json:"bio"`
 	Status      TraderStatus `gorm:"type:varchar(20);default:'pending';index" json:"status"`
-	TotalPnL    float64      `json:"total_pnl"` // This should be calculated or updated, not a direct input
+	TotalPnL    float64      `json:"total_pnl"`
 	IsVerified  bool         `gorm:"default:false" json:"is_verified"`
 }

@@ -34,7 +34,6 @@ func NewCustomerRepository(db *gorm.DB) CustomerRepository {
 	}
 }
 
-// ... (Rest of your customerRepository methods remain the same) ...
 func (r *customerRepository) GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error) {
 	var plans []models.SubscriptionPlan
 	if err := r.db.Where("is_trader_plan = ? AND is_active = ?", true, true).

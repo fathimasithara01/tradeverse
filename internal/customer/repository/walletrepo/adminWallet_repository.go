@@ -1,5 +1,4 @@
-package walletrepo // Changed package name
-
+package walletrepo 
 import (
 	"errors"
 	"time"
@@ -42,7 +41,6 @@ func NewWalletRepository(db *gorm.DB) WalletRepository {
 	return &walletRepository{db: db}
 }
 
-// ... (Rest of your walletRepository methods remain the same) ...
 func (r *walletRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
 	var wallet models.Wallet
 	err := r.db.Where("user_id = ?", userID).First(&wallet).Error

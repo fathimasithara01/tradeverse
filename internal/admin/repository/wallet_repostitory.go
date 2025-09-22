@@ -1,4 +1,3 @@
-// internal/admin/repository/admin_wallet_repository.go
 package repository
 
 import (
@@ -10,7 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// IAdminWalletRepository defines the interface for admin wallet database operations.
 type IAdminWalletRepository interface {
 	GetAdminWallet() (*models.Wallet, error)
 	CreateWalletTransaction(tx *gorm.DB, transaction *models.WalletTransaction) error
@@ -24,7 +22,6 @@ type IAdminWalletRepository interface {
 	GetAdminWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
 	FindAdminUser() (*models.User, error)
 
-	// For approving/rejecting customer withdrawals
 	GetPendingWithdrawalRequests(pagination models.PaginationParams) ([]models.WithdrawRequest, int64, error)
 	UpdateCustomerWalletBalance(tx *gorm.DB, wallet *models.Wallet) error
 	GetCustomerWallet(userID uint) (*models.Wallet, error)
@@ -38,10 +35,8 @@ func NewAdminWalletRepository(db *gorm.DB) *AdminWalletRepository {
 	return &AdminWalletRepository{DB: db}
 }
 
-// FindAdminUser finds the admin user (assuming there's only one or the first one).
 func (r *AdminWalletRepository) FindAdminUser() (*models.User, error) {
 	var adminUser models.User
-	// Assuming you identify admin by role, or a specific email from config
 	err := r.DB.Where("role = ?", models.RoleAdmin).First(&adminUser).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -52,7 +47,6 @@ func (r *AdminWalletRepository) FindAdminUser() (*models.User, error) {
 	return &adminUser, nil
 }
 
-// GetAdminWallet retrieves the admin's wallet.
 func (r *AdminWalletRepository) GetAdminWallet() (*models.Wallet, error) {
 	adminUser, err := r.FindAdminUser()
 	if err != nil {
@@ -70,52 +64,43 @@ func (r *AdminWalletRepository) GetAdminWallet() (*models.Wallet, error) {
 	return &wallet, nil
 }
 
-// CreateWalletTransaction creates a new wallet transaction record within a given GORM transaction.
 func (r *AdminWalletRepository) CreateWalletTransaction(tx *gorm.DB, transaction *models.WalletTransaction) error {
 	return tx.Create(transaction).Error
 }
 
-// UpdateWalletBalance updates the balance of a wallet within a given GORM transaction.
 func (r *AdminWalletRepository) UpdateWalletBalance(tx *gorm.DB, wallet *models.Wallet) error {
 	wallet.LastUpdated = time.Now()
 	return tx.Save(wallet).Error
 }
 
-// CreateDepositRequest creates a deposit request.
 func (r *AdminWalletRepository) CreateDepositRequest(deposit *models.DepositRequest) error {
 	return r.DB.Create(deposit).Error
 }
 
-// GetDepositRequestByID retrieves a deposit request by its ID.
 func (r *AdminWalletRepository) GetDepositRequestByID(depositID uint) (*models.DepositRequest, error) {
 	var deposit models.DepositRequest
 	err := r.DB.First(&deposit, depositID).Error
 	return &deposit, err
 }
 
-// UpdateDepositRequest updates a deposit request.
 func (r *AdminWalletRepository) UpdateDepositRequest(deposit *models.DepositRequest) error {
 	return r.DB.Save(deposit).Error
 }
 
-// CreateWithdrawRequest creates a withdrawal request.
 func (r *AdminWalletRepository) CreateWithdrawRequest(withdraw *models.WithdrawRequest) error {
 	return r.DB.Create(withdraw).Error
 }
 
-// GetWithdrawRequestByID retrieves a withdrawal request by its ID.
 func (r *AdminWalletRepository) GetWithdrawRequestByID(withdrawID uint) (*models.WithdrawRequest, error) {
 	var withdraw models.WithdrawRequest
 	err := r.DB.First(&withdraw, withdrawID).Error
 	return &withdraw, err
 }
 
-// UpdateWithdrawRequest updates a withdrawal request.
 func (r *AdminWalletRepository) UpdateWithdrawRequest(withdraw *models.WithdrawRequest) error {
 	return r.DB.Save(withdraw).Error
 }
 
-// GetAdminWalletTransactions retrieves transactions for the admin's wallet with pagination.
 func (r *AdminWalletRepository) GetAdminWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
 	adminUser, err := r.FindAdminUser()
 	if err != nil {
@@ -140,7 +125,6 @@ func (r *AdminWalletRepository) GetAdminWalletTransactions(pagination models.Pag
 	return transactions, total, nil
 }
 
-// GetPendingWithdrawalRequests retrieves withdrawal requests with a PENDING status for all users.
 func (r *AdminWalletRepository) GetPendingWithdrawalRequests(pagination models.PaginationParams) ([]models.WithdrawRequest, int64, error) {
 	var withdrawals []models.WithdrawRequest
 	var total int64
@@ -160,13 +144,11 @@ func (r *AdminWalletRepository) GetPendingWithdrawalRequests(pagination models.P
 	return withdrawals, total, nil
 }
 
-// UpdateCustomerWalletBalance updates a customer's wallet balance within a transaction.
 func (r *AdminWalletRepository) UpdateCustomerWalletBalance(tx *gorm.DB, wallet *models.Wallet) error {
 	wallet.LastUpdated = time.Now()
 	return tx.Save(wallet).Error
 }
 
-// GetCustomerWallet retrieves a specific customer's wallet.
 func (r *AdminWalletRepository) GetCustomerWallet(userID uint) (*models.Wallet, error) {
 	var wallet models.Wallet
 	err := r.DB.Where("user_id = ?", userID).First(&wallet).Error

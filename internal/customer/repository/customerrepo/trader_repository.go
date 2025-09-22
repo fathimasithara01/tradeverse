@@ -39,7 +39,6 @@ func (r *TraderRepository) FindApprovedTradersWithUsers(filters map[string]inter
 		query = query.Order(order)
 	}
 
-	// Apply pagination
 	if page > 0 && pageSize > 0 {
 		offset := (page - 1) * pageSize
 		query = query.Limit(pageSize).Offset(offset)

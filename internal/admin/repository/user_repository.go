@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// IUserRepository defines the interface for user data operations.
 type IUserRepository interface {
 	Create(user *models.User) error
 	CreateCustomerWithProfile(user *models.User, profile *models.CustomerProfile) error
@@ -19,7 +18,7 @@ type IUserRepository interface {
 
 	FindByID(id uint) (models.User, error)
 	FindByEmail(email string) (models.User, error)
-	FindByRole(role models.UserRole) ([]models.User, error) // Added this method
+	FindByRole(role models.UserRole) ([]models.User, error)
 	FindAllNonAdmins() ([]models.User, error)
 	FindAllAdvanced(options UserQueryOptions) (PaginatedUsers, error)
 	Update(user *models.User) error
@@ -36,27 +35,20 @@ type IUserRepository interface {
 	UpdateUserAndProfile(user *models.User) error
 	DeleteUser(id uint) error
 
-	// These methods seem redundant given FindByID and FindByEmail,
-	// but kept if there's a specific reason for them returning *models.User.
-	// Consider consolidating.
 	GetUserByID(id uint) (*models.User, error)
 	GetRoleByName(name models.UserRole) (*models.Role, error)
 	UpdateUser(user *models.User) error
 	GetUserByEmail(email string) (*models.User, error)
 }
 
-// UserRepository implements IUserRepository using GORM.
 type UserRepository struct {
 	DB *gorm.DB
 }
 
-// NewUserRepository creates a new UserRepository instance.
 func NewUserRepository(db *gorm.DB) IUserRepository {
 	return &UserRepository{DB: db}
 }
 
-// CreateCustomerWithProfile creates a user and their customer profile within a transaction.
-// Expects user.Password to be ALREADY HASHED.
 func (r *UserRepository) CreateCustomerWithProfile(user *models.User, profile *models.CustomerProfile) error {
 	tx := r.DB.Begin()
 	defer func() {
@@ -79,8 +71,6 @@ func (r *UserRepository) CreateCustomerWithProfile(user *models.User, profile *m
 	return tx.Commit().Error
 }
 
-// CreateTraderWithProfile creates a user and their trader profile within a transaction.
-// Expects user.Password to be ALREADY HASHED.
 func (r *UserRepository) CreateTraderWithProfile(user *models.User, profile *models.TraderProfile) error {
 	tx := r.DB.Begin()
 	defer func() {
@@ -103,7 +93,6 @@ func (r *UserRepository) CreateTraderWithProfile(user *models.User, profile *mod
 	return tx.Commit().Error
 }
 
-// GetUserByID retrieves a user by ID, preloading their role.
 func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 	var user models.User
 	err := r.DB.Preload("RoleModel").First(&user, id).Error
@@ -119,7 +108,6 @@ func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-// GetRoleByName retrieves a role by its name.
 func (r *UserRepository) GetRoleByName(name models.UserRole) (*models.Role, error) {
 	var role models.Role
 	err := r.DB.Where("name = ?", string(name)).First(&role).Error
@@ -135,13 +123,10 @@ func (r *UserRepository) GetRoleByName(name models.UserRole) (*models.Role, erro
 	return &role, nil
 }
 
-// UpdateUser updates user details.
-// Expects user.Password to be ALREADY HASHED if it's being updated.
 func (r *UserRepository) UpdateUser(user *models.User) error {
 	return r.DB.Save(user).Error
 }
 
-// GetUserByEmail retrieves a user by email, preloading their role.
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := r.DB.Preload("RoleModel").Where("LOWER(email) = LOWER(?)", email).First(&user).Error
@@ -157,7 +142,6 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-// FindByID retrieves a user by ID, preloading customer, trader, and role profiles.
 func (r *UserRepository) FindByID(id uint) (models.User, error) {
 	var user models.User
 	err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").Preload("RoleModel").First(&user, id).Error
@@ -173,7 +157,6 @@ func (r *UserRepository) FindByID(id uint) (models.User, error) {
 	return user, nil
 }
 
-// GetUserByIDWithProfile retrieves a user by ID, preloading customer and trader profiles.
 func (r *UserRepository) GetUserByIDWithProfile(id uint) (*models.User, error) {
 	var user models.User
 	if err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").First(&user, id).Error; err != nil {
@@ -185,8 +168,6 @@ func (r *UserRepository) GetUserByIDWithProfile(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-// UpdateUserAndProfile updates a user and their associated profile within a transaction.
-// Expects user.Password to be ALREADY HASHED if it's being updated.
 func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 	tx := r.DB.Begin()
 	defer func() {
@@ -195,23 +176,19 @@ func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 		}
 	}()
 
-	// Save the user itself (this will update password if it's been changed and hashed)
 	if err := tx.Save(user).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
-	// Update Customer Profile if present
-	// Check if the profile actually exists by ID before saving, otherwise create or handle it.
-	// GORM's Save can create if ID is 0, but it's safer to be explicit.
 	if user.CustomerProfile.UserID != 0 {
-		if user.CustomerProfile.ID != 0 { // Existing profile
+		if user.CustomerProfile.ID != 0 {
 			if err := tx.Save(&user.CustomerProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to update customer profile: %w", err)
 			}
-		} else { // New profile for an existing user
-			user.CustomerProfile.UserID = user.ID // Ensure association
+		} else {
+			user.CustomerProfile.UserID = user.ID
 			if err := tx.Create(&user.CustomerProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to create customer profile: %w", err)
@@ -219,15 +196,14 @@ func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 		}
 	}
 
-	// Update Trader Profile if present
 	if user.TraderProfile.UserID != 0 {
-		if user.TraderProfile.ID != 0 { // Existing profile
+		if user.TraderProfile.ID != 0 {
 			if err := tx.Save(&user.TraderProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to update trader profile: %w", err)
 			}
-		} else { // New profile for an existing user
-			user.TraderProfile.UserID = user.ID // Ensure association
+		} else {
+			user.TraderProfile.UserID = user.ID 
 			if err := tx.Create(&user.TraderProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to create trader profile: %w", err)
@@ -238,8 +214,6 @@ func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 	return tx.Commit().Error
 }
 
-// DeleteUser performs a soft delete on the user and cascades to profiles if applicable.
-// Using Unscoped().Delete for hard deleting the user row, which then cascades to profiles.
 func (r *UserRepository) DeleteUser(id uint) error {
 	tx := r.DB.Begin()
 	defer func() {
@@ -248,8 +222,7 @@ func (r *UserRepository) DeleteUser(id uint) error {
 		}
 	}()
 
-	// GORM's CASCADE will handle associated profiles if properly configured in models.
-	// If not, you'd explicitly delete profiles first. Assuming CASCADE is set.
+	
 	if err := tx.Unscoped().Delete(&models.User{}, id).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to delete user: %w", err)
@@ -258,9 +231,7 @@ func (r *UserRepository) DeleteUser(id uint) error {
 	return tx.Commit().Error
 }
 
-// Create is a generic create method for a user. It relies on the AfterCreate hook in models.User
-// to create default profiles and wallets.
-// Expects user.Password to be ALREADY HASHED.
+
 func (r *UserRepository) Create(user *models.User) error {
 	return r.DB.Create(user).Error
 }
@@ -281,7 +252,6 @@ func (r *UserRepository) FindByEmail(email string) (models.User, error) {
 	return user, nil
 }
 
-// FindByRole retrieves a list of users by their role.
 func (r *UserRepository) FindByRole(role models.UserRole) ([]models.User, error) {
 	var users []models.User
 	err := r.DB.
@@ -298,7 +268,6 @@ func (r *UserRepository) FindByRole(role models.UserRole) ([]models.User, error)
 	return users, nil
 }
 
-// FindAllNonAdmins retrieves all users that are not administrators.
 func (r *UserRepository) FindAllNonAdmins() ([]models.User, error) {
 	var users []models.User
 	err := r.DB.
@@ -314,7 +283,6 @@ func (r *UserRepository) FindAllNonAdmins() ([]models.User, error) {
 	return users, nil
 }
 
-// FindTradersByStatus retrieves all traders with a specific status.
 func (r *UserRepository) FindTradersByStatus(status models.TraderStatus) ([]models.User, error) {
 	var users []models.User
 	err := r.DB.Joins("JOIN trader_profiles ON users.id = trader_profiles.user_id").
@@ -329,7 +297,6 @@ func (r *UserRepository) FindTradersByStatus(status models.TraderStatus) ([]mode
 	return users, nil
 }
 
-// FindByIDs retrieves a list of users by their IDs.
 func (r *UserRepository) FindByIDs(ids []uint) ([]models.User, error) {
 	var users []models.User
 	if len(ids) == 0 {
@@ -341,7 +308,6 @@ func (r *UserRepository) FindByIDs(ids []uint) ([]models.User, error) {
 	return users, nil
 }
 
-// UpdateTraderStatus updates the status of a trader's profile.
 func (r *UserRepository) UpdateTraderStatus(userID uint, newStatus models.TraderStatus) error {
 	res := r.DB.Model(&models.TraderProfile{}).Where("user_id = ?", userID).Update("status", newStatus)
 	if res.Error != nil {
@@ -353,15 +319,12 @@ func (r *UserRepository) UpdateTraderStatus(userID uint, newStatus models.Trader
 	return nil
 }
 
-// Update updates a user, ensuring associations are saved.
-// Expects user.Password to be ALREADY HASHED if it's being updated.
+
 func (r *UserRepository) Update(user *models.User) error {
 	return r.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(user).Error
 }
 
-// Delete performs a hard delete for a user. Be careful with this!
 func (r *UserRepository) Delete(id uint) error {
-	// Assuming CASCADE is set up in your models for profiles.
 	res := r.DB.Unscoped().Delete(&models.User{}, id)
 	if res.Error != nil {
 		return fmt.Errorf("failed to delete user (hard delete): %w", res.Error)
@@ -372,7 +335,6 @@ func (r *UserRepository) Delete(id uint) error {
 	return nil
 }
 
-// UserQueryOptions defines options for advanced user queries.
 type UserQueryOptions struct {
 	Search string          `form:"search"`
 	Role   models.UserRole `form:"role"`
@@ -381,14 +343,12 @@ type UserQueryOptions struct {
 	Limit  int             `form:"limit"`
 }
 
-// PaginatedUsers holds paginated user results.
 type PaginatedUsers struct {
 	Users      []models.User `json:"users"`
 	TotalPages int           `json:"total_pages"`
 	Page       int           `json:"page"`
 }
 
-// FindAllAdvanced retrieves users with advanced filtering and pagination.
 func (r *UserRepository) FindAllAdvanced(options UserQueryOptions) (PaginatedUsers, error) {
 	var users []models.User
 	var totalUsers int64
@@ -444,7 +404,6 @@ func (r *UserRepository) FindAllAdvanced(options UserQueryOptions) (PaginatedUse
 	}, nil
 }
 
-// FindAllWithRole retrieves all non-admin users with their roles preloaded.
 func (r *UserRepository) FindAllWithRole() ([]models.User, error) {
 	var users []models.User
 	err := r.DB.
@@ -455,7 +414,6 @@ func (r *UserRepository) FindAllWithRole() ([]models.User, error) {
 	return users, err
 }
 
-// AssignRoleToUser assigns a specific role to a user.
 func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint, roleName models.UserRole) error {
 	updates := map[string]interface{}{
 		"role_id": roleID,
@@ -472,7 +430,6 @@ func (r *UserRepository) AssignRoleToUser(userID uint, roleID uint, roleName mod
 	return nil
 }
 
-// GetLatestOpenTradeForUser retrieves the most recent open trade for a given user.
 func (r *UserRepository) GetLatestOpenTradeForUser(userID uint) (models.Trade, error) {
 	var trade models.Trade
 	err := r.DB.Where("master_user_id = ? AND status = ?", userID, "open").

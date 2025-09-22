@@ -17,10 +17,8 @@ func NewTraderWalletService(db *gorm.DB, walletRepo walletrepo.TraderWalletRepos
 	return &TraderWalletService{db: db, walletRepo: walletRepo}
 }
 
-// SubscribeCustomer handles subscription payment
 func (s *TraderWalletService) SubscribeCustomer(customerID, traderID uint, price float64, currency string) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		// Get wallets
 		customerWallet, err := s.walletRepo.GetByUserID(customerID)
 		if err != nil {
 			return errors.New("customer wallet not found")
@@ -29,7 +27,7 @@ func (s *TraderWalletService) SubscribeCustomer(customerID, traderID uint, price
 		if err != nil {
 			return errors.New("trader wallet not found")
 		}
-		adminWallet, err := s.walletRepo.GetByUserID(1) // admin assumed user_id=1
+		adminWallet, err := s.walletRepo.GetByUserID(1)
 		if err != nil {
 			return errors.New("admin wallet not found")
 		}
@@ -38,11 +36,9 @@ func (s *TraderWalletService) SubscribeCustomer(customerID, traderID uint, price
 			return errors.New("insufficient balance")
 		}
 
-		// Split amounts
 		adminShare := price * 0.20
 		traderShare := price * 0.80
 
-		// Deduct customer
 		if err := s.walletRepo.UpdateBalance(customerWallet.ID, -price); err != nil {
 			return err
 		}
@@ -56,7 +52,6 @@ func (s *TraderWalletService) SubscribeCustomer(customerID, traderID uint, price
 			Description:     "subscription payment",
 		})
 
-		// Credit admin
 		if err := s.walletRepo.UpdateBalance(adminWallet.ID, adminShare); err != nil {
 			return err
 		}
@@ -70,7 +65,6 @@ func (s *TraderWalletService) SubscribeCustomer(customerID, traderID uint, price
 			Description:     "subscription share",
 		})
 
-		// Credit trader
 		if err := s.walletRepo.UpdateBalance(traderWallet.ID, traderShare); err != nil {
 			return err
 		}

@@ -56,7 +56,7 @@ func (c *TradeController) CreateTrade(ctx *gin.Context) {
 		return
 	}
 
-	req.TraderID = traderID.(uint) // force override
+	req.TraderID = traderID.(uint)
 
 	trade, err := c.svc.CreateTrade(ctx, req)
 	if err != nil {

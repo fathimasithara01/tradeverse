@@ -22,38 +22,34 @@ func NewKYCService(kycRepo customerrepo.KYCRepository) KYCServicer {
 }
 
 func (s *kycService) SubmitKYCDocuments(userID uint, docType, docURL string) error {
-	// 1. Create the new KYC document record
 	newDoc := &models.KYCDocument{
 		UserID:             userID,
 		DocumentType:       docType,
 		DocumentURL:        docURL,
-		VerificationStatus: models.KYCStatusPending, // New documents are always pending review
+		VerificationStatus: models.KYCStatusPending,
 	}
 	if err := s.kycRepo.CreateKYCDocument(newDoc); err != nil {
 		return errors.New("failed to save KYC document: " + err.Error())
 	}
 
-	// 2. Update/Create the user's overall KYC status
 	userKYCStatus, err := s.kycRepo.FindUserKYCStatus(userID)
 	if err != nil {
 		return errors.New("failed to retrieve user KYC status: " + err.Error())
 	}
 
 	if userKYCStatus == nil {
-		// No existing status, create a new one
 		newUserStatus := &models.UserKYCStatus{
 			UserID:          userID,
 			Status:          models.KYCStatusPending,
-			LastUpdatedBy:   userID, // The user themselves submitted it
+			LastUpdatedBy:   userID,
 			LastUpdatedDate: time.Now(),
 		}
 		if err := s.kycRepo.CreateUserKYCStatus(newUserStatus); err != nil {
 			return errors.New("failed to create user KYC status: " + err.Error())
 		}
 	} else if userKYCStatus.Status != models.KYCStatusApproved {
-		// If status exists and is not already approved, set it to PENDING
 		userKYCStatus.Status = models.KYCStatusPending
-		userKYCStatus.Reason = "" // Clear any previous rejection reasons
+		userKYCStatus.Reason = ""
 		userKYCStatus.LastUpdatedBy = userID
 		userKYCStatus.LastUpdatedDate = time.Now()
 		if err := s.kycRepo.UpdateUserKYCStatus(userKYCStatus); err != nil {
@@ -64,7 +60,6 @@ func (s *kycService) SubmitKYCDocuments(userID uint, docType, docURL string) err
 	return nil
 }
 
-// GetKYCStatus retrieves the user's current overall KYC verification status.
 func (s *kycService) GetKYCStatus(userID uint) (*models.KYCStatusResponse, error) {
 	userKYCStatus, err := s.kycRepo.FindUserKYCStatus(userID)
 	if err != nil {
@@ -72,10 +67,9 @@ func (s *kycService) GetKYCStatus(userID uint) (*models.KYCStatusResponse, error
 	}
 
 	if userKYCStatus == nil {
-		// If no status entry exists, it means nothing was ever submitted.
 		return &models.KYCStatusResponse{
 			Status:      models.KYCStatusNotSubmitted,
-			LastUpdated: time.Now(), // Default to now as a "not found" time
+			LastUpdated: time.Now(), 
 		}, nil
 	}
 

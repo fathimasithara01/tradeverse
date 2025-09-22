@@ -1,4 +1,4 @@
-package routes
+package router
 
 import (
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"

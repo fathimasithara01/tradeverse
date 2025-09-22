@@ -151,18 +151,15 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		}
 	}
 
-	// Load profile data if it exists and then update
 	if userToUpdate.Role == models.RoleCustomer {
 		if userToUpdate.CustomerProfile.ID == 0 {
-			// If CustomerProfile is not preloaded (e.g., if UserSvc.GetUserByID doesn't preload it fully)
-			// you might need to fetch it explicitly or update the GetUserByID method.
-			// For now, assuming it's loaded if present, or will be created/updated by UpdateUser method logic.
+			
 		}
+		userToUpdate.CustomerProfile.Name = c.PostForm("Name")
 		userToUpdate.CustomerProfile.PhoneNumber = c.PostForm("PhoneNumber")
 		userToUpdate.CustomerProfile.ShippingAddress = c.PostForm("ShippingAddress")
 	} else if userToUpdate.Role == models.RoleTrader {
 		if userToUpdate.TraderProfile.ID == 0 {
-			// Similar to CustomerProfile, ensure TraderProfile is loaded.
 		}
 		userToUpdate.TraderProfile.CompanyName = c.PostForm("CompanyName")
 		userToUpdate.TraderProfile.Bio = c.PostForm("Bio")

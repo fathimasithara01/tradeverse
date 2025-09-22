@@ -23,19 +23,16 @@ func NewSubscriptionService(db *gorm.DB, repo customerrepo.SubscriptionRepositor
 }
 
 func (s *subscriptionService) SubscribeCustomerToTrader(userID, planID uint) (*models.TraderSubscription, error) {
-	// Load plan
 	var plan models.SubscriptionPlan
 	if err := s.db.First(&plan, planID).Error; err != nil {
 		return nil, errors.New("subscription plan not found")
 	}
 
-	// Ensure customer has not subscribed already
 	existing, _ := s.repo.GetActiveSubscription(userID, planID)
 	if existing != nil {
 		return nil, errors.New("already subscribed to this trader plan")
 	}
 
-	// Load admin wallet
 	var adminUser models.User
 	if err := s.db.Where("role = ?", models.RoleAdmin).First(&adminUser).Error; err != nil {
 		return nil, errors.New("admin not found")
@@ -46,7 +43,6 @@ func (s *subscriptionService) SubscribeCustomerToTrader(userID, planID uint) (*m
 		return nil, errors.New("admin wallet not found")
 	}
 
-	// Transaction: record subscription + fund admin wallet
 	sub := &models.TraderSubscription{
 		UserID:                   userID,
 		TraderSubscriptionPlanID: plan.ID,
@@ -59,19 +55,16 @@ func (s *subscriptionService) SubscribeCustomerToTrader(userID, planID uint) (*m
 	}
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
-		// Save subscription
 		if err := tx.Create(sub).Error; err != nil {
 			return err
 		}
 
-		// Credit Admin wallet
 		before := adminWallet.Balance
 		adminWallet.Balance += plan.Price
 		if err := tx.Save(&adminWallet).Error; err != nil {
 			return err
 		}
 
-		// Add wallet transaction
 		wtx := models.WalletTransaction{
 			WalletID:        adminWallet.ID,
 			UserID:          adminUser.ID,
