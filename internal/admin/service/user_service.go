@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
-	"log" // Import log for service-level logging
+	"log"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/auth"
@@ -106,7 +106,7 @@ func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profi
 	}
 	if user.Email != "" && existingUser.Email != user.Email {
 		_, err := s.UserRepo.FindByEmail(user.Email)
-		if err == nil { // User with this email already exists
+		if err == nil {
 			return errors.New("email already registered by another user")
 		}
 		existingUser.Email = user.Email
@@ -131,8 +131,8 @@ func (s *UserService) RegisterCustomer(user models.User, profile models.Customer
 	}
 
 	user.Role = models.RoleCustomer
-	user.RoleID = &customerRole.ID // Assign the actual RoleID
-	profile.UserID = user.ID       // Ensure UserID is set on the profile before creation
+	user.RoleID = &customerRole.ID
+	profile.UserID = user.ID
 
 	return s.UserRepo.CreateCustomerWithProfile(&user, &profile)
 }
@@ -149,16 +149,13 @@ func (s *UserService) RegisterTrader(user models.User, profile models.TraderProf
 	}
 
 	user.Role = models.RoleTrader
-	user.RoleID = &traderRole.ID // Assign the actual RoleID
+	user.RoleID = &traderRole.ID
 	profile.Status = models.StatusPending
-	profile.UserID = user.ID // Ensure UserID is set on the profile before creation
+	profile.UserID = user.ID
 
-	// Use the specific repository method for creating user with trader profile
-	// user.Password should already be hashed by the controller
 	return s.UserRepo.CreateTraderWithProfile(&user, &profile)
 }
 
-// CreateTraderByAdmin creates a new trader, bypassing pending status as it's admin-approved. The user object's password should already be hashed.
 func (s *UserService) CreateTraderByAdmin(user models.User, profile models.TraderProfile) error {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
@@ -171,22 +168,19 @@ func (s *UserService) CreateTraderByAdmin(user models.User, profile models.Trade
 	}
 
 	user.Role = models.RoleTrader
-	user.RoleID = &traderRole.ID // Assign the actual RoleID
+	user.RoleID = &traderRole.ID
 	profile.Status = models.StatusApproved
-	profile.UserID = user.ID // Ensure UserID is set on the profile before creation
+	profile.UserID = user.ID
 
-	// user.Password should already be hashed by the controller
 	return s.UserRepo.CreateTraderWithProfile(&user, &profile)
 }
 
-// CreateInternalUser creates a new internal user (e.g., admin, without specific profile). The user object's password should already be hashed.
 func (s *UserService) CreateInternalUser(user models.User) (models.User, error) {
 	_, err := s.UserRepo.FindByEmail(user.Email)
 	if err == nil {
 		return models.User{}, errors.New("a user with this email already exists")
 	}
 
-	// Ensure RoleID is set for internal users as well if a role is provided
 	if user.Role != "" {
 		role, err := s.UserRepo.GetRoleByName(user.Role)
 		if err != nil {
@@ -195,8 +189,7 @@ func (s *UserService) CreateInternalUser(user models.User) (models.User, error) 
 		user.RoleID = &role.ID
 	}
 
-	// user.Password should already be hashed by the controller
-	err = s.UserRepo.Create(&user) // Use the generic Create method
+	err = s.UserRepo.Create(&user)
 	if err != nil {
 		return models.User{}, fmt.Errorf("failed to create internal user: %w", err)
 	}
@@ -204,7 +197,7 @@ func (s *UserService) CreateInternalUser(user models.User) (models.User, error) 
 }
 
 func (s *UserService) GetUserByID(id uint) (models.User, error) {
-	user, err := s.UserRepo.FindByID(id) // FindByID now preloads roles
+	user, err := s.UserRepo.FindByID(id)
 	if err != nil {
 		return models.User{}, fmt.Errorf("failed to get user by ID %d: %w", id, err)
 	}
@@ -225,16 +218,15 @@ func (s *UserService) GetAllUsers() ([]models.User, error) {
 	return users, nil
 }
 func (s *UserService) DeleteUser(id uint) error {
-	err := s.UserRepo.Delete(id) // This will trigger CASCADE if configured
+	err := s.UserRepo.Delete(id)
 	if err != nil {
 		return fmt.Errorf("failed to delete user %d: %w", id, err)
 	}
 	return nil
 }
 
-// UpdateUser updates a user. The userToUpdate object's password should already be hashed if it's being updated.
 func (s *UserService) UpdateUser(userToUpdate *models.User) error {
-	err := s.UserRepo.UpdateUserAndProfile(userToUpdate) // Ensure this method handles saving of profiles
+	err := s.UserRepo.UpdateUserAndProfile(userToUpdate)
 	if err != nil {
 		return fmt.Errorf("failed to update user %d: %w", userToUpdate.ID, err)
 	}

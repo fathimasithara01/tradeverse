@@ -64,9 +64,8 @@ func (ctrl *UserController) CreateTrader(c *gin.Context) {
 
 	user.Name = c.PostForm("Name")
 	user.Email = c.PostForm("Email")
-	rawPassword := c.PostForm("Password") // Get raw password
+	rawPassword := c.PostForm("Password")
 
-	// Hash the password
 	if err := user.SetPassword(rawPassword); err != nil {
 		c.HTML(http.StatusInternalServerError, "add_trader.html", gin.H{"error": "Failed to process password."})
 		return
@@ -87,9 +86,8 @@ func (ctrl *UserController) CreateCustomer(c *gin.Context) {
 	var user models.User
 	var profile models.CustomerProfile
 	user.Name, user.Email = c.PostForm("Name"), c.PostForm("Email")
-	rawPassword := c.PostForm("Password") // Get raw password
+	rawPassword := c.PostForm("Password")
 
-	// Hash the password
 	if err := user.SetPassword(rawPassword); err != nil {
 		c.HTML(http.StatusInternalServerError, "add_customer.html", gin.H{"error": "Failed to process password."})
 		return
@@ -108,9 +106,8 @@ func (ctrl *UserController) CreateInternalUser(c *gin.Context) {
 	var user models.User
 	user.Name = c.PostForm("Name")
 	user.Email = c.PostForm("Email")
-	rawPassword := c.PostForm("Password") // Get raw password
+	rawPassword := c.PostForm("Password")
 
-	// Hash the password
 	if err := user.SetPassword(rawPassword); err != nil {
 		c.HTML(http.StatusInternalServerError, "add_internal_user.html", gin.H{"error": "Failed to process password."})
 		return
@@ -139,9 +136,9 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 
 	userToUpdate.Name = c.PostForm("Name")
 	userToUpdate.Email = c.PostForm("Email")
-	newPassword := c.PostForm("Password") // Get new password if provided
+	newPassword := c.PostForm("Password")
 
-	if newPassword != "" { // Only update password if a new one is provided
+	if newPassword != "" {
 		if err := userToUpdate.SetPassword(newPassword); err != nil {
 			c.HTML(http.StatusInternalServerError, "edit_user.html", gin.H{
 				"error": "Failed to process new password.",
@@ -153,7 +150,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 
 	if userToUpdate.Role == models.RoleCustomer {
 		if userToUpdate.CustomerProfile.ID == 0 {
-			
+
 		}
 		userToUpdate.CustomerProfile.Name = c.PostForm("Name")
 		userToUpdate.CustomerProfile.PhoneNumber = c.PostForm("PhoneNumber")
@@ -172,7 +169,6 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 		})
 		return
 	}
-	// Decide redirect based on user role or a generic path
 	c.Redirect(http.StatusFound, "/admin/users/all")
 }
 

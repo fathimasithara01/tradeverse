@@ -203,7 +203,7 @@ func (r *UserRepository) UpdateUserAndProfile(user *models.User) error {
 				return fmt.Errorf("failed to update trader profile: %w", err)
 			}
 		} else {
-			user.TraderProfile.UserID = user.ID 
+			user.TraderProfile.UserID = user.ID
 			if err := tx.Create(&user.TraderProfile).Error; err != nil {
 				tx.Rollback()
 				return fmt.Errorf("failed to create trader profile: %w", err)
@@ -222,7 +222,6 @@ func (r *UserRepository) DeleteUser(id uint) error {
 		}
 	}()
 
-	
 	if err := tx.Unscoped().Delete(&models.User{}, id).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to delete user: %w", err)
@@ -230,7 +229,6 @@ func (r *UserRepository) DeleteUser(id uint) error {
 
 	return tx.Commit().Error
 }
-
 
 func (r *UserRepository) Create(user *models.User) error {
 	return r.DB.Create(user).Error
@@ -288,7 +286,7 @@ func (r *UserRepository) FindTradersByStatus(status models.TraderStatus) ([]mode
 	err := r.DB.Joins("JOIN trader_profiles ON users.id = trader_profiles.user_id").
 		Where("users.role = ? AND trader_profiles.status = ?", models.RoleTrader, status).
 		Preload("TraderProfile").
-		Preload("RoleModel"). // Preload the Role association
+		Preload("RoleModel").
 		Order("users.id asc").
 		Find(&users).Error
 	if err != nil {
@@ -300,7 +298,7 @@ func (r *UserRepository) FindTradersByStatus(status models.TraderStatus) ([]mode
 func (r *UserRepository) FindByIDs(ids []uint) ([]models.User, error) {
 	var users []models.User
 	if len(ids) == 0 {
-		return users, nil // Return empty slice if no IDs are provided
+		return users, nil
 	}
 	if err := r.DB.Preload("RoleModel").Where("id IN ?", ids).Find(&users).Error; err != nil {
 		return nil, fmt.Errorf("failed to find users by IDs: %w", err)
@@ -318,7 +316,6 @@ func (r *UserRepository) UpdateTraderStatus(userID uint, newStatus models.Trader
 	}
 	return nil
 }
-
 
 func (r *UserRepository) Update(user *models.User) error {
 	return r.DB.Session(&gorm.Session{FullSaveAssociations: true}).Save(user).Error

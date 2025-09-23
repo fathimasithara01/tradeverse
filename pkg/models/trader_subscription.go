@@ -8,9 +8,9 @@ import (
 
 type TraderSubscription struct {
 	gorm.Model
-	UserID                   uint             `gorm:"not null;index" json:"user_id"` // User who subscribed (this is a customer subscribing to a trader's plan)
+	UserID                   uint             `gorm:"not null;index" json:"user_id"`
 	User                     User             `gorm:"foreignKey:UserID" json:"user"`
-	TraderSubscriptionPlanID uint             `gorm:"not null;index" json:"trader_subscription_plan_id"` // The specific plan subscribed to
+	TraderSubscriptionPlanID uint             `gorm:"not null;index" json:"trader_subscription_plan_id"`
 	TraderSubscriptionPlan   SubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID" json:"trader_subscription_plan"`
 	StartDate                time.Time        `gorm:"not null" json:"start_date"`
 	EndDate                  time.Time        `gorm:"not null" json:"end_date"`
