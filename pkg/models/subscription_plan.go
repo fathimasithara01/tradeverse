@@ -20,3 +20,8 @@ type SubscriptionPlan struct {
 	AnalyticsAccess  string  `gorm:"size:50" json:"analytics_access,omitempty"`
 	CreatedByAdminID uint    `json:"created_by_admin_id"`
 }
+
+
+// 	IsTraderPlan    bool    `gorm:"default:false"` // true if this plan is specifically for traders
+// 	IsActive        bool    `gorm:"default:true"`  // Whether the plan is currently active/available
+// }

@@ -21,12 +21,12 @@ type SubscriptionPlanResponseDTO struct {
 	Duration        int     `json:"duration"`
 	Interval        string  `json:"interval"`
 	MaxFollowers    int     `json:"max_followers"`
-	Status          string  `json:"status"`
+	Status          string  `json:"status"` // Calculated status for display
 	Features        string  `json:"features"`
 	CommissionRate  float64 `json:"commission_rate"`
 	AnalyticsAccess string  `json:"analytics_access"`
-	IsTraderPlan    bool    `json:"is_trader_plan"`
-	IsActive        bool    `json:"is_active"`
+	IsTraderPlan    bool    `json:"is_trader_plan"` // Raw boolean for form population
+	IsActive        bool    `json:"is_active"`      // Raw boolean for form population
 }
 
 type CreateUpdateSubscriptionPlanRequest struct {
@@ -71,10 +71,82 @@ func (ctrl *SubscriptionController) ShowSubscriptionPlansPage(c *gin.Context) {
 	})
 }
 
+// ShowEditSubscriptionPlanPage is likely not needed with the current frontend approach
+// The frontend fetches data via API and populates a modal.
+/*
+func (ctrl *SubscriptionController) ShowEditSubscriptionPlanPage(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"error": "Invalid plan ID"})
+		return
+	}
+	plan, err := ctrl.SubscriptionPlanService.GetSubscriptionPlanByID(uint(id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.HTML(http.StatusNotFound, "error.html", gin.H{"error": "Subscription plan not found"})
+			return
+		}
+		log.Printf("Error fetching plan for edit page: %v", err)
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": "Failed to retrieve subscription plan"})
+		return
+	}
+	c.HTML(http.StatusOK, "edit_subscription_plan.html", gin.H{
+		"Title":  "Edit Subscription Plan",
+		"ActiveTab":    "financials",
+		"ActiveSubTab": "subscription_plans",
+		"Plan": plan, // Pass the entire plan object if the page truly expects it
+	})
+}
+*/
+
+// GetSubscriptionPlanByID API endpoint for the frontend to fetch plan data for editing
+func (ctrl *SubscriptionController) GetSubscriptionPlanByID(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid plan ID"})
+		return
+	}
+
+	plan, err := ctrl.SubscriptionPlanService.GetSubscriptionPlanByID(uint(id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Subscription plan not found"})
+			return
+		}
+		log.Printf("Error fetching subscription plan by ID: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve subscription plan"})
+		return
+	}
+
+	// Prepare response DTO
+	status := "inactive"
+	if plan.IsActive {
+		status = "active"
+	}
+	responsePlan := SubscriptionPlanResponseDTO{
+		ID:              plan.ID,
+		Name:            plan.Name,
+		Description:     plan.Description,
+		Price:           plan.Price,
+		Duration:        plan.Duration,
+		Interval:        plan.Interval,
+		MaxFollowers:    plan.MaxFollowers,
+		Status:          status,
+		Features:        plan.Features,
+		CommissionRate:  plan.CommissionRate,
+		AnalyticsAccess: plan.AnalyticsAccess,
+		IsTraderPlan:    plan.IsTraderPlan,
+		IsActive:        plan.IsActive,
+	}
+
+	c.JSON(http.StatusOK, responsePlan)
+}
+
 func (ctrl *SubscriptionController) GetSubscriptionPlans(c *gin.Context) {
 	plans, err := ctrl.SubscriptionPlanService.GetAllSubscriptionPlans()
 	if err != nil {
-		log.Printf("Error fetching subscription plans: %v", err) // Log the actual error
+		log.Printf("Error fetching subscription plans: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch subscription plans"})
 		return
 	}
@@ -168,8 +240,8 @@ func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
 	}
 
 	if err := ctrl.SubscriptionPlanService.CreateSubscriptionPlan(&newPlan); err != nil {
-		log.Printf("Error creating subscription plan: %v", err)                                                        // Log the actual error
-		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to create subscription plan: " + err.Error()}) // More detailed error
+		log.Printf("Error creating subscription plan: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"Message": "Failed to create subscription plan: " + err.Error()})
 		return
 	}
 
@@ -198,16 +270,14 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 
-	var req CreateUpdateSubscriptionPlanRequest // Use the same DTO for update
+	var req CreateUpdateSubscriptionPlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// First, get the existing plan to ensure we're updating it
 	existingPlan, err := ctrl.SubscriptionPlanService.GetSubscriptionPlanByID(uint(id))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) { // Assuming service returns this error for not found
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Subscription plan not found"})
 			return
 		}
@@ -216,7 +286,6 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 
-	// Update fields from the request DTO
 	existingPlan.Name = req.Name
 	existingPlan.Description = req.Description
 	existingPlan.Price = req.Price
@@ -226,8 +295,8 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 	existingPlan.Features = req.Features
 	existingPlan.CommissionRate = req.CommissionRate
 	existingPlan.AnalyticsAccess = req.AnalyticsAccess
-	existingPlan.IsTraderPlan = req.IsTraderPlan // Crucial update
-	existingPlan.IsActive = req.IsActive         // Crucial update
+	existingPlan.IsTraderPlan = req.IsTraderPlan
+	existingPlan.IsActive = req.IsActive
 
 	if err := ctrl.SubscriptionPlanService.UpdateSubscriptionPlan(existingPlan); err != nil {
 		log.Printf("Error updating subscription plan: %v", err)
@@ -235,11 +304,11 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 
-	// Respond with the DTO for consistency
 	status := "inactive"
 	if existingPlan.IsActive {
 		status = "active"
 	}
+
 	responsePlan := SubscriptionPlanResponseDTO{
 		ID:              existingPlan.ID,
 		Name:            existingPlan.Name,
@@ -259,7 +328,6 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 	c.JSON(http.StatusOK, responsePlan)
 }
 
-// DeleteSubscriptionPlan deletes a subscription plan
 func (ctrl *SubscriptionController) DeleteSubscriptionPlan(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)
@@ -269,6 +337,7 @@ func (ctrl *SubscriptionController) DeleteSubscriptionPlan(c *gin.Context) {
 	}
 
 	if err := ctrl.SubscriptionPlanService.DeleteSubscriptionPlan(uint(id)); err != nil {
+		log.Printf("Error deleting subscription plan %d: %v", id, err) // Log the error
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete subscription plan"})
 		return
 	}

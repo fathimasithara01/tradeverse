@@ -103,6 +103,7 @@ func WireAdminRoutes(
 				financials.POST("/api/subscription-plans", subscriptionController.CreateSubscriptionPlan)
 				financials.PUT("/api/subscription-plans/:id", subscriptionController.UpdateSubscriptionPlan)
 				financials.DELETE("/api/subscription-plans/:id", subscriptionController.DeleteSubscriptionPlan)
+				financials.GET("api/subscription-plans/:id", subscriptionController.GetSubscriptionPlanByID)
 
 				financials.GET("/wallet", adminWalletController.ShowAdminWalletPage)
 				financials.GET("/api/wallet/summary", adminWalletController.GetAdminWalletSummary)

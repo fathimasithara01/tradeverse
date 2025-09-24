@@ -38,10 +38,13 @@ func (r *SubscriptionPlanRepository) GetSubscriptionPlanByID(id uint) (*models.S
 }
 
 func (r *SubscriptionPlanRepository) UpdateSubscriptionPlan(plan *models.SubscriptionPlan) error {
+	// GORM's Save method works for both creation and update.
+	// When a primary key is set (ID > 0), it updates; otherwise, it creates.
 	return r.DB.Save(plan).Error
 }
 
 func (r *SubscriptionPlanRepository) DeleteSubscriptionPlan(id uint) error {
+	// Unscoped() is used for hard delete. Without it, GORM performs a soft delete
+	// if the model has gorm.DeletedAt field.
 	return r.DB.Unscoped().Delete(&models.SubscriptionPlan{}, id).Error
-
 }
