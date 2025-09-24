@@ -13,15 +13,10 @@ type SubscriptionPlan struct {
 
 	Currency string `gorm:"size:10;not null;default:'USD'" json:"currency"`
 
-	IsTraderPlan     bool    `gorm:"default:true" json:"is_trader_plan"`
+	IsTraderPlan     bool    `gorm:"default:false" json:"is_trader_plan"`
 	Features         string  `gorm:"type:text" json:"features"`
 	MaxFollowers     int     `json:"max_followers,omitempty"`
 	CommissionRate   float64 `gorm:"type:numeric(5,4);default:0.00" json:"commission_rate,omitempty"`
 	AnalyticsAccess  string  `gorm:"size:50" json:"analytics_access,omitempty"`
 	CreatedByAdminID uint    `json:"created_by_admin_id"`
 }
-
-
-// 	IsTraderPlan    bool    `gorm:"default:false"` // true if this plan is specifically for traders
-// 	IsActive        bool    `gorm:"default:true"`  // Whether the plan is currently active/available
-// }
