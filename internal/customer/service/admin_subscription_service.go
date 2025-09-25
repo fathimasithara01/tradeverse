@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -44,22 +45,22 @@ type UserTraderSubscriptionResponse struct {
 	IsActive  bool      `json:"is_active"`
 	Status    string    `json:"payment_status"`
 }
-
 type CustomerService interface {
 	ListTraderSubscriptionPlans() ([]TraderSubscriptionPlanResponse, error)
 	SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error)
 	GetCustomerTraderSubscription(userID uint) (*UserTraderSubscriptionResponse, error)
 	CancelCustomerTraderSubscription(userID uint, subscriptionID uint) error
+	DeactivateExpiredTraderSubscriptions() error
 }
 
 type customerService struct {
-	repo       customerrepo.CustomerRepository
+	repo       customerrepo.ITraderSubscriptionRepository
 	walletSvc  WalletService
 	walletRepo walletrepo.WalletRepository
 	db         *gorm.DB
 }
 
-func NewCustomerService(repo customerrepo.CustomerRepository, walletSvc WalletService, walletRepo walletrepo.WalletRepository, db *gorm.DB) CustomerService { // Changed type
+func NewCustomerService(repo customerrepo.ITraderSubscriptionRepository, walletSvc WalletService, walletRepo walletrepo.WalletRepository, db *gorm.DB) CustomerService {
 	return &customerService{
 		repo:       repo,
 		walletSvc:  walletSvc,
@@ -116,10 +117,10 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 	}
 
 	existingSub, err := s.repo.GetUserTraderSubscription(userID)
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) { 
 		return nil, fmt.Errorf("failed to check existing trader subscription: %w", err)
 	}
-	if existingSub != nil {
+	if existingSub != nil && existingSub.IsActive { 
 		return nil, ErrAlreadyHasTraderSubscription
 	}
 
@@ -141,7 +142,7 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 			newAdminWallet := &models.Wallet{
 				UserID:   AdminUserID,
 				Balance:  0,
-				Currency: "INR",
+				Currency: "INR", 
 			}
 			if createErr := s.walletRepo.CreateWallet(newAdminWallet); createErr != nil {
 				return nil, fmt.Errorf("failed to auto-create admin wallet: %w", createErr)
@@ -187,17 +188,30 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 			return fmt.Errorf("failed to create trader subscription record in transaction: %w", err)
 		}
 
+		user.Role = models.RoleTrader 
 		if err := tx.Model(&models.User{}).Where("id = ?", userID).Update("role", models.RoleTrader).Error; err != nil {
 			return fmt.Errorf("failed to update user role to trader in transaction: %w", err)
 		}
 
-		newTraderProfile := models.TraderProfile{
-			UserID:     userID,
-			Status:     models.StatusPending,
-			IsVerified: false,
-		}
-		if err := tx.Create(&newTraderProfile).Error; err != nil {
-			return fmt.Errorf("failed to create trader profile in transaction: %w", err)
+		var traderProfile models.TraderProfile
+		if err := tx.Where("user_id = ?", userID).First(&traderProfile).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				traderProfile = models.TraderProfile{
+					UserID:     userID,
+					Status:     models.StatusPending, // Or models.StatusApproved if direct approval
+					IsVerified: false,
+				}
+				if err := tx.Create(&traderProfile).Error; err != nil {
+					return fmt.Errorf("failed to create trader profile in transaction: %w", err)
+				}
+			} else {
+				return fmt.Errorf("failed to check existing trader profile: %w", err)
+			}
+		} else {
+			traderProfile.Status = models.StatusPending
+			if err := tx.Save(&traderProfile).Error; err != nil {
+				return fmt.Errorf("failed to update trader profile in transaction: %w", err)
+			}
 		}
 
 		return nil
@@ -237,6 +251,9 @@ func (s *customerService) GetCustomerTraderSubscription(userID uint) (*UserTrade
 	if sub == nil {
 		return nil, nil
 	}
+	if sub.TraderSubscriptionPlan.ID == 0 {
+		return nil, fmt.Errorf("trader subscription plan not loaded for subscription ID %d", sub.ID)
+	}
 
 	return &UserTraderSubscriptionResponse{
 		ID:        sub.ID,
@@ -252,6 +269,9 @@ func (s *customerService) GetCustomerTraderSubscription(userID uint) (*UserTrade
 func (s *customerService) CancelCustomerTraderSubscription(userID uint, subscriptionID uint) error {
 	existingSub, err := s.repo.GetUserTraderSubscription(userID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNoActiveTraderSubscription
+		}
 		return fmt.Errorf("failed to check existing trader subscription: %w", err)
 	}
 	if existingSub == nil || existingSub.ID != subscriptionID || !existingSub.IsActive {
@@ -265,16 +285,57 @@ func (s *customerService) CancelCustomerTraderSubscription(userID uint, subscrip
 
 	return nil
 }
-
 func calculateEndDate(start time.Time, interval string, duration int) time.Time {
 	switch strings.ToLower(strings.TrimSpace(interval)) {
-	case "day", "days", "d":
+	case "day", "days", "d", "daily":
 		return start.AddDate(0, 0, duration)
+	case "week", "weeks", "w", "weekly":
+		return start.AddDate(0, 0, duration*7)
 	case "month", "months", "m", "monthly":
 		return start.AddDate(0, duration, 0)
 	case "year", "years", "y", "yearly":
 		return start.AddDate(duration, 0, 0)
 	default:
-		return start.AddDate(0, duration, 0)
+		fmt.Printf("Warning: Unknown interval '%s'. Defaulting to 1 month duration.\n", interval)
+		return start.AddDate(0, 1, 0)
 	}
+}
+
+func (s *customerService) DeactivateExpiredTraderSubscriptions() error {
+	log.Println("Running cron job: Deactivating expired trader subscriptions...")
+	expiredTraderSubs, err := s.repo.GetExpiredActiveTraderSubscriptions()
+	if err != nil {
+		return fmt.Errorf("failed to get expired active trader subscriptions: %w", err)
+	}
+
+	if len(expiredTraderSubs) == 0 {
+		log.Println("No expired trader subscriptions found to deactivate.")
+		return nil
+	}
+
+	for _, sub := range expiredTraderSubs {
+		sub.IsActive = false
+		sub.PaymentStatus = "expired"
+		if err := s.repo.UpdateTraderSubscription(&sub); err != nil {
+			log.Printf("Error deactivating trader subscription ID %d for user %d: %v", sub.ID, sub.UserID, err)
+		} else {
+			planName := "Unknown Plan"
+			if sub.TraderSubscriptionPlan != nil {
+				planName = sub.TraderSubscriptionPlan.Name
+			}
+			log.Printf("Deactivated trader subscription ID %d for user %d (Plan: %s). EndDate: %v", sub.ID, sub.UserID, planName, sub.EndDate)
+
+			var activeTraderSubsCount int64
+			s.db.Model(&models.TraderSubscription{}).Where("user_id = ? AND is_active = ?", sub.UserID, true).Count(&activeTraderSubsCount)
+			if activeTraderSubsCount == 0 {
+				if err := s.db.Model(&models.User{}).Where("id = ?", sub.UserID).Update("role", models.RoleCustomer).Error; err != nil {
+					log.Printf("Warning: Failed to demote user %d to customer after their last trader subscription expired: %v", sub.UserID, err)
+				} else {
+					log.Printf("User %d demoted to customer role after last trader subscription expired.", sub.UserID)
+				}
+			}
+		}
+	}
+	log.Printf("Cron job finished: Deactivated %d trader subscriptions.", len(expiredTraderSubs))
+	return nil
 }

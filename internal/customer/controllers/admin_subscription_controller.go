@@ -17,7 +17,7 @@ func NewCustomerController(service service.CustomerService) *CustomerController 
 }
 
 func (ctrl *CustomerController) ListTraderSubscriptionPlans(c *gin.Context) {
-	plans, err := ctrl.Service.ListTraderSubscriptionPlans() // Calls the correct service method
+	plans, err := ctrl.Service.ListTraderSubscriptionPlans() 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return

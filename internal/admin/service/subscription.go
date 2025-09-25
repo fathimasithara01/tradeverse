@@ -19,6 +19,9 @@ type ISubscriptionService interface {
 	DeleteSubscription(id uint) error
 	GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
 	UpgradeUserToTrader(userID uint) error
+
+	DeactivateExpiredSubscriptions() error // New method for cron job
+
 }
 
 type SubscriptionService struct {
@@ -37,6 +40,31 @@ func NewSubscriptionService(subRepo repository.ISubscriptionRepository, planRepo
 		adminWalletService: adminWalletService,
 		DB:                 db,
 	}
+}
+
+func (s *SubscriptionService) DeactivateExpiredSubscriptions() error {
+	log.Println("Running cron job: Deactivating expired subscriptions...")
+	expiredSubs, err := s.subscriptionRepo.GetExpiredActiveSubscriptions()
+	if err != nil {
+		return fmt.Errorf("failed to get expired active subscriptions: %w", err)
+	}
+
+	if len(expiredSubs) == 0 {
+		log.Println("No expired subscriptions found to deactivate.")
+		return nil
+	}
+
+	for _, sub := range expiredSubs {
+		sub.IsActive = false
+		sub.PaymentStatus = "expired"
+		if err := s.subscriptionRepo.UpdateSubscription(&sub); err != nil {
+			log.Printf("Error deactivating subscription ID %d for user %d: %v", sub.ID, sub.UserID, err)
+		} else {
+			log.Printf("Deactivated subscription ID %d for user %d (Plan: %s)", sub.ID, sub.UserID, sub.SubscriptionPlan.Name)
+		}
+	}
+	log.Printf("Cron job finished: Deactivated %d subscriptions.", len(expiredSubs))
+	return nil
 }
 
 func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {

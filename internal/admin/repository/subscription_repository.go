@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
 )
@@ -12,6 +14,8 @@ type ISubscriptionRepository interface {
 	GetSubscriptionsByUserID(userID uint) ([]models.Subscription, error)
 	UpdateSubscription(subscription *models.Subscription) error
 	DeleteSubscription(id uint) error
+	GetExpiredActiveSubscriptions() ([]models.Subscription, error) // New method
+
 }
 
 type SubscriptionRepository struct {
@@ -20,6 +24,15 @@ type SubscriptionRepository struct {
 
 func NewSubscriptionRepository(db *gorm.DB) *SubscriptionRepository {
 	return &SubscriptionRepository{DB: db}
+}
+
+func (r *SubscriptionRepository) GetExpiredActiveSubscriptions() ([]models.Subscription, error) {
+	var subscriptions []models.Subscription
+	err := r.DB.
+		Where("is_active = ? AND end_date < ?", true, time.Now()).
+		Preload("User").
+		Find(&subscriptions).Error
+	return subscriptions, err
 }
 
 func (r *SubscriptionRepository) CreateSubscription(subscription *models.Subscription) error {

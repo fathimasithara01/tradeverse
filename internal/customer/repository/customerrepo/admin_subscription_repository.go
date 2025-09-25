@@ -1,4 +1,4 @@
-package repository
+package customerrepo
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 )
 
-type CustomerRepository interface {
+type ITraderSubscriptionRepository interface {
 	GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error)
 	GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
 	CreateTraderSubscription(sub *models.TraderSubscription) error
@@ -22,19 +22,34 @@ type CustomerRepository interface {
 	GetUserByID(userID uint) (*models.User, error)
 	UpdateUserRole(userID uint, role models.UserRole) error
 	CreateTraderProfile(profile *models.TraderProfile) error
+
+	GetExpiredActiveTraderSubscriptions() ([]models.TraderSubscription, error)
+	UpdateTraderSubscription(sub *models.TraderSubscription) error
 }
 
-type customerRepository struct {
+
+
+type traderSubscriptionRepository struct {
 	db *gorm.DB
 }
 
-func NewCustomerRepository(db *gorm.DB) CustomerRepository {
-	return &customerRepository{
-		db: db,
-	}
+func NewTraderSubscriptionRepository(db *gorm.DB) ITraderSubscriptionRepository { // Changed return type
+	return &traderSubscriptionRepository{db: db}
 }
 
-func (r *customerRepository) GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error) {
+func (r *traderSubscriptionRepository) GetExpiredActiveTraderSubscriptions() ([]models.TraderSubscription, error) {
+	var subs []models.TraderSubscription
+	err := r.db.
+		Where("is_active = ? AND end_date < ?", true, time.Now()).
+		Preload("TraderSubscriptionPlan"). // Preload plan details for logging
+		Find(&subs).Error
+	return subs, err
+}
+
+func (r *traderSubscriptionRepository) UpdateTraderSubscription(sub *models.TraderSubscription) error {
+	return r.db.Save(sub).Error
+}
+func (r *traderSubscriptionRepository) GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error) {
 	var plans []models.SubscriptionPlan
 	if err := r.db.Where("is_trader_plan = ? AND is_active = ?", true, true).
 		Order("price ASC").
@@ -44,7 +59,7 @@ func (r *customerRepository) GetTraderSubscriptionPlans() ([]models.Subscription
 	return plans, nil
 }
 
-func (r *customerRepository) GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error) {
+func (r *traderSubscriptionRepository) GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error) {
 	var plan models.SubscriptionPlan
 	if err := r.db.First(&plan, id).Error; err != nil {
 		return nil, err
@@ -52,11 +67,11 @@ func (r *customerRepository) GetSubscriptionPlanByID(id uint) (*models.Subscript
 	return &plan, nil
 }
 
-func (r *customerRepository) CreateTraderSubscription(sub *models.TraderSubscription) error {
+func (r *traderSubscriptionRepository) CreateTraderSubscription(sub *models.TraderSubscription) error {
 	return r.db.Create(sub).Error
 }
 
-func (r *customerRepository) GetUserTraderSubscription(userID uint) (*models.TraderSubscription, error) {
+func (r *traderSubscriptionRepository) GetUserTraderSubscription(userID uint) (*models.TraderSubscription, error) {
 	var sub models.TraderSubscription
 	err := r.db.
 		Where("user_id = ? AND is_active = ? AND end_date > ?", userID, true, time.Now()).
@@ -71,13 +86,13 @@ func (r *customerRepository) GetUserTraderSubscription(userID uint) (*models.Tra
 	return &sub, nil
 }
 
-func (r *customerRepository) CancelTraderSubscription(userID uint, subscriptionID uint) error {
+func (r *traderSubscriptionRepository) CancelTraderSubscription(userID uint, subscriptionID uint) error {
 	return r.db.Model(&models.TraderSubscription{}).
 		Where("id = ? AND user_id = ?", subscriptionID, userID).
 		Updates(map[string]interface{}{"is_active": false, "end_date": time.Now()}).Error
 }
 
-func (r *customerRepository) GetUserByID(userID uint) (*models.User, error) {
+func (r *traderSubscriptionRepository) GetUserByID(userID uint) (*models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -88,10 +103,10 @@ func (r *customerRepository) GetUserByID(userID uint) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *customerRepository) UpdateUserRole(userID uint, role models.UserRole) error {
+func (r *traderSubscriptionRepository) UpdateUserRole(userID uint, role models.UserRole) error {
 	return r.db.Model(&models.User{}).Where("id = ?", userID).Update("role", role).Error
 }
 
-func (r *customerRepository) CreateTraderProfile(profile *models.TraderProfile) error {
+func (r *traderSubscriptionRepository) CreateTraderProfile(profile *models.TraderProfile) error {
 	return r.db.Create(profile).Error
 }

@@ -71,35 +71,6 @@ func (ctrl *SubscriptionController) ShowSubscriptionPlansPage(c *gin.Context) {
 	})
 }
 
-// ShowEditSubscriptionPlanPage is likely not needed with the current frontend approach
-// The frontend fetches data via API and populates a modal.
-/*
-func (ctrl *SubscriptionController) ShowEditSubscriptionPlanPage(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"error": "Invalid plan ID"})
-		return
-	}
-	plan, err := ctrl.SubscriptionPlanService.GetSubscriptionPlanByID(uint(id))
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.HTML(http.StatusNotFound, "error.html", gin.H{"error": "Subscription plan not found"})
-			return
-		}
-		log.Printf("Error fetching plan for edit page: %v", err)
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"error": "Failed to retrieve subscription plan"})
-		return
-	}
-	c.HTML(http.StatusOK, "edit_subscription_plan.html", gin.H{
-		"Title":  "Edit Subscription Plan",
-		"ActiveTab":    "financials",
-		"ActiveSubTab": "subscription_plans",
-		"Plan": plan, // Pass the entire plan object if the page truly expects it
-	})
-}
-*/
-
-// GetSubscriptionPlanByID API endpoint for the frontend to fetch plan data for editing
 func (ctrl *SubscriptionController) GetSubscriptionPlanByID(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)

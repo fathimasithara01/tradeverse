@@ -5,7 +5,6 @@ import (
 
 	adminSvc "github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
-	"github.com/fathimasithara01/tradeverse/internal/customer/repository"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
@@ -37,21 +36,23 @@ func InitializeApp() (*App, error) {
 
 	userRepo := adminRepo.NewUserRepository(db)
 	roleRepo := adminRepo.NewRoleRepository(db)
-	kycRepo := customerrepo.NewKYCRepository(db)
 	walletRepo := walletrepo.NewWalletRepository(db)
-	customerRepo := repository.NewCustomerRepository(db)
-	traderRepo := customerrepo.NewTraderRepository(db)
+
+	kycRepo := customerrepo.NewKYCRepository(db)
 	subRepo := customerrepo.NewSubscriptionRepository(db)
+	traderRepo := customerrepo.NewTraderRepository(db)
+	cusSubRepo := customerrepo.NewTraderSubscriptionRepository(db)
+
 	traderWalletRepo := walletrepo.NewTraderWalletRepository(db)
 
 	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	kycService := service.NewKYCService(kycRepo)
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 	walletService := service.NewWalletService(walletRepo, paymentClient, db)
-	customerService := service.NewCustomerService(customerRepo, walletService, walletRepo, db)
 	traderService := service.NewTraderService(traderRepo, db)
 	subService := service.NewSubscriptionService(db, subRepo)
 	traderWalletService := service.NewTraderWalletService(db, traderWalletRepo)
+	customerService := service.NewCustomerService(cusSubRepo, walletService, walletRepo, db)
 
 	authController := controllers.NewAuthController(userService)
 	profileController := controllers.NewProfileController(userService)

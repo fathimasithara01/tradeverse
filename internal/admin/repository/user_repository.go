@@ -39,6 +39,8 @@ type IUserRepository interface {
 	GetRoleByName(name models.UserRole) (*models.Role, error)
 	UpdateUser(user *models.User) error
 	GetUserByEmail(email string) (*models.User, error)
+
+	GetUsersByRole(role models.UserRole) ([]models.User, error)
 }
 
 type UserRepository struct {
@@ -47,6 +49,16 @@ type UserRepository struct {
 
 func NewUserRepository(db *gorm.DB) IUserRepository {
 	return &UserRepository{DB: db}
+}
+
+func (r *UserRepository) GetUsersByRole(role models.UserRole) ([]models.User, error) {
+	var users []models.User
+	// Make sure the query correctly targets the 'role' field
+	err := r.DB.Where("role = ?", role).Find(&users).Error
+	if err != nil {
+		return nil, fmt.Errorf("repo: failed to find users by role: %w", err)
+	}
+	return users, nil
 }
 
 func (r *UserRepository) CreateCustomerWithProfile(user *models.User, profile *models.CustomerProfile) error {

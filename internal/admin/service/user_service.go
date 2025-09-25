@@ -203,13 +203,18 @@ func (s *UserService) GetUserByID(id uint) (models.User, error) {
 	}
 	return user, nil
 }
+
 func (s *UserService) GetUsersByRole(role models.UserRole) ([]models.User, error) {
-	users, err := s.UserRepo.FindByRole(role)
+	log.Printf("Fetching users with role: %s", role)
+	users, err := s.UserRepo.GetUsersByRole(role)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get users by role '%s': %w", role, err)
+		log.Printf("Error fetching users by role %s: %v", role, err)
+		return nil, fmt.Errorf("service: failed to get users by role %s: %w", role, err)
 	}
+	log.Printf("Found %d users with role %s", len(users), role)
 	return users, nil
 }
+
 func (s *UserService) GetAllUsers() ([]models.User, error) {
 	users, err := s.UserRepo.FindAllNonAdmins()
 	if err != nil {
@@ -217,6 +222,7 @@ func (s *UserService) GetAllUsers() ([]models.User, error) {
 	}
 	return users, nil
 }
+
 func (s *UserService) DeleteUser(id uint) error {
 	err := s.UserRepo.Delete(id)
 	if err != nil {
@@ -232,6 +238,7 @@ func (s *UserService) UpdateUser(userToUpdate *models.User) error {
 	}
 	return nil
 }
+
 func (s *UserService) GetAllUsersAdvanced(options repository.UserQueryOptions) (repository.PaginatedUsers, error) {
 	paginatedUsers, err := s.UserRepo.FindAllAdvanced(options)
 	if err != nil {
