@@ -144,6 +144,7 @@ type TransactionListResponse struct {
 }
 
 type PaginationParams struct {
-	Page  int `form:"page,default=1"`
-	Limit int `form:"limit,default=10"`
+	Page        int    `form:"page,default=1"`
+	Limit       int    `form:"limit,default=10"`
+	SearchQuery string `form:"search"`
 }

@@ -20,18 +20,21 @@ func NewAdminWalletController(adminWalletService service.IAdminWalletService) *A
 	}
 }
 
+type PaginationParams struct {
+	Page        int    `form:"page,default=1"`
+	Limit       int    `form:"limit,default=10"`
+	SearchQuery string `form:"search"`
+}
+
 func (ctrl *AdminWalletController) ShowAdminWalletPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin_wallet.html", gin.H{
 		"Title":        "Admin Wallet",
 		"ActiveTab":    "financials",
 		"ActiveSubTab": "admin_wallet",
 	})
-	fmt.Println("Finished rendering admin_wallet.html (if no error occurred)") // Add this line
+	fmt.Println("Finished rendering admin_wallet.html (if no error occurred)")
 }
 
-// ... existing methods ...
-
-// AdminGetAllPlatformTransactions retrieves all transactions across all users.
 func (ctrl *AdminWalletController) AdminGetAllPlatformTransactions(c *gin.Context) {
 	var pagination models.PaginationParams
 	if err := c.ShouldBindQuery(&pagination); err != nil {
@@ -116,7 +119,28 @@ func (ctrl *AdminWalletController) AdminRequestWithdrawal(c *gin.Context) {
 	c.JSON(http.StatusCreated, res)
 }
 
-// AdminGetWalletTransactions retrieves all transactions for the admin's wallet.
+// func (ctrl *AdminWalletController) AdminGetWalletTransactions(c *gin.Context) {
+// 	var pagination models.PaginationParams
+// 	if err := c.ShouldBindQuery(&pagination); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	// You might want to add filtering options here as well (e.g., by type, status, date range)
+// 	transactions, total, err := ctrl.AdminWalletService.AdminGetWalletTransactions(pagination)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve admin wallet transactions", "details": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, models.TransactionListResponse{
+// 		Transactions: transactions,
+// 		Total:        total,
+// 		Page:         pagination.Page,
+// 		Limit:        pagination.Limit,
+// 	})
+// }
+
 func (ctrl *AdminWalletController) AdminGetWalletTransactions(c *gin.Context) {
 	var pagination models.PaginationParams
 	if err := c.ShouldBindQuery(&pagination); err != nil {
@@ -124,8 +148,8 @@ func (ctrl *AdminWalletController) AdminGetWalletTransactions(c *gin.Context) {
 		return
 	}
 
-	// You might want to add filtering options here as well (e.g., by type, status, date range)
-	transactions, total, err := ctrl.AdminWalletService.AdminGetWalletTransactions(pagination)
+	// Pass the search query from pagination
+	transactions, total, err := ctrl.AdminWalletService.AdminGetWalletTransactions(pagination) // Changed this line
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve admin wallet transactions", "details": err.Error()})
 		return
@@ -139,7 +163,6 @@ func (ctrl *AdminWalletController) AdminGetWalletTransactions(c *gin.Context) {
 	})
 }
 
-// AdminApproveOrRejectWithdrawal allows admin to approve/reject customer withdrawal requests
 func (ctrl *AdminWalletController) AdminApproveOrRejectWithdrawal(c *gin.Context) {
 	withdrawalIDStr := c.Param("id")
 	withdrawalID, err := strconv.ParseUint(withdrawalIDStr, 10, 64)
@@ -170,7 +193,6 @@ func (ctrl *AdminWalletController) AdminApproveOrRejectWithdrawal(c *gin.Context
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Withdrawal request %sed successfully", req.Action)})
 }
 
-// GetPendingWithdrawals retrieves all pending withdrawal requests (from customers)
 func (ctrl *AdminWalletController) GetPendingWithdrawals(c *gin.Context) {
 	var pagination models.PaginationParams
 	if err := c.ShouldBindQuery(&pagination); err != nil {
