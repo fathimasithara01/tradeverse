@@ -173,7 +173,7 @@
 
 <body>
     <div class="wrapper">
-                {{template "admin_sidebar" .}}
+        {{template "admin_sidebar" .}}
 
         <div id="content">
             <h2 class="mb-4">{{.Title}}</h2>
@@ -371,6 +371,7 @@
             const transactionTableBody = document.getElementById('transactionTableBody');
             const transactionPagination = document.getElementById('transactionPagination');
             const transactionSearch = document.getElementById('transactionSearch');
+
             const depositForm = document.getElementById('depositForm');
             const withdrawForm = document.getElementById('withdrawForm');
             const pendingWithdrawalsTableBody = document.getElementById('pendingWithdrawalsTableBody');
@@ -380,11 +381,11 @@
             const rejectWithdrawalIdSpan = document.getElementById('rejectWithdrawalId');
             const confirmRejectWithdrawalBtn = document.getElementById('confirmRejectWithdrawalBtn');
 
+
             let currentTransactionPage = 1;
             let currentPendingWithdrawalPage = 1;
             let currentRejectWithdrawalID = null;
 
-            // --- Utility for Toast Notifications ---
             function showToast(message, type = 'success') {
                 const toastContainer = document.getElementById('toastContainer');
                 const toastId = `toast-${Date.now()}`;
@@ -429,43 +430,53 @@
                     });
             }
 
-            function fetchAdminWalletTransactions(page = 1, limit = 10, searchQuery = '') {
-                // Corrected API endpoint
-                let url = `/admin/financials/api/wallet/transactions?page=${page}&limit=${limit}`;
+
+            function fetchPlatformTransactions(page = 1, limit = 10, searchQuery = '') { // Renamed for clarity
+                let url = `/admin/financials/api/transactions/all?page=${page}&limit=${limit}`; // This is the new endpoint
                 if (searchQuery) {
-                    url += `&search=${encodeURIComponent(searchQuery)}`; // Add search parameter and encode
+                    url += `&search=${encodeURIComponent(searchQuery)}`;
                 }
 
                 fetch(url)
                     .then(response => {
                         if (!response.ok) {
-                            return response.json().then(err => { throw new Error(err.details || 'Failed to fetch transactions'); });
+                            // It's good practice to log the full error response for debugging
+                            return response.json().then(err => {
+                                console.error('API Error Response:', err);
+                                throw new Error(err.details || `Failed to fetch transactions (${response.status} ${response.statusText})`);
+                            });
                         }
                         return response.json();
                     })
+
                     .then(data => {
                         transactionTableBody.innerHTML = '';
                         if (data.transactions && data.transactions.length > 0) {
                             data.transactions.forEach(tx => {
+                                // Defensive checks for amount (optional but good practice)
+                                const amountDisplay = (tx.amount !== undefined && tx.amount !== null) ? tx.amount.toFixed(2) : 'N/A';
+                                const createdAtDisplay = tx.CreatedAt ? new Date(tx.CreatedAt).toLocaleString() : 'N/A';
                                 const row = `
-                                    <tr>
-                                        <td>${tx.ID}</td>
-                                        <td>${tx.transaction_type}</td>
-                                        <td>${tx.amount.toFixed(2)}</td>
-                                        <td>${tx.currency}</td>
-                                        <td><span class="badge bg-${getStatusBadgeClass(tx.status)}">${tx.status}</span></td>
-                                        <td>${tx.description || 'N/A'}</td>
-                                        <td>${new Date(tx.CreatedAt).toLocaleString()}</td>
-                                    </tr>
-                                `;
+                            <tr>
+                                <td>${tx.ID}</td>
+                                <td>${tx.transaction_type}</td>
+                                <td>${amountDisplay}</td>
+                                <td>${tx.currency}</td>
+                                <td><span class="badge bg-${getStatusBadgeClass(tx.status)}">${tx.status}</span></td>
+                                <td>${tx.description || 'N/A'}</td>
+                                <td>${createdAtDisplay}</td>
+                            </tr>
+                        `;
                                 transactionTableBody.insertAdjacentHTML('beforeend', row);
                             });
-                            renderPagination(transactionPagination, data.total, data.limit, data.page, fetchAdminWalletTransactions);
+
+                            renderPagination(transactionPagination, data.total, data.limit, data.page, fetchPlatformTransactions);
                         } else {
                             transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center">No transactions found.</td></tr>`;
                             transactionPagination.innerHTML = '';
                         }
                     })
+
                     .catch(error => {
                         console.error('Error fetching transactions:', error);
                         transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
@@ -473,6 +484,10 @@
                         showToast(`Failed to load transactions: ${error.message}`, 'danger');
                     });
             }
+
+
+
+
 
             function getStatusBadgeClass(status) {
                 switch (status.toLowerCase()) { // Ensure case insensitivity
@@ -497,44 +512,43 @@
                 const totalPages = Math.ceil(totalItems / limit);
 
                 if (totalPages <= 1) {
-                    return; // No need for pagination if only one page
+                    return;
                 }
 
-                const maxPagesToShow = 5; // Number of page links to show
+                const maxPagesToShow = 5;
                 let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
                 let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
                 if (endPage - startPage + 1 < maxPagesToShow) {
                     startPage = Math.max(1, endPage - maxPagesToShow + 1);
                 }
-
-                // Previous button
                 const prevDisabled = currentPage === 1 ? 'disabled' : '';
                 paginationElement.insertAdjacentHTML('beforeend',
                     `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`);
 
-                // Page numbers
                 for (let i = startPage; i <= endPage; i++) {
                     const activeClass = i === currentPage ? 'active' : '';
                     paginationElement.insertAdjacentHTML('beforeend', `<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
                 }
 
-                // Next button
                 const nextDisabled = currentPage === totalPages ? 'disabled' : '';
                 paginationElement.insertAdjacentHTML('beforeend', `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`);
 
-                // Add event listeners for pagination links
+
+
+
                 paginationElement.querySelectorAll('.page-link').forEach(link => {
                     link.addEventListener('click', function (e) {
                         e.preventDefault();
                         const page = parseInt(this.dataset.page);
                         if (!isNaN(page) && page > 0 && page <= totalPages) {
-                            if (fetchDataFunction === fetchAdminWalletTransactions) {
+                            // Update this condition to use the new function name
+                            if (fetchDataFunction === fetchPlatformTransactions) { // Changed this line
                                 currentTransactionPage = page;
-                                fetchDataFunction(page, limit, transactionSearch.value); // Pass search query for transactions
+                                fetchDataFunction(page, limit, transactionSearch.value);
                             } else if (fetchDataFunction === fetchPendingWithdrawals) {
                                 currentPendingWithdrawalPage = page;
-                                fetchDataFunction(page, limit); // Pending withdrawals don't have search
+                                fetchDataFunction(page, limit);
                             }
                         }
                     });
@@ -740,22 +754,18 @@
                         showToast(`Failed to ${action} withdrawal: ${error.message}`, 'danger');
                     });
             }
-
-
-            // Initial data load
             fetchAdminWalletSummary();
-            fetchAdminWalletTransactions(); // Load initial transactions
+            fetchPlatformTransactions();
 
-            // Event listener for search input
+
             let searchTimeout;
             transactionSearch.addEventListener('input', function () {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
-                    currentTransactionPage = 1; // Reset to first page on new search
-                    fetchAdminWalletTransactions(currentTransactionPage, 10, this.value);
-                }, 500); // Debounce search to prevent excessive API calls
+                    currentTransactionPage = 1;
+                    fetchPlatformTransactions(currentTransactionPage, 10, this.value); // Changed this line
+                }, 500);
             });
-
             // Event listener for pending withdrawals modal show
             document.getElementById('pendingWithdrawalsModal').addEventListener('show.bs.modal', function () {
                 fetchPendingWithdrawals(); // Load pending withdrawals when modal is opened
@@ -767,11 +777,11 @@
             });
             document.getElementById('withdrawModal').addEventListener('hidden.bs.modal', function () {
                 fetchAdminWalletSummary();
-                fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+                fetchPlatformTransactions(currentTransactionPage, 10, transactionSearch.value); // Changed this line
             });
             document.getElementById('pendingWithdrawalsModal').addEventListener('hidden.bs.modal', function () {
-                fetchAdminWalletSummary(); // Refresh in case a withdrawal was approved/rejected
-                fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+                fetchAdminWalletSummary();
+                fetchPlatformTransactions(currentTransactionPage, 10, transactionSearch.value); // Changed this line
             });
 
 

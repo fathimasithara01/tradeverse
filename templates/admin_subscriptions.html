@@ -2,14 +2,16 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}} - Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/admin.css"> <!-- Assuming your CSS is in static/css/admin.css -->
-     <style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}}</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+ <style>
         :root {
             --sidebar-bg: #ffffff;
             --sidebar-width: 280px;
@@ -22,11 +24,28 @@
             --link-active-color: #1967d2;
             --border-color: #e9ecef;
             --shadow-color: rgba(0, 0, 0, 0.08);
+
+            /* Status badge colors */
+            --status-active-bg: #e6ffed; /* Light green */
+            --status-active-color: #007f35; /* Dark green */
+            --status-pending-bg: #fffbe6; /* Light yellow */
+            --status-pending-color: #7a5c00; /* Dark yellow */
+            --status-expired-bg: #ffe6e6; /* Light red */
+            --status-expired-color: #990000; /* Dark red */
+            --status-inactive-bg: #e9ecef; /* Light gray */
+            --status-inactive-color: #495057; /* Dark gray */
+            --status-approved-bg: #e6ffed; /* Light green */
+            --status-approved-color: #007f35; /* Dark green */
+            --status-rejected-bg: #ffe6e6; /* Light red */
+            --status-rejected-color: #990000; /* Dark red */
+            --status-pending-approval-bg: #fffbe6; /* Light yellow */
+            --status-pending-approval-color: #7a5c00; /* Dark yellow */
         }
 
         body {
             background-color: var(--main-bg);
             font-family: 'Inter', sans-serif;
+            margin: 0; /* Ensure no default body margin */
         }
 
         .wrapper {
@@ -62,6 +81,7 @@
         #sidebar-nav {
             flex-grow: 1;
             padding: 1rem 0;
+            overflow-y: auto; /* Enable scrolling for long sidebars */
         }
 
         #sidebar-nav .nav-heading {
@@ -134,6 +154,7 @@
         #content {
             flex-grow: 1;
             padding: 2.5rem;
+            overflow-x: auto; /* Allow horizontal scrolling for table */
         }
 
         .card {
@@ -168,118 +189,237 @@
             font-size: 0.9rem;
             color: #6c757d;
         }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: .35em .65em;
+            font-size: .75em;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: .375rem;
+            margin-bottom: 0; /* Ensure no extra margin from parent */
+        }
+
+        .status-active, .status-approved {
+            color: var(--status-active-color);
+            background-color: var(--status-active-bg);
+        }
+
+        .status-pending, .status-pending-approval {
+            color: var(--status-pending-color);
+            background-color: var(--status-pending-bg);
+        }
+
+        .status-expired, .status-rejected {
+            color: var(--status-expired-color);
+            background-color: var(--status-expired-bg);
+        }
+
+        .status-inactive {
+            color: var(--status-inactive-color);
+            background-color: var(--status-inactive-bg);
+        }
     </style>
 </head>
 
-<body>
-    <div class="wrapper">
-         {{template "admin_sidebar" .}}
+<body class="bg-light">
+  <div class="wrapper">
+    {{template "admin_sidebar" .}}
 
-        <div id="content">
-            <h2 class="mb-4">{{.Title}}</h2>
+    <div id="content">
+      <h2 class="mb-4">{{.Title}}</h2>
 
-            <div class="card">
-                <div class="card-header">
-                    All Customer Subscriptions
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Traders</th>
-                                    <th>Plan Name</th>
-                                    <th>Price</th>
-                                    <th>Duration</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                    <th>Status</th>
-                                    <th>Payment Status</th>
-                                    <th>Transaction ID</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subscriptions-table-body">
-                                <!-- Subscriptions will be loaded here via JavaScript -->
-                                <tr>
-                                    <td colspan="10" class="text-center">Loading subscriptions...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover text-center align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Customer Name</th>
+              <th>Trader Name</th>
+              <th>Trader Status</th>
+              <th>Plan</th>
+              <th>Subscription Status</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="subscriptions-table">
+            <tr>
+              <td colspan="9" class="text-muted">Fetching subscriptions...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Function to fetch and render subscriptions
-            function fetchSubscriptions() {
-                fetch('/admin/api/subscriptions')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const tbody = document.getElementById('subscriptions-table-body');
-                        tbody.innerHTML = ''; // Clear existing rows
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+  <script>
+    function getStatusBadge(status) {
+      let badgeClass = '';
+      let statusText = status;
 
-                        if (data.length === 0) {
-                            tbody.innerHTML = `<tr><td colspan="10" class="text-center">No subscriptions found.</td></tr>`;
-                            return;
-                        }
+      switch (status) {
+        case 'active':
+          badgeClass = 'status-active';
+          break;
+        case 'expired':
+          badgeClass = 'status-expired';
+          break;
+        case 'paid': // Often 'paid' implies active
+          badgeClass = 'status-active';
+          statusText = 'Active';
+          break;
+        case 'pending':
+          badgeClass = 'status-pending';
+          break;
+        case 'approved':
+          badgeClass = 'status-approved';
+          break;
+        case 'rejected':
+          badgeClass = 'status-rejected';
+          break;
+        case 'pending_approval':
+          badgeClass = 'status-pending-approval';
+          statusText = 'Pending Approval';
+          break;
+        default:
+          badgeClass = 'status-inactive';
+          statusText = status || 'Unknown';
+          break;
+      }
 
-                        data.forEach((sub, index) => {
-                            // Ensure user and subscription_plan are not null or undefined
-                            const userName = sub.user ? sub.user.name : 'N/A';
-                            const userEmail = sub.user ? sub.user.email : 'N/A';
-                            const userId = sub.user ? sub.user.ID : '0'; // For gravatar-like image
-                            const planName = sub.subscription_plan ? sub.subscription_plan.name : 'N/A';
-                            const planDuration = sub.subscription_plan ? sub.subscription_plan.duration : 'N/A';
-                            const planInterval = sub.subscription_plan ? sub.subscription_plan.interval : '';
+      return `<span class="status-badge ${badgeClass}">
+                ${statusText.charAt(0).toUpperCase() + statusText.slice(1)}
+              </span>`;
+    }
 
-                            const row = `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>
-                                        <img src="https://i.pravatar.cc/30?u=${userId}" alt="${userName}" class="rounded-circle me-2">
-                                        ${userName} (${userEmail})
-                                    </td>
-                                    <td>${planName}</td>
-                                    <td>$${sub.amount_paid ? sub.amount_paid.toFixed(2) : '0.00'}</td>
-                                    <td>${planDuration} ${planInterval}</td>
-                                    <td>${new Date(sub.start_date).toLocaleDateString()}</td>
-                                    <td>${new Date(sub.end_date).toLocaleDateString()}</td>
-                                    <td>
-                                        <span class="badge ${sub.is_active ? 'bg-success' : 'bg-danger'}">
-                                            ${sub.is_active ? 'Active' : 'Expired'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge ${sub.payment_status === 'paid' ? 'bg-success' : sub.payment_status === 'pending' ? 'bg-warning' : 'bg-danger'}">
-                                            ${sub.payment_status}
-                                        </span>
-                                    </td>
-                                    <td>${sub.transaction_id || 'N/A'}</td>
-                                </tr>
-                            `;
-                            tbody.insertAdjacentHTML('beforeend', row);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching subscriptions:', error);
-                        const tbody = document.getElementById('subscriptions-table-body');
-                        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Failed to load subscriptions. Please try again.</td></tr>`;
-                    });
+    async function fetchSubscriptions() {
+      try {
+        const res = await fetch('/admin/financials/api/subscriptions');
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Failed to fetch data: ${res.status} - ${errorText}`);
+        }
+
+        const subscriptions = await res.json();
+        const tableBody = document.getElementById("subscriptions-table");
+        tableBody.innerHTML = ""; // Clear loading message
+
+        if (subscriptions.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="9" class="text-muted">No subscriptions found.</td></tr>`;
+          return;
+        }
+
+        subscriptions.forEach(sub => {
+          const customerName = sub.user?.name || 'N/A';
+          const planName = sub.subscription_plan?.name || 'N/A';
+          // Determine subscription status more robustly
+          const subscriptionStatus = sub.is_active ? 'active' : (sub.payment_status || 'inactive');
+
+          const isTrader = sub.user?.trader_profile && sub.user.trader_profile.user_id !== 0;
+          const traderName = isTrader ? (sub.user.trader_profile.trader_name || 'N/A') : 'N/A';
+          const traderProfileStatus = isTrader ? sub.user.trader_profile.status : null;
+          const traderStatusDisplay = isTrader
+            ? getStatusBadge(traderProfileStatus)
+            : '<span class="text-muted">Not a Trader</span>';
+
+          let actionsHtml = '';
+          if (sub.user && sub.user.id) {
+            if (isTrader) {
+              switch (traderProfileStatus) {
+                case 'approved':
+                  actionsHtml = '<span class="status-badge status-approved">Trader Approved</span>';
+                  break;
+                case 'pending_approval':
+                  actionsHtml = `
+                    <button class="btn btn-sm btn-success me-2" 
+                            onclick="updateTraderStatus(${sub.user.id}, 'approved')">
+                      Approve
+                    </button>
+                    <button class="btn btn-sm btn-danger" 
+                            onclick="updateTraderStatus(${sub.user.id}, 'rejected')">
+                      Reject
+                    </button>`;
+                  break;
+                case 'rejected':
+                  actionsHtml = `
+                    <span class="status-badge status-rejected me-2">Trader Rejected</span>
+                    <button class="btn btn-sm btn-success" 
+                            onclick="updateTraderStatus(${sub.user.id}, 'approved')">
+                      Approve Anyway
+                    </button>`;
+                  break;
+                default:
+                  actionsHtml = '<span class="text-muted">N/A</span>';
+                  break;
+              }
+            } else {
+              actionsHtml = '<span class="text-muted">N/A (Not a Trader)</span>';
             }
+          } else {
+            actionsHtml = '<span class="text-muted">User Data Missing</span>';
+          }
 
-            fetchSubscriptions();
+          const row = `
+            <tr>
+              <td>${sub.ID}</td>
+              <td>${customerName}</td>
+              <td>${traderName}</td>
+              <td>${traderStatusDisplay}</td>
+              <td>${planName}</td>
+              <td>${getStatusBadge(subscriptionStatus)}</td>
+              <td>${new Date(sub.start_date).toLocaleDateString()}</td>
+              <td>${new Date(sub.end_date).toLocaleDateString()}</td>
+              <td>${actionsHtml}</td>
+            </tr>`;
+          tableBody.innerHTML += row;
         });
-    </script>
+      } catch (err) {
+        console.error("Error fetching subscriptions:", err);
+        document.getElementById("subscriptions-table").innerHTML =
+          `<tr><td colspan="9" class="text-danger">Error loading data: ${err.message}. Please check console for details.</td></tr>`;
+      }
+    }
+
+    async function updateTraderStatus(userId, status) {
+      if (!confirm(`Are you sure you want to set this user's trader status to '${status}'?`)) return;
+
+      try {
+        // Corrected endpoint for admin trader status update
+        const res = await fetch(`/admin/financials/api/traders/${userId}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: status })
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Failed to update trader status: ${res.status} - ${errorText}`);
+        }
+
+        alert(`Trader status updated to '${status}' successfully!`);
+        fetchSubscriptions(); // Refresh table
+      } catch (err) {
+        console.error("Error updating trader status:", err);
+        alert("Error: " + err.message);
+      }
+    }
+
+    // Load subscriptions on page load
+    document.addEventListener('DOMContentLoaded', fetchSubscriptions);
+  </script>
 </body>
 
 </html>

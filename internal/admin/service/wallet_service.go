@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// IAdminWalletService defines the interface for admin wallet services.
 type IAdminWalletService interface {
 	GetAdminWalletSummary() (*models.WalletSummaryResponse, error)
 	AdminInitiateDeposit(input models.DepositRequestInput) (*models.DepositResponse, error)
@@ -20,10 +19,11 @@ type IAdminWalletService interface {
 	AdminGetWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
 	CreditAdminWallet(tx *gorm.DB, amount float64, currency, description string) error // For subscription payments
 
-	// For approving/rejecting customer withdrawals
 	GetPendingWithdrawalRequests(pagination models.PaginationParams) ([]models.WithdrawRequest, int64, error)
 	ApproveWithdrawalRequest(withdrawalID uint) error
 	RejectWithdrawalRequest(withdrawalID uint) error
+
+	GetAllWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
 }
 
 type AdminWalletService struct {
@@ -38,7 +38,10 @@ func NewAdminWalletService(repo repository.IAdminWalletRepository, db *gorm.DB) 
 	}
 }
 
-// GetAdminWalletSummary retrieves the summary of the admin's wallet.
+func (s *AdminWalletService) GetAllWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
+    return s.Repo.GetAllWalletTransactions(pagination)
+}
+
 func (s *AdminWalletService) GetAdminWalletSummary() (*models.WalletSummaryResponse, error) {
 	wallet, err := s.Repo.GetAdminWallet()
 	if err != nil {

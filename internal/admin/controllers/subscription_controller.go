@@ -12,7 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Re-using the DTO from before, but will apply it for input as well
 type SubscriptionPlanResponseDTO struct {
 	ID              uint    `json:"ID"`
 	Name            string  `json:"name"`
@@ -21,12 +20,12 @@ type SubscriptionPlanResponseDTO struct {
 	Duration        int     `json:"duration"`
 	Interval        string  `json:"interval"`
 	MaxFollowers    int     `json:"max_followers"`
-	Status          string  `json:"status"` // Calculated status for display
+	Status          string  `json:"status"`
 	Features        string  `json:"features"`
 	CommissionRate  float64 `json:"commission_rate"`
 	AnalyticsAccess string  `json:"analytics_access"`
-	IsTraderPlan    bool    `json:"is_trader_plan"` // Raw boolean for form population
-	IsActive        bool    `json:"is_active"`      // Raw boolean for form population
+	IsTraderPlan    bool    `json:"is_trader_plan"`
+	IsActive        bool    `json:"is_active"`
 }
 
 type CreateUpdateSubscriptionPlanRequest struct {
@@ -39,8 +38,8 @@ type CreateUpdateSubscriptionPlanRequest struct {
 	Features        string  `json:"features"`
 	CommissionRate  float64 `json:"commission_rate"`
 	AnalyticsAccess string  `json:"analytics_access"`
-	IsTraderPlan    bool    `json:"is_trader_plan"` // Admin can specify if it's a trader plan
-	IsActive        bool    `json:"is_active"`      // Admin can specify if it's active
+	IsTraderPlan    bool    `json:"is_trader_plan"`
+	IsActive        bool    `json:"is_active"`
 }
 
 type SubscriptionController struct {
@@ -57,10 +56,40 @@ func NewSubscriptionController(subService service.ISubscriptionService, planServ
 
 func (ctrl *SubscriptionController) ShowSubscriptionsPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin_subscriptions.html", gin.H{
-		"Title":        "Customer Subscriptions",
+		"Title":        "Trader Subscriptions",
 		"ActiveTab":    "financials",
 		"ActiveSubTab": "subscriptions",
 	})
+}
+
+func (ctrl *SubscriptionController) UpdateTraderStatus(c *gin.Context) {
+	userIDParam := c.Param("id")
+	userID, err := strconv.ParseUint(userIDParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID"})
+		return
+	}
+
+	var req struct {
+		Status string `json:"status" binding:"required,oneof=approved rejected"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = ctrl.SubscriptionService.UpdateUserTraderStatus(uint(userID), req.Status)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User or Trader Profile not found"})
+			return
+		}
+		log.Printf("Error updating trader status for user %d to %s: %v", userID, req.Status, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update trader status"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Trader status updated successfully"})
 }
 
 func (ctrl *SubscriptionController) ShowSubscriptionPlansPage(c *gin.Context) {
@@ -90,7 +119,6 @@ func (ctrl *SubscriptionController) GetSubscriptionPlanByID(c *gin.Context) {
 		return
 	}
 
-	// Prepare response DTO
 	status := "inactive"
 	if plan.IsActive {
 		status = "active"
@@ -136,24 +164,27 @@ func (ctrl *SubscriptionController) GetSubscriptionPlans(c *gin.Context) {
 			Duration:        plan.Duration,
 			Interval:        plan.Interval,
 			MaxFollowers:    plan.MaxFollowers,
-			Status:          status, // Set status based on IsActive
+			Status:          status,
 			Features:        plan.Features,
 			CommissionRate:  plan.CommissionRate,
 			AnalyticsAccess: plan.AnalyticsAccess,
 			IsTraderPlan:    plan.IsTraderPlan,
-			IsActive:        plan.IsActive, // Expose IsActive in response
+			IsActive:        plan.IsActive,
 		})
 	}
 	c.JSON(http.StatusOK, responsePlans)
 }
 
 func (ctrl *SubscriptionController) GetSubscriptions(c *gin.Context) {
-	subscriptions, err := ctrl.SubscriptionService.GetAllSubscriptions()
+	log.Println("DEBUG: GetSubscriptions handler was called.") // Add this
+	subs, err := ctrl.SubscriptionService.GetAllSubscriptions()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch subscriptions"})
+		log.Printf("ERROR: controllers.SubscriptionController.GetSubscriptions failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch subscriptions"})
 		return
 	}
-	c.JSON(http.StatusOK, subscriptions)
+	log.Printf("DEBUG: Successfully fetched %d subscriptions.", len(subs)) // Add this
+	c.JSON(http.StatusOK, subs)
 }
 
 func (ctrl *SubscriptionController) CreateCustomerSubscription(c *gin.Context) {

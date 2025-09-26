@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -20,8 +21,8 @@ type ISubscriptionService interface {
 	GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
 	UpgradeUserToTrader(userID uint) error
 
-	DeactivateExpiredSubscriptions() error // New method for cron job
-
+	DeactivateExpiredSubscriptions() error
+	UpdateUserTraderStatus(userID uint, status string) error
 }
 
 type SubscriptionService struct {
@@ -40,6 +41,54 @@ func NewSubscriptionService(subRepo repository.ISubscriptionRepository, planRepo
 		adminWalletService: adminWalletService,
 		DB:                 db,
 	}
+}
+
+func (s *SubscriptionService) UpdateUserTraderStatus(userID uint, status string) error {
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("user with ID %d not found", userID)
+		}
+		return fmt.Errorf("failed to get user by ID %d: %w", userID, err)
+	}
+
+	// Initialize TraderProfile if it's nil or has a zero UserID
+	if user.TraderProfile == nil || user.TraderProfile.UserID == 0 {
+		return fmt.Errorf("user %d does not have an initialized trader profile", userID)
+	}
+
+	// Validate the status string against models.TraderProfileStatus
+	switch status {
+	case string(models.StatusApproved):
+		user.TraderProfile.Status = models.StatusApproved
+	case string(models.StatusRejected):
+		user.TraderProfile.Status = models.StatusRejected
+	default:
+		return fmt.Errorf("invalid trader status provided: %s", status)
+	}
+
+	// Using DB.Save to update the nested TraderProfile
+	if err := s.DB.Save(&user.TraderProfile).Error; err != nil {
+		return fmt.Errorf("failed to update trader profile for user %d: %w", userID, err)
+	}
+
+	// If status is approved, ensure the user has the trader role
+	if user.TraderProfile.Status == models.StatusApproved && user.Role != models.RoleTrader {
+		traderRole, err := s.userRepo.GetRoleByName(models.RoleTrader)
+		if err != nil {
+			log.Printf("Warning: Trader role not found when approving user %d: %v", userID, err)
+			// Decide if this should be a critical error or just a warning.
+			// For now, let's just log and continue, but ideally, the role should exist.
+		} else {
+			user.RoleID = &traderRole.ID
+			user.Role = models.RoleTrader
+			if err := s.userRepo.UpdateUser(user); err != nil {
+				log.Printf("Warning: Failed to update user %d to trader role after profile approval: %v", userID, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *SubscriptionService) DeactivateExpiredSubscriptions() error {
@@ -82,21 +131,18 @@ func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {
 	user.RoleID = &traderRole.ID
 	user.Role = models.RoleTrader
 
-	if user.TraderProfile.UserID == 0 {
-		user.TraderProfile = models.TraderProfile{
+	// Initialize TraderProfile if it's nil or has a zero UserID
+	if user.TraderProfile == nil || user.TraderProfile.UserID == 0 {
+		user.TraderProfile = &models.TraderProfile{ // Make sure to initialize as pointer if it's a pointer in the model
 			UserID: user.ID,
 			Status: models.StatusApproved,
 		}
-	} else {
-		user.TraderProfile.Status = models.StatusApproved
-	}
-
-	if user.TraderProfile.ID == 0 {
-		if err := s.DB.Create(&user.TraderProfile).Error; err != nil {
+		if err := s.DB.Create(user.TraderProfile).Error; err != nil {
 			return fmt.Errorf("failed to create trader profile for user %d: %w", userID, err)
 		}
 	} else {
-		if err := s.DB.Save(&user.TraderProfile).Error; err != nil {
+		user.TraderProfile.Status = models.StatusApproved
+		if err := s.DB.Save(user.TraderProfile).Error; err != nil {
 			return fmt.Errorf("failed to update trader profile for user %d: %w", userID, err)
 		}
 	}
@@ -123,7 +169,7 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 		case "yearly":
 			endDate = startDate.AddDate(plan.Duration, 0, 0)
 		default:
-			endDate = startDate.AddDate(0, 1, 0)
+			endDate = startDate.AddDate(0, 1, 0) // Default to 1 month if interval is not specified/recognized
 		}
 
 		newSubscription := &models.Subscription{
@@ -158,7 +204,14 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 }
 
 func (s *SubscriptionService) GetAllSubscriptions() ([]models.Subscription, error) {
-	return s.subscriptionRepo.GetAllSubscriptions()
+	log.Println("DEBUG: SubscriptionService.GetAllSubscriptions was called.") // Add this
+	subs, err := s.subscriptionRepo.GetAllSubscriptions()
+	if err != nil {
+		log.Printf("ERROR: SubscriptionService.GetAllSubscriptions failed: %v", err)
+		return nil, fmt.Errorf("failed to retrieve all subscriptions: %w", err)
+	}
+	log.Printf("DEBUG: SubscriptionService fetched %d subscriptions from repo.", len(subs)) // Add this
+	return subs, nil
 }
 
 func (s *SubscriptionService) GetSubscriptionByID(id uint) (*models.Subscription, error) {

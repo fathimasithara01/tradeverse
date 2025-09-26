@@ -93,28 +93,50 @@ func WireAdminRoutes(
 			protected.GET("/api/activity/live", activityCtrl.GetActiveSessions)
 			protected.GET("/api/activity/logs", activityCtrl.GetTradeLogs)
 
-			financials := admin.Group("/financials")
-			{
-				financials.GET("/subscriptions", subscriptionController.ShowSubscriptionsPage)
-				financials.GET("/api/subscriptions", subscriptionController.GetSubscriptions)
+			protected.GET("/financials/subscriptions", subscriptionController.ShowSubscriptionsPage)
+			protected.GET("/financials/api/subscriptions", subscriptionController.GetSubscriptions)
+			protected.GET("/financials/subscription-plans", subscriptionController.ShowSubscriptionPlansPage)
+			protected.GET("/financials/api/subscription-plans", subscriptionController.GetSubscriptionPlans)
+			protected.POST("/financials/api/subscription-plans", subscriptionController.CreateSubscriptionPlan)
+			protected.PUT("/financials/api/subscription-plans/:id", subscriptionController.UpdateSubscriptionPlan)
+			protected.DELETE("/financials/api/subscription-plans/:id", subscriptionController.DeleteSubscriptionPlan)
+			protected.GET("/financials/api/subscription-plans/:id", subscriptionController.GetSubscriptionPlanByID)
+			protected.PUT("/financials/api/traders/:id/status", subscriptionController.UpdateTraderStatus)
 
-				financials.GET("/subscription-plans", subscriptionController.ShowSubscriptionPlansPage)
-				financials.GET("/api/subscription-plans", subscriptionController.GetSubscriptionPlans)
-				financials.POST("/api/subscription-plans", subscriptionController.CreateSubscriptionPlan)
-				financials.PUT("/api/subscription-plans/:id", subscriptionController.UpdateSubscriptionPlan)
-				financials.DELETE("/api/subscription-plans/:id", subscriptionController.DeleteSubscriptionPlan)
-				financials.GET("api/subscription-plans/:id", subscriptionController.GetSubscriptionPlanByID)
+			protected.GET("/financials/wallet", adminWalletController.ShowAdminWalletPage)
+			protected.GET("/financials/api/wallet/summary", adminWalletController.GetAdminWalletSummary)
+			protected.POST("/financials/api/wallet/deposit", adminWalletController.AdminInitiateDeposit)
+			protected.POST("/financials/api/wallet/deposit/:deposit_id/verify", adminWalletController.AdminVerifyDeposit)
+			protected.POST("/financials/api/wallet/withdraw", adminWalletController.AdminRequestWithdrawal)
+			protected.GET("/financials/api/wallet/transactions", adminWalletController.AdminGetWalletTransactions)
+			protected.GET("/financials/api/transactions/all", adminWalletController.AdminGetAllPlatformTransactions)
 
-				financials.GET("/wallet", adminWalletController.ShowAdminWalletPage)
-				financials.GET("/api/wallet/summary", adminWalletController.GetAdminWalletSummary)
-				financials.POST("/api/wallet/deposit", adminWalletController.AdminInitiateDeposit)
-				financials.POST("/api/wallet/deposit/:deposit_id/verify", adminWalletController.AdminVerifyDeposit) // Or integrate with a real webhook
-				financials.POST("/api/wallet/withdraw", adminWalletController.AdminRequestWithdrawal)
-				financials.GET("/api/wallet/transactions", adminWalletController.AdminGetWalletTransactions)
+			protected.GET("/financials/api/withdrawals/pending", adminWalletController.GetPendingWithdrawals)
+			protected.POST("/financials/api/withdrawals/:id/action", adminWalletController.AdminApproveOrRejectWithdrawal)
 
-				financials.GET("/api/withdrawals/pending", adminWalletController.GetPendingWithdrawals)
-				financials.POST("/api/withdrawals/:id/action", adminWalletController.AdminApproveOrRejectWithdrawal)
-			}
+			// financials := admin.Group("/financials")
+			// {
+
+			// 	financials.GET("/subscriptions", subscriptionController.ShowSubscriptionsPage)
+			// 	financials.GET("/api/subscriptions", subscriptionController.GetSubscriptions)
+
+			// 	financials.GET("/subscription-plans", subscriptionController.ShowSubscriptionPlansPage)
+			// 	financials.GET("/api/subscription-plans", subscriptionController.GetSubscriptionPlans)
+			// 	financials.POST("/api/subscription-plans", subscriptionController.CreateSubscriptionPlan)
+			// 	financials.PUT("/api/subscription-plans/:id", subscriptionController.UpdateSubscriptionPlan)
+			// 	financials.DELETE("/api/subscription-plans/:id", subscriptionController.DeleteSubscriptionPlan)
+			// 	financials.GET("api/subscription-plans/:id", subscriptionController.GetSubscriptionPlanByID)
+
+			// 	financials.GET("/wallet", adminWalletController.ShowAdminWalletPage)
+			// 	financials.GET("/api/wallet/summary", adminWalletController.GetAdminWalletSummary)
+			// 	financials.POST("/api/wallet/deposit", adminWalletController.AdminInitiateDeposit)
+			// 	financials.POST("/api/wallet/deposit/:deposit_id/verify", adminWalletController.AdminVerifyDeposit)
+			// 	financials.POST("/api/wallet/withdraw", adminWalletController.AdminRequestWithdrawal)
+			// 	financials.GET("/api/wallet/transactions", adminWalletController.AdminGetWalletTransactions)
+
+			// 	financials.GET("/api/withdrawals/pending", adminWalletController.GetPendingWithdrawals)
+			// 	financials.POST("/api/withdrawals/:id/action", adminWalletController.AdminApproveOrRejectWithdrawal)
+			// }
 		}
 
 	}

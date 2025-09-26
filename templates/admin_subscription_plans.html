@@ -304,8 +304,7 @@ const API_BASE = "http://localhost:8080/admin/financials/api/subscription-plans"
 const planModal = new bootstrap.Modal(document.getElementById('planModal'));
 
 function getAuthHeaders() {
-    // In a real application, you would securely retrieve and store the admin token.
-    // For demonstration purposes, a hardcoded DUMMY_TOKEN is used.
+    
     let token = localStorage.getItem("adminToken") || "DUMMY_TOKEN"; 
     return {
         "Content-Type": "application/json",

@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
-	"github.com/fathimasithara01/tradeverse/pkg/models" // Assuming models has Wallet structs
+	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +21,6 @@ func NewAdminWalletController(adminWalletService service.IAdminWalletService) *A
 }
 
 func (ctrl *AdminWalletController) ShowAdminWalletPage(c *gin.Context) {
-	fmt.Println("Attempting to render admin_wallet.html") // Add this line for debugging
 	c.HTML(http.StatusOK, "admin_wallet.html", gin.H{
 		"Title":        "Admin Wallet",
 		"ActiveTab":    "financials",
@@ -30,7 +29,29 @@ func (ctrl *AdminWalletController) ShowAdminWalletPage(c *gin.Context) {
 	fmt.Println("Finished rendering admin_wallet.html (if no error occurred)") // Add this line
 }
 
-// GetAdminWalletSummary retrieves the admin's wallet balance and details.
+// ... existing methods ...
+
+// AdminGetAllPlatformTransactions retrieves all transactions across all users.
+func (ctrl *AdminWalletController) AdminGetAllPlatformTransactions(c *gin.Context) {
+	var pagination models.PaginationParams
+	if err := c.ShouldBindQuery(&pagination); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	transactions, total, err := ctrl.AdminWalletService.GetAllWalletTransactions(pagination)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve all platform wallet transactions", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.TransactionListResponse{
+		Transactions: transactions,
+		Total:        total,
+		Page:         pagination.Page,
+		Limit:        pagination.Limit,
+	})
+}
 func (ctrl *AdminWalletController) GetAdminWalletSummary(c *gin.Context) {
 	summary, err := ctrl.AdminWalletService.GetAdminWalletSummary()
 	if err != nil {
@@ -40,7 +61,6 @@ func (ctrl *AdminWalletController) GetAdminWalletSummary(c *gin.Context) {
 	c.JSON(http.StatusOK, summary)
 }
 
-// AdminInitiateDeposit simulates an admin initiating a deposit to their wallet.
 func (ctrl *AdminWalletController) AdminInitiateDeposit(c *gin.Context) {
 	var req models.DepositRequestInput
 	if err := c.ShouldBindJSON(&req); err != nil {

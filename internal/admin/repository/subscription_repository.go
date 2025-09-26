@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"fmt" // Import fmt for structured errors
+	"log"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -40,9 +42,20 @@ func (r *SubscriptionRepository) CreateSubscription(subscription *models.Subscri
 }
 
 func (r *SubscriptionRepository) GetAllSubscriptions() ([]models.Subscription, error) {
+	log.Println("DEBUG: SubscriptionRepository.GetAllSubscriptions was called.") // Add this
 	var subscriptions []models.Subscription
-	err := r.DB.Preload("User").Preload("SubscriptionPlan").Find(&subscriptions).Error
-	return subscriptions, err
+	err := r.DB.
+		Preload("User").
+		Preload("User.TraderProfile").
+		Preload("SubscriptionPlan").
+		Find(&subscriptions).Error
+
+	if err != nil {
+		log.Printf("ERROR: failed to fetch all subscriptions from DB: %v", err) // Add this
+		return nil, fmt.Errorf("failed to fetch all subscriptions from DB: %w", err)
+	}
+	log.Printf("DEBUG: SubscriptionRepository found %d subscriptions.", len(subscriptions)) // Add this
+	return subscriptions, nil
 }
 
 func (r *SubscriptionRepository) GetSubscriptionByID(id uint) (*models.Subscription, error) {
