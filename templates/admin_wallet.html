@@ -365,6 +365,7 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const walletBalanceEl = document.getElementById('walletBalance');
@@ -411,11 +412,9 @@
 
 
             function fetchAdminWalletSummary() {
-                // Corrected API endpoint
                 fetch('/admin/financials/api/wallet/summary')
                     .then(response => {
                         if (!response.ok) {
-                            // Handle HTTP errors
                             return response.json().then(err => { throw new Error(err.details || 'Failed to fetch wallet summary'); });
                         }
                         return response.json();
@@ -431,19 +430,19 @@
             }
 
 
-            function fetchPlatformTransactions(page = 1, limit = 10, searchQuery = '') { // Renamed for clarity
-                let url = `/admin/financials/api/transactions/all?page=${page}&limit=${limit}`; // This is the new endpoint
+            // Renamed and updated function to fetch only Admin's wallet transactions
+            function fetchAdminWalletTransactions(page = 1, limit = 10, searchQuery = '') { 
+                let url = `/admin/financials/api/wallet/transactions?page=${page}&limit=${limit}`; 
                 if (searchQuery) {
-                    url += `&search=${encodeURIComponent(searchQuery)}`;
+                    url += `&search=${encodeURIComponent(searchQuery)}`; 
                 }
 
                 fetch(url)
                     .then(response => {
                         if (!response.ok) {
-                            // It's good practice to log the full error response for debugging
                             return response.json().then(err => {
                                 console.error('API Error Response:', err);
-                                throw new Error(err.details || `Failed to fetch transactions (${response.status} ${response.statusText})`);
+                                throw new Error(err.details || `Failed to fetch admin wallet transactions (${response.status} ${response.statusText})`);
                             });
                         }
                         return response.json();
@@ -453,44 +452,41 @@
                         transactionTableBody.innerHTML = '';
                         if (data.transactions && data.transactions.length > 0) {
                             data.transactions.forEach(tx => {
-                                // Defensive checks for amount (optional but good practice)
-                                const amountDisplay = (tx.amount !== undefined && tx.amount !== null) ? tx.amount.toFixed(2) : 'N/A';
+                                // Corrected to use tx.Amount (capital A)
+                                const amountDisplay = (tx.Amount !== undefined && tx.Amount !== null) ? tx.Amount.toFixed(2) : 'N/A';
                                 const createdAtDisplay = tx.CreatedAt ? new Date(tx.CreatedAt).toLocaleString() : 'N/A';
                                 const row = `
-                            <tr>
-                                <td>${tx.ID}</td>
-                                <td>${tx.transaction_type}</td>
-                                <td>${amountDisplay}</td>
-                                <td>${tx.currency}</td>
-                                <td><span class="badge bg-${getStatusBadgeClass(tx.status)}">${tx.status}</span></td>
-                                <td>${tx.description || 'N/A'}</td>
-                                <td>${createdAtDisplay}</td>
-                            </tr>
-                        `;
+                                    <tr>
+                                        <td>${tx.ID}</td>
+                                        <td>${tx.TransactionType}</td>
+                                        <td>${amountDisplay}</td>
+                                        <td>${tx.Currency}</td>
+                                        <td><span class="badge bg-${getStatusBadgeClass(tx.Status)}">${tx.Status}</span></td>
+                                        <td>${tx.Description || 'N/A'}</td>
+                                        <td>${createdAtDisplay}</td>
+                                    </tr>
+                                `;
                                 transactionTableBody.insertAdjacentHTML('beforeend', row);
                             });
 
-                            renderPagination(transactionPagination, data.total, data.limit, data.page, fetchPlatformTransactions);
+                            renderPagination(transactionPagination, data.total, data.limit, data.page, fetchAdminWalletTransactions); // Use new function name
                         } else {
-                            transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center">No transactions found.</td></tr>`;
+                            transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center">No admin wallet transactions found.</td></tr>`;
                             transactionPagination.innerHTML = '';
                         }
                     })
 
                     .catch(error => {
-                        console.error('Error fetching transactions:', error);
+                        console.error('Error fetching admin wallet transactions:', error);
                         transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
                         transactionPagination.innerHTML = '';
-                        showToast(`Failed to load transactions: ${error.message}`, 'danger');
+                        showToast(`Failed to load admin wallet transactions: ${error.message}`, 'danger');
                     });
             }
 
 
-
-
-
             function getStatusBadgeClass(status) {
-                switch (status.toLowerCase()) { // Ensure case insensitivity
+                switch (status.toLowerCase()) {
                     case 'success':
                     case 'completed':
                         return 'success';
@@ -543,7 +539,7 @@
                         const page = parseInt(this.dataset.page);
                         if (!isNaN(page) && page > 0 && page <= totalPages) {
                             // Update this condition to use the new function name
-                            if (fetchDataFunction === fetchPlatformTransactions) { // Changed this line
+                            if (fetchDataFunction === fetchAdminWalletTransactions) { 
                                 currentTransactionPage = page;
                                 fetchDataFunction(page, limit, transactionSearch.value);
                             } else if (fetchDataFunction === fetchPendingWithdrawals) {
@@ -576,7 +572,6 @@
                     })
                     .then(data => {
                         showToast('Deposit initiated. Simulating immediate verification...', 'info');
-                        // Simulate immediate verification for admin manual deposit
                         simulateDepositVerification(data.deposit_id, amount);
                         depositForm.reset();
                         bootstrap.Modal.getInstance(document.getElementById('depositModal')).hide();
@@ -589,7 +584,7 @@
 
             // Simulate Deposit Verification (for manual admin deposits)
             function simulateDepositVerification(depositID, amount) {
-                const mockTxID = `ADM-DEP-TX-${Date.now()}`; // A mock transaction ID
+                const mockTxID = `ADM-DEP-TX-${Date.now()}`;
                 fetch(`/admin/financials/api/wallet/deposit/${depositID}/verify`, {
                     method: 'POST',
                     headers: {
@@ -598,7 +593,7 @@
                     body: JSON.stringify({
                         payment_gateway_tx_id: mockTxID,
                         amount: amount,
-                        status: 'SUCCESS' // Hardcoded success for simulation
+                        status: 'SUCCESS'
                     })
                 })
                     .then(response => {
@@ -610,7 +605,7 @@
                     .then(data => {
                         showToast('Deposit successfully verified and credited!', 'success');
                         fetchAdminWalletSummary();
-                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value); // Use new function name
                     })
                     .catch(error => {
                         console.error('Error during deposit verification simulation:', error);
@@ -648,7 +643,7 @@
                         withdrawForm.reset();
                         bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
                         fetchAdminWalletSummary();
-                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value);
+                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value); // Use new function name
                     })
                     .catch(error => {
                         console.error('Error during withdrawal request:', error);
@@ -687,7 +682,6 @@
                             });
                             renderPagination(pendingWithdrawalsPagination, data.total, data.limit, data.page, fetchPendingWithdrawals);
 
-                            // Attach event listeners for approve/reject buttons
                             document.querySelectorAll('.approve-withdrawal-btn').forEach(button => {
                                 button.addEventListener('click', function () {
                                     const withdrawalID = this.dataset.id;
@@ -700,7 +694,6 @@
                             document.querySelectorAll('.reject-withdrawal-btn').forEach(button => {
                                 button.addEventListener('click', function () {
                                     const withdrawalID = this.dataset.id;
-                                    // Store the ID for the confirmation modal
                                     currentRejectWithdrawalID = withdrawalID;
                                     rejectWithdrawalIdSpan.textContent = withdrawalID;
                                     rejectWithdrawalConfirmModal.show();
@@ -724,7 +717,7 @@
                 if (currentRejectWithdrawalID) {
                     processWithdrawal(currentRejectWithdrawalID, 'reject');
                     rejectWithdrawalConfirmModal.hide();
-                    currentRejectWithdrawalID = null; // Clear the stored ID
+                    currentRejectWithdrawalID = null;
                 }
             });
 
@@ -745,17 +738,19 @@
                     })
                     .then(data => {
                         showToast(`Withdrawal ${action}d successfully!`, 'success');
-                        fetchPendingWithdrawals(currentPendingWithdrawalPage, 10); // Refresh pending list
-                        fetchAdminWalletSummary(); // Refresh admin balance in case of rejection/approval
-                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value); // Refresh admin transactions
+                        fetchPendingWithdrawals(currentPendingWithdrawalPage, 10);
+                        fetchAdminWalletSummary();
+                        fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value); // Use new function name
                     })
                     .catch(error => {
                         console.error('Error processing withdrawal:', error);
                         showToast(`Failed to ${action} withdrawal: ${error.message}`, 'danger');
                     });
             }
+
+            // Initial fetches
             fetchAdminWalletSummary();
-            fetchPlatformTransactions();
+            fetchAdminWalletTransactions(); // Use new function name
 
 
             let searchTimeout;
@@ -763,28 +758,25 @@
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     currentTransactionPage = 1;
-                    fetchPlatformTransactions(currentTransactionPage, 10, this.value); // Changed this line
+                    fetchAdminWalletTransactions(currentTransactionPage, 10, this.value); // Use new function name
                 }, 500);
             });
             // Event listener for pending withdrawals modal show
             document.getElementById('pendingWithdrawalsModal').addEventListener('show.bs.modal', function () {
-                fetchPendingWithdrawals(); // Load pending withdrawals when modal is opened
+                fetchPendingWithdrawals();
             });
 
-            // Optional: If you want to refresh admin wallet summary/transactions after any modal closes
             document.getElementById('depositModal').addEventListener('hidden.bs.modal', function () {
                 // Actions already handled by simulateDepositVerification
             });
             document.getElementById('withdrawModal').addEventListener('hidden.bs.modal', function () {
                 fetchAdminWalletSummary();
-                fetchPlatformTransactions(currentTransactionPage, 10, transactionSearch.value); // Changed this line
+                fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value); // Use new function name
             });
             document.getElementById('pendingWithdrawalsModal').addEventListener('hidden.bs.modal', function () {
                 fetchAdminWalletSummary();
-                fetchPlatformTransactions(currentTransactionPage, 10, transactionSearch.value); // Changed this line
+                fetchAdminWalletTransactions(currentTransactionPage, 10, transactionSearch.value); // Use new function name
             });
-
-
         });
     </script>
 </body>
