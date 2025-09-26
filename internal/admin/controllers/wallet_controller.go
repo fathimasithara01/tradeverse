@@ -79,7 +79,6 @@ func (ctrl *AdminWalletController) AdminInitiateDeposit(c *gin.Context) {
 	c.JSON(http.StatusCreated, res)
 }
 
-// AdminVerifyDeposit simulates a webhook callback for a deposit.
 func (ctrl *AdminWalletController) AdminVerifyDeposit(c *gin.Context) {
 	var req models.DepositVerifyInput
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +86,6 @@ func (ctrl *AdminWalletController) AdminVerifyDeposit(c *gin.Context) {
 		return
 	}
 
-	// Assuming the request includes the DepositID to verify
 	depositIDStr := c.Param("deposit_id")
 	depositID, err := strconv.ParseUint(depositIDStr, 10, 32)
 	if err != nil {
@@ -103,7 +101,6 @@ func (ctrl *AdminWalletController) AdminVerifyDeposit(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// AdminRequestWithdrawal handles an admin's request to withdraw funds.
 func (ctrl *AdminWalletController) AdminRequestWithdrawal(c *gin.Context) {
 	var req models.WithdrawalRequestInput
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -119,28 +116,6 @@ func (ctrl *AdminWalletController) AdminRequestWithdrawal(c *gin.Context) {
 	c.JSON(http.StatusCreated, res)
 }
 
-// func (ctrl *AdminWalletController) AdminGetWalletTransactions(c *gin.Context) {
-// 	var pagination models.PaginationParams
-// 	if err := c.ShouldBindQuery(&pagination); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	// You might want to add filtering options here as well (e.g., by type, status, date range)
-// 	transactions, total, err := ctrl.AdminWalletService.AdminGetWalletTransactions(pagination)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve admin wallet transactions", "details": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, models.TransactionListResponse{
-// 		Transactions: transactions,
-// 		Total:        total,
-// 		Page:         pagination.Page,
-// 		Limit:        pagination.Limit,
-// 	})
-// }
-
 func (ctrl *AdminWalletController) AdminGetWalletTransactions(c *gin.Context) {
 	var pagination models.PaginationParams
 	if err := c.ShouldBindQuery(&pagination); err != nil {
@@ -148,7 +123,6 @@ func (ctrl *AdminWalletController) AdminGetWalletTransactions(c *gin.Context) {
 		return
 	}
 
-	// Pass the search query from pagination
 	transactions, total, err := ctrl.AdminWalletService.AdminGetWalletTransactions(pagination) // Changed this line
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve admin wallet transactions", "details": err.Error()})

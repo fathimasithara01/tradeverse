@@ -5,6 +5,7 @@ import (
 	"log"
 	"path/filepath" // Import for path manipulation
 	"runtime"       // Import for getting current file path
+	"text/template"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
@@ -78,6 +79,10 @@ func InitializeApp() (*App, error) {
 
 	customerWalletService := customerService.NewWalletService(customerWalletRepo, paymentClient, DB)
 
+	transactionRepo := repository.NewTransactionRepository(DB)
+	transactionService := service.NewTransactionService(transactionRepo)
+	transactionController := controllers.NewTransactionController(transactionService)
+
 	customerServiceForTraderSubs := customerService.NewCustomerService(
 		customerTraderSubscriptionRepo,
 		customerWalletService,
@@ -89,10 +94,29 @@ func InitializeApp() (*App, error) {
 
 	_, filename, _, _ := runtime.Caller(0)
 	currentDir := filepath.Dir(filename)
-
 	projectRoot := filepath.Join(currentDir, "..", "..", "..")
-
 	templatesPath := filepath.Join(projectRoot, "templates", "*.html")
+
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"subtract": func(a, b int) int {
+			return a - b
+		},
+		"max": func(a, b int) int {
+			if a > b {
+				return a
+			}
+			return b
+		},
+		"min": func(a, b int) int {
+			if a < b {
+				return a
+			}
+			return b
+		},
+	})
 
 	r.LoadHTMLGlob(templatesPath)
 
@@ -111,6 +135,7 @@ func InitializeApp() (*App, error) {
 		signalController,
 		adminWalletController,
 		subscriptionController,
+		transactionController,
 	)
 
 	cron.StartCronJobs(subscriptionService, customerServiceForTraderSubs)

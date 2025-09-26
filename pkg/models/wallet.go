@@ -46,9 +46,11 @@ const (
 
 type WalletTransaction struct {
 	gorm.Model
-	WalletID           uint              `gorm:"index;not null"`
-	UserID             uint              `gorm:"index;not null"`
-	TransactionType    TransactionType   `gorm:"size:30;not null"` // Increased size for new types
+	WalletID uint `gorm:"index;not null"`
+	UserID   uint `gorm:"index;not null"`
+	User     User `gorm:"foreignKey:UserID"` // This line is crucial for preloading User data
+
+	TransactionType    TransactionType   `gorm:"size:30;not null"`
 	Amount             float64           `gorm:"type:numeric(18,4);not null"`
 	Currency           string            `gorm:"size:3;not null"`
 	Status             TransactionStatus `gorm:"size:20;not null"`

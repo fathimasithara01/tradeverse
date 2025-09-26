@@ -9,20 +9,20 @@
         <li class="nav-heading">Main</li>
 
         <li class="nav-item {{if eq .ActiveTab "dashboard"}}active{{end}}">
-            <a href="/admin/dashboard"><i class="fas fa-tachometer-alt "></i> Dashboard</a>
+            <a href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
         </li>
 
         <li class="nav-heading">Core Management</li>
 
         <li class="nav-item">
-            <a href="#permissionsSubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "permissions"}}active{{end}}"
+            <a href="#permissionsSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "permissions"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "permissions"}}true{{else}}false{{end}}">
                 <i class="fas fa-shield-alt"></i>
                 <span> Users & Permissions</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "permissions"}}show{{end}}" id="permissionsSubmenu">
+            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "permissions"}}show{{end}}"
+                id="permissionsSubmenu">
                 <li class="nav-item"><a href="/admin/users/all" class="{{if eq .ActiveSubTab "manage_users"}}active{{end}}">Manage User</a></li>
                 <li class="nav-item"><a href="/admin/roles" class="{{if eq .ActiveSubTab "manage_roles"}}active{{end}}">Manage Roles</a></li>
                 <li class="nav-item"><a href="/admin/roles/permissions" class="{{if eq .ActiveSubTab "assign_permissions"}}active{{end}}">Assign Permissions </a></li>
@@ -31,27 +31,27 @@
         </li>
 
         <li class="nav-item">
-            <a href="#customerSubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "customer"}}active{{end}}"
+            <a href="#customerSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "customer"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "customer"}}true{{else}}false{{end}}">
                 <i class="fas fa-users"></i>
                 <span>Customer Management</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "customer"}}show{{end}}" id="customerSubmenu">
+            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "customer"}}show{{end}}"
+                id="customerSubmenu">
                 <li class="nav-item"><a href="/admin/users/customers" class="{{if eq .ActiveSubTab "customers_list"}}active{{end}}">Customers List</a></li>
             </ul>
         </li>
 
         <li class="nav-item">
-            <a href="#traderSubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "trader"}}active{{end}}"
+            <a href="#traderSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "trader"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "trader"}}true{{else}}false{{end}}">
                 <i class="fas fa-user-tie"></i>
                 <span>Trader Management</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "trader"}}show{{end}}" id="traderSubmenu">
+            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "trader"}}show{{end}}"
+                id="traderSubmenu">
                 <li class="nav-item"><a href="/admin/users/traders" class="{{if eq .ActiveSubTab "traders_list"}}active{{end}}">Traders List</a></li>
                 <li class="nav-item"><a href="/admin/users/traders/approval" class="{{if eq .ActiveSubTab "trader_approval"}}active{{end}}">Trader Approval</a></li>
             </ul>
@@ -59,86 +59,257 @@
 
 
         <li class="nav-item ">
-            <a href="#activitySubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "activity"}}active{{end}}"
+            <a href="#activitySubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "activity"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "activity"}}true{{else}}false{{end}}">
                 <i class="fas fa-sync-alt"></i>
                 <span>Platform Activity</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "activity"}}show{{end}}" id="activitySubmenu">
-                <li class="nav-item {{if eq .ActiveSubTab "live_signals"}}active{{end}}"><a href="/admin/signals">Live Signals</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "live_copying"}}active{{end}}"><a href="/admin/activity/live">Live Copying</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "trade_log_errors"}}active{{end}}"><a href="/admin/activity/errors">Trade Log & Errors</a></li>
+            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "activity"}}show{{end}}"
+                id="activitySubmenu">
+                <li class="nav-item {{if eq .ActiveSubTab "live_signals"}}active{{end}}"><a href="/admin/signals">Live
+                        Signals</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "live_copying"}}active{{end}}"><a
+                        href="/admin/activity/live">Live Copying</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "trade_log_errors"}}active{{end}}"><a
+                        href="/admin/activity/errors">Trade Log & Errors</a></li>
             </ul>
         </li>
 
         <li class="nav-item">
-            <a href="#financialsSubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "financials"}}active{{end}}"
-                aria-expanded="{{if eq .ActiveTab "financials"}}true{{else}}false{{end}}">
+            <a href="#financialsSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "financials"}}active{{end}}" aria-expanded="{{if eq .ActiveTab "financials"}}true{{else}}false{{end}}">
                 <i class="fas fa-wallet"></i>
                 <span>Financials</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "financials"}}show{{end}}" id="financialsSubmenu">
-                <li class="nav-item {{if eq .ActiveSubTab "admin_wallet"}}active{{end}}"><a href="/admin/financials/wallet">Admin Wallet</a></li> <!-- CORRECTED LINK HERE -->
-                <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a href="/admin/financials/subscriptions">Subscriptions</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a href="/admin/financials/subscription-plans">Subscription Plans</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "trader_payouts"}}active{{end}}"><a href="#">Trader Payouts</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "transactions"}}active{{end}}"><a href="#">Transactions</a></li>
+            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "financials"}}show{{end}}"
+                id="financialsSubmenu">
+                <li class="nav-item {{if eq .ActiveSubTab "admin_wallet"}}active{{end}}"><a
+                        href="/admin/financials/wallet">Admin Wallet</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a
+                        href="/admin/financials/subscriptions">Subscriptions</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a
+                        href="/admin/financials/subscription-plans">Subscription Plans</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "trader_payouts"}}active{{end}}"><a href="/admin/financials/trader-payouts">Trader Payouts</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "transactions"}}active{{end}}"><a
+                        href="/admin/transactions">Transactions</a></li>
             </ul>
         </li>
 
-        <li class="nav-heading">Growth & Support</li>
-        <li class="nav-item">
-            <a href="#marketingSubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "marketing"}}active{{end}}"
-                aria-expanded="{{if eq .ActiveTab "marketing"}}true{{else}}false{{end}}">
-                <i class="fas fa-bullhorn"></i>
-                <span>Marketing & Promos</span>
-                <i class="fas fa-chevron-right collapse-arrow"></i>
-            </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "marketing"}}show{{end}}" id="marketingSubmenu">
-                <li class="nav-item {{if eq .ActiveSubTab "promo_codes"}}active{{end}}"><a href="/admin/marketing/promo-codes">Promo Codes</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "campaigns"}}active{{end}}"><a href="/admin/marketing/campaigns">Campaigns</a></li>
-            </ul>
-        </li>
+    <li class="nav-heading">Growth & Support</li>
+    <li class="nav-item">
+        <a href="#marketingSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "marketing"}}active{{end}}"
+            aria-expanded="{{if eq .ActiveTab "marketing"}}true{{else}}false{{end}}">
+            <i class="fas fa-bullhorn"></i>
+            <span>Marketing & Promos</span>
+            <i class="fas fa-chevron-right collapse-arrow"></i>
+        </a>
+        <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "marketing"}}show{{end}}"
+            id="marketingSubmenu">
+            <li class="nav-item {{if eq .ActiveSubTab "promo_codes"}}active{{end}}"><a
+                    href="/admin/marketing/promo-codes">Promo Codes</a></li>
+            <li class="nav-item {{if eq .ActiveSubTab "campaigns"}}active{{end}}"><a
+                    href="/admin/marketing/campaigns">Campaigns</a></li>
+        </ul>
+    </li>
 
-        <li class="nav-item">
-            <a href="#contentSubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "content"}}active{{end}}"
-                aria-expanded="{{if eq .ActiveTab "content"}}true{{else}}false{{end}}">
-                <i class="fas fa-file-alt"></i>
-                <span>Content Management</span>
-                <i class="fas fa-chevron-right collapse-arrow"></i>
-            </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "content"}}show{{end}}" id="contentSubmenu">
-                <li class="nav-item {{if eq .ActiveSubTab "blog_posts"}}active{{end}}"><a href="/admin/content/blog-posts">Blog Posts</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "pages"}}active{{end}}"><a href="/admin/content/pages">Pages</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "faq"}}active{{end}}"><a href="/admin/content/faq">FAQ</a></li>
-            </ul>
-        </li>
+    <li class="nav-item">
+        <a href="#contentSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "content"}}active{{end}}"
+            aria-expanded="{{if eq .ActiveTab "content"}}true{{else}}false{{end}}">
+            <i class="fas fa-file-alt"></i>
+            <span>Content Management</span>
+            <i class="fas fa-chevron-right collapse-arrow"></i>
+        </a>
+        <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "content"}}show{{end}}" id="contentSubmenu">
+            <li class="nav-item {{if eq .ActiveSubTab "blog_posts"}}active{{end}}"><a
+                    href="/admin/content/blog-posts">Blog Posts</a></li>
+            <li class="nav-item {{if eq .ActiveSubTab "pages"}}active{{end}}"><a href="/admin/content/pages">Pages</a>
+            </li>
+            <li class="nav-item {{if eq .ActiveSubTab "faq"}}active{{end}}"><a href="/admin/content/faq">FAQ</a></li>
+        </ul>
+    </li>
 
-        <li class="nav-item">
-            <a href="#supportSubmenu" data-bs-toggle="collapse"
-                class="{{if eq .ActiveTab "support"}}active{{end}}"
-                aria-expanded="{{if eq .ActiveTab "support"}}true{{else}}false{{end}}">
-                <i class="fas fa-headset"></i>
-                <span>Support & Help</span>
-                <i class="fas fa-chevron-right collapse-arrow"></i>
-            </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "support"}}show{{end}}" id="supportSubmenu">
-                <li class="nav-item {{if eq .ActiveSubTab "support_tickets"}}active{{end}}"><a href="/admin/support/tickets">Support Tickets</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "announcements"}}active{{end}}"><a href="/admin/support/announcements">Announcements</a></li>
-            </ul>
-        </li>
+    <li class="nav-item">
+        <a href="#supportSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "support"}}active{{end}}"
+            aria-expanded="{{if eq .ActiveTab "support"}}true{{else}}false{{end}}">
+            <i class="fas fa-headset"></i>
+            <span>Support & Help</span>
+            <i class="fas fa-chevron-right collapse-arrow"></i>
+        </a>
+        <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "support"}}show{{end}}" id="supportSubmenu">
+            <li class="nav-item {{if eq .ActiveSubTab "support_tickets"}}active{{end}}"><a
+                    href="/admin/support/tickets">Support Tickets</a></li>
+            <li class="nav-item {{if eq .ActiveSubTab "announcements"}}active{{end}}"><a
+                    href="/admin/support/announcements">Announcements</a></li>
+        </ul>
+    </li>
 
-        <li class="nav-heading">Settings</li>
-        <li class="nav-item {{if eq .ActiveTab "system_settings"}}active{{end}}">
-            <a href="/admin/settings"><i class="fas fa-cogs"></i> System Settings</a>
-        </li>
+    <li class="nav-heading">Settings</li>
+    <li class="nav-item {{if eq .ActiveTab "system_settings"}}active{{end}}">
+        <a href="/admin/settings"><i class="fas fa-cogs"></i> System Settings</a>
+    </li>
     </ul>
 </nav>
-
 {{end}}
+
+<!-- The rest of your HTML (outside the define block) is identical, so no changes needed there. -->
+<style>
+        :root {
+            --sidebar-bg: #ffffff;
+            --sidebar-width: 280px;
+            --main-bg: #f7f9fc;
+            --brand-color: #1a73e8;
+            --text-color: #343a40;
+            --link-color: #5f6368;
+            --link-hover-bg: #f1f3f4;
+            --link-active-bg: #e8f0fe;
+            --link-active-color: #1967d2;
+            --border-color: #e9ecef;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background-color: var(--main-bg);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            transition: all 0.3s;
+            box-shadow: 0 0 25px var(--shadow-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h3 {
+            color: var(--brand-color);
+            font-weight: 700;
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
+
+        #sidebar-nav {
+            flex-grow: 1;
+            padding: 1rem 0;
+        }
+
+        #sidebar-nav .nav-heading {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #adb5bd;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        #sidebar-nav .nav-item a {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            color: var(--link-color);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        #sidebar-nav .nav-item a:hover {
+            background: var(--link-hover-bg);
+            color: var(--text-color);
+        }
+
+        #sidebar-nav .nav-item.active>a,
+        #sidebar-nav .nav-item a[aria-expanded="true"] {
+            background: var(--link-active-bg);
+            color: var(--link-active-color);
+            border-left-color: var(--link-active-color);
+        }
+
+        #sidebar-nav .nav-item a i {
+            margin-right: 1rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .collapse-arrow {
+            margin-left: auto;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        a[aria-expanded="true"] .collapse-arrow {
+            transform: rotate(90deg);
+        }
+
+        .nav-collapse .nav-item a {
+            padding-left: 3.8rem !important;
+            font-size: 0.9rem;
+            border-left: none;
+            position: relative;
+            color: #6c757d;
+        }
+
+        .nav-collapse .nav-item.active a {
+            color: var(--link-active-color);
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+        }
+
+        #content {
+            flex-grow: 1;
+            padding: 2.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>

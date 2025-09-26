@@ -21,6 +21,7 @@ func WireAdminRoutes(
 	signalCtrl *controllers.SignalController,
 	adminWalletController *controllers.AdminWalletController,
 	subscriptionController *controllers.SubscriptionController,
+	tranasactionController *controllers.TransactionController,
 
 ) {
 	authz := middleware.NewAuthzMiddleware(roleService)
@@ -114,29 +115,10 @@ func WireAdminRoutes(
 			protected.GET("/financials/api/withdrawals/pending", adminWalletController.GetPendingWithdrawals)
 			protected.POST("/financials/api/withdrawals/:id/action", adminWalletController.AdminApproveOrRejectWithdrawal)
 
-			// financials := admin.Group("/financials")
-			// {
+			protected.GET("/transactions", tranasactionController.GetTransactionsPage)
+			protected.GET("/api/transactions", tranasactionController.GetTransactionsAPI)
 
-			// 	financials.GET("/subscriptions", subscriptionController.ShowSubscriptionsPage)
-			// 	financials.GET("/api/subscriptions", subscriptionController.GetSubscriptions)
-
-			// 	financials.GET("/subscription-plans", subscriptionController.ShowSubscriptionPlansPage)
-			// 	financials.GET("/api/subscription-plans", subscriptionController.GetSubscriptionPlans)
-			// 	financials.POST("/api/subscription-plans", subscriptionController.CreateSubscriptionPlan)
-			// 	financials.PUT("/api/subscription-plans/:id", subscriptionController.UpdateSubscriptionPlan)
-			// 	financials.DELETE("/api/subscription-plans/:id", subscriptionController.DeleteSubscriptionPlan)
-			// 	financials.GET("api/subscription-plans/:id", subscriptionController.GetSubscriptionPlanByID)
-
-			// 	financials.GET("/wallet", adminWalletController.ShowAdminWalletPage)
-			// 	financials.GET("/api/wallet/summary", adminWalletController.GetAdminWalletSummary)
-			// 	financials.POST("/api/wallet/deposit", adminWalletController.AdminInitiateDeposit)
-			// 	financials.POST("/api/wallet/deposit/:deposit_id/verify", adminWalletController.AdminVerifyDeposit)
-			// 	financials.POST("/api/wallet/withdraw", adminWalletController.AdminRequestWithdrawal)
-			// 	financials.GET("/api/wallet/transactions", adminWalletController.AdminGetWalletTransactions)
-
-			// 	financials.GET("/api/withdrawals/pending", adminWalletController.GetPendingWithdrawals)
-			// 	financials.POST("/api/withdrawals/:id/action", adminWalletController.AdminApproveOrRejectWithdrawal)
-			// }
+		
 		}
 
 	}

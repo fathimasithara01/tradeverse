@@ -67,8 +67,8 @@ func (s *AdminWalletService) AdminInitiateDeposit(input models.DepositRequestInp
 		Amount:         input.Amount,
 		Currency:       input.Currency,
 		Status:         models.TxStatusPending,
-		PaymentGateway: "AdminManual", // Or a specific gateway for admin deposits
-		RedirectURL:    "",            // Not applicable for internal admin deposits
+		PaymentGateway: "AdminManual",
+		RedirectURL:    "",
 	}
 
 	if err := s.Repo.CreateDepositRequest(&depositRequest); err != nil {
@@ -100,15 +100,14 @@ func (s *AdminWalletService) AdminVerifyDeposit(depositID uint, input models.Dep
 		return nil, errors.New("deposit verification failed as per input status")
 	}
 
-	// Start a database transaction
 	err = s.DB.Transaction(func(tx *gorm.DB) error {
-		wallet, err := s.Repo.GetAdminWallet() // Get admin wallet within the transaction
+		wallet, err := s.Repo.GetAdminWallet()
 		if err != nil {
 			return err
 		}
 
 		balanceBefore := wallet.Balance
-		wallet.Balance += input.Amount // Update balance
+		wallet.Balance += input.Amount
 		wallet.LastUpdated = time.Now()
 
 		if err := s.Repo.UpdateWalletBalance(tx, wallet); err != nil {
@@ -116,7 +115,7 @@ func (s *AdminWalletService) AdminVerifyDeposit(depositID uint, input models.Dep
 		}
 
 		depositRequest.Status = models.TxStatusSuccess
-		depositRequest.PaymentGatewayTxID = input.PaymentGatewayTxID // Assuming webhook provides this
+		depositRequest.PaymentGatewayTxID = input.PaymentGatewayTxID
 		if err := s.Repo.UpdateDepositRequest(depositRequest); err != nil {
 			return fmt.Errorf("failed to update admin deposit request status: %w", err)
 		}
@@ -138,7 +137,7 @@ func (s *AdminWalletService) AdminVerifyDeposit(depositID uint, input models.Dep
 			return fmt.Errorf("failed to create admin wallet transaction record: %w", err)
 		}
 
-		depositRequest.WalletTransactionID = &walletTx.ID // Link transaction to deposit request
+		depositRequest.WalletTransactionID = &walletTx.ID
 		return s.Repo.UpdateDepositRequest(depositRequest)
 	})
 
@@ -174,7 +173,7 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 
 	err = s.DB.Transaction(func(tx *gorm.DB) error {
 		balanceBefore := wallet.Balance
-		wallet.Balance -= input.Amount // Deduct balance immediately
+		wallet.Balance -= input.Amount
 		wallet.LastUpdated = time.Now()
 
 		if err := s.Repo.UpdateWalletBalance(tx, wallet); err != nil {
@@ -185,16 +184,15 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 			UserID:             adminUser.ID,
 			Amount:             input.Amount,
 			Currency:           input.Currency,
-			Status:             models.TxStatusPending, // Withdrawal requests usually go into pending for review/processing
+			Status:             models.TxStatusPending,
 			BeneficiaryAccount: input.BeneficiaryAccount,
-			PaymentGateway:     "AdminManualTransfer", // Or actual payment gateway
+			PaymentGateway:     "AdminManualTransfer",
 			PaymentGatewayTxID: "",
 		}
 		if err := s.Repo.CreateWithdrawRequest(&withdrawRequest); err != nil {
 			return fmt.Errorf("failed to create admin withdrawal request: %w", err)
 		}
 
-		// Create a pending wallet transaction for the withdrawal
 		walletTx := models.WalletTransaction{
 			WalletID:           wallet.ID,
 			UserID:             wallet.UserID,
@@ -203,16 +201,16 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 			Currency:           wallet.Currency,
 			Status:             models.TxStatusPending,
 			ReferenceID:        fmt.Sprintf("WITHDRAW-%d", withdrawRequest.ID),
-			PaymentGatewayTxID: "", // Will be updated upon actual processing
+			PaymentGatewayTxID: "",
 			Description:        fmt.Sprintf("Admin withdrawal request to %s", input.BeneficiaryAccount),
 			BalanceBefore:      balanceBefore,
-			BalanceAfter:       wallet.Balance, // Balance is deducted
+			BalanceAfter:       wallet.Balance,
 		}
 		if err := s.Repo.CreateWalletTransaction(tx, &walletTx); err != nil {
 			return fmt.Errorf("failed to create admin withdrawal transaction record: %w", err)
 		}
-		withdrawRequest.WalletTransactionID = &walletTx.ID    // Link transaction to withdrawal request
-		return s.Repo.UpdateWithdrawRequest(&withdrawRequest) // Corrected: Pass pointer
+		withdrawRequest.WalletTransactionID = &walletTx.ID
+		return s.Repo.UpdateWithdrawRequest(&withdrawRequest)
 	})
 
 	if err != nil {
@@ -235,7 +233,7 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 		}
 
 		balanceBefore := wallet.Balance
-		wallet.Balance -= input.Amount // Deduct balance immediately
+		wallet.Balance -= input.Amount
 		wallet.LastUpdated = time.Now()
 
 		if err := s.Repo.UpdateWalletBalance(tx, wallet); err != nil {
@@ -254,7 +252,7 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 		if err := s.Repo.CreateWithdrawRequest(&withdrawRequest); err != nil {
 			return fmt.Errorf("failed to create admin withdrawal request: %w", err)
 		}
-		finalWithdrawRequest = withdrawRequest // Assign to outer scope variable
+		finalWithdrawRequest = withdrawRequest
 
 		walletTx := models.WalletTransaction{
 			WalletID:           wallet.ID,
@@ -281,7 +279,7 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 	}
 
 	return &models.WithdrawalResponse{
-		WithdrawalID:       finalWithdrawRequest.ID, // Corrected: use actual ID
+		WithdrawalID:       finalWithdrawRequest.ID,
 		Amount:             input.Amount,
 		Currency:           input.Currency,
 		Status:             models.TxStatusPending,
@@ -291,16 +289,11 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 }
 
 func (s *AdminWalletService) AdminGetWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
-	return s.Repo.AdminGetWalletTransactions(pagination) // Pass pagination directly
+	return s.Repo.AdminGetWalletTransactions(pagination)
 }
 
-// func (s *AdminWalletService) AdminGetWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
-// 	return s.Repo.GetAdminWalletTransactions(pagination)
-// }
-
-// CreditAdminWallet is a helper function to credit the admin's wallet, specifically for subscription payments.
 func (s *AdminWalletService) CreditAdminWallet(tx *gorm.DB, amount float64, currency, description string) error {
-	adminWallet, err := s.Repo.GetAdminWallet() // Get admin wallet within the transaction
+	adminWallet, err := s.Repo.GetAdminWallet()
 	if err != nil {
 		return fmt.Errorf("failed to get admin wallet: %w", err)
 	}
@@ -317,11 +310,10 @@ func (s *AdminWalletService) CreditAdminWallet(tx *gorm.DB, amount float64, curr
 		return fmt.Errorf("failed to update admin wallet balance for credit: %w", err)
 	}
 
-	// Create a wallet transaction record for the credit
 	walletTx := models.WalletTransaction{
 		WalletID:        adminWallet.ID,
 		UserID:          adminWallet.UserID,
-		TransactionType: models.TxTypeDeposit, // Treat as a deposit to admin wallet
+		TransactionType: models.TxTypeDeposit,
 		Amount:          amount,
 		Currency:        currency,
 		Status:          models.TxStatusSuccess,
@@ -335,12 +327,10 @@ func (s *AdminWalletService) CreditAdminWallet(tx *gorm.DB, amount float64, curr
 	return nil
 }
 
-// GetPendingWithdrawalRequests retrieves all pending withdrawal requests from customers.
 func (s *AdminWalletService) GetPendingWithdrawalRequests(pagination models.PaginationParams) ([]models.WithdrawRequest, int64, error) {
 	return s.Repo.GetPendingWithdrawalRequests(pagination)
 }
 
-// ApproveWithdrawalRequest approves a customer's withdrawal request.
 func (s *AdminWalletService) ApproveWithdrawalRequest(withdrawalID uint) error {
 	return s.DB.Transaction(func(tx *gorm.DB) error {
 		withdrawal, err := s.Repo.GetWithdrawRequestByID(withdrawalID)
@@ -352,15 +342,13 @@ func (s *AdminWalletService) ApproveWithdrawalRequest(withdrawalID uint) error {
 		}
 
 		withdrawal.Status = models.TxStatusSuccess
-		// Simulate integration with a payment gateway here to actually disburse funds.
-		// For now, we'll just update the status.
+
 		withdrawal.PaymentGatewayTxID = fmt.Sprintf("PAYOUT-%d-%s", withdrawal.ID, time.Now().Format("20060102")) // Mock ID
 
 		if err := s.Repo.UpdateWithdrawRequest(withdrawal); err != nil { // Corrected: Removed `tx`
 			return fmt.Errorf("failed to update withdrawal request status: %w", err)
 		}
 
-		// Update the corresponding WalletTransaction status to SUCCESS
 		if withdrawal.WalletTransactionID != nil {
 			var walletTx models.WalletTransaction
 			// Ensure walletTx is fetched within the current transaction `tx`
