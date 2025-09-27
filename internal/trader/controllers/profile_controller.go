@@ -19,7 +19,7 @@ func NewTraderProfileController(traderService service.ITraderProfileService) *Tr
 
 func (c *TraderProfileController) GetTraderProfile(ctx *gin.Context) {
 
-	userID := ctx.MustGet("userID").(uint) // Example: getting userID from context
+	userID := ctx.MustGet("userID").(uint)
 
 	profile, err := c.traderService.GetProfile(userID)
 	if err != nil {
@@ -77,7 +77,7 @@ func (c *TraderProfileController) UpdateTraderProfile(ctx *gin.Context) {
 		return
 	}
 
-	userID := ctx.MustGet("userID").(uint) 
+	userID := ctx.MustGet("userID").(uint)
 
 	existingProfile, err := c.traderService.GetProfile(userID)
 	if err != nil {

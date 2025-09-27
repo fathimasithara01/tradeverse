@@ -57,7 +57,7 @@ func checkPasswordHash(password, hash string) bool {
 }
 
 func (s *UserService) Login(email, password string) (string, models.User, error) {
-	user, err := s.UserRepo.FindByEmail(email) // Find user by email, preloads Role
+	user, err := s.UserRepo.FindByEmail(email) 
 	if err != nil {
 		log.Printf("[LOGIN SERVICE] User '%s' not found or other error: %v", email, err)
 		return "", models.User{}, errors.New("invalid credentials")
