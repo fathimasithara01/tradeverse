@@ -6,14 +6,23 @@ import (
 	"gorm.io/gorm"
 )
 
+// type Wallet struct {
+// 	gorm.Model
+// 	UserID   uint    `gorm:"uniqueIndex;not null"`
+// 	Balance  float64 `gorm:"type:numeric(18,4);default:0.00"`
+// 	Currency string  `gorm:"size:10;not null;default:'USD'" json:"currency"` // Changed default to USD, as common for trading platforms
+
+// 	LastUpdated time.Time
+// }
+
 type Wallet struct {
 	gorm.Model
-	UserID   uint    `gorm:"uniqueIndex;not null"`
-	Balance  float64 `gorm:"type:numeric(18,4);default:0.00"`
-	Currency string  `gorm:"size:10;not null;default:'USD'" json:"currency"` // Changed default to USD, as common for trading platforms
-
+	UserID      uint    `gorm:"uniqueIndex;not null" json:"user_id"`
+	Balance     float64 `gorm:"type:numeric(18,4);default:0.00" json:"balance"`
+	Currency    string  `gorm:"size:10;not null;default:'USD'" json:"currency"`
 	LastUpdated time.Time
-	// User        User    `gorm:"foreignKey:UserID"` // Optional: If you need to eager load user with wallet
+
+	Transactions []WalletTransaction `gorm:"foreignKey:WalletID" json:"transactions,omitempty"`
 }
 
 type TransactionType string
@@ -25,8 +34,8 @@ const (
 	TxTypeTransfer           TransactionType = "TRANSFER"
 	TxTypeReversal           TransactionType = "REVERSAL"
 	TxTypeSubscription       TransactionType = "SUBSCRIPTION_PAYMENT"
-	TxTypeTradeOpeningFunds  TransactionType = "TRADE_OPENING_FUNDS" // NEW: Funds reserved/deducted for opening a trade
-	TxTypeTradeClosingFunds  TransactionType = "TRADE_CLOSING_FUNDS" // NEW: Funds released/returned/adjusted on trade close
+	TxTypeTradeOpeningFunds  TransactionType = "TRADE_OPENING_FUNDS"
+	TxTypeTradeClosingFunds  TransactionType = "TRADE_CLOSING_FUNDS"
 	TxTypeTradeProfit        TransactionType = "TRADE_PROFIT"
 	TxTypeTradeLoss          TransactionType = "TRADE_LOSS"
 	TxTypeCopyTradeFee       TransactionType = "COPY_TRADE_FEE"
@@ -44,21 +53,39 @@ const (
 	TxStatusRejected  TransactionStatus = "REJECTED"
 )
 
+type WalletTransactionType string
+
+const (
+	TransactionDeposit    WalletTransactionType = "DEPOSIT"
+	TransactionWithdrawal WalletTransactionType = "WITHDRAWAL"
+)
+const (
+	Deposit  TransactionType = "deposit"
+	Withdraw TransactionType = "withdraw"
+)
+
 type WalletTransaction struct {
 	gorm.Model
-	WalletID uint `gorm:"index;not null"`
-	UserID   uint `gorm:"index;not null"`
-	User     User `gorm:"foreignKey:UserID"` // This line is crucial for preloading User data
+	WalletID uint `gorm:"index;not null" json:"wallet_id"`
+	// Type     WalletTransactionType `gorm:"type:varchar(20);not null;default:'DEPOSIT'" json:"type"`
+	Type   TransactionType `gorm:"type:varchar(20);not null" json:"type"`
+	UserID uint            `gorm:"not null;index" json:"user_id"` // <-- required for FK
 
-	TransactionType    TransactionType   `gorm:"size:30;not null"`
-	Amount             float64           `gorm:"type:numeric(18,4);not null"`
-	Currency           string            `gorm:"size:3;not null"`
-	Status             TransactionStatus `gorm:"size:20;not null"`
-	ReferenceID        string            `gorm:"size:100"`
-	PaymentGatewayTxID string            `gorm:"size:100"`
-	Description        string            `gorm:"type:text"`
-	BalanceBefore      float64           `gorm:"type:numeric(18,4)"`
-	BalanceAfter       float64           `gorm:"type:numeric(18,4)"`
+	// UserID uint `gorm:"index;not null"`
+	User User `gorm:"foreignKey:UserID"`
+
+	TransactionType TransactionType   `gorm:"size:30;not null"`
+	Amount          float64           `gorm:"type:numeric(18,4);not null"`
+	Currency        string            `gorm:"size:3;not null"`
+	Status          TransactionStatus `gorm:"size:20;not null"`
+	Notes           string            `json:"notes,omitempty"`
+	// Status string `gorm:"type:varchar(20);default:'PENDING'" json:"status"`
+
+	ReferenceID        string  `gorm:"size:100"`
+	PaymentGatewayTxID string  `gorm:"size:100"`
+	Description        string  `gorm:"type:text"`
+	BalanceBefore      float64 `gorm:"type:numeric(18,4)"`
+	BalanceAfter       float64 `gorm:"type:numeric(18,4)"`
 
 	TradeID              *uint `gorm:"index" json:"trade_id,omitempty"`
 	CopyTradeID          *uint `gorm:"index" json:"copy_trade_id,omitempty"`

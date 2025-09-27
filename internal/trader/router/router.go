@@ -14,6 +14,7 @@ func SetupRouter(
 	tradeController *controllers.TradeController,
 	subscriberController *controllers.SubscriberController,
 	liveCtrl *controllers.LiveTradeController,
+	walletCntrl *controllers.WalletController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -37,6 +38,11 @@ func SetupRouter(
 		protected.GET("/trades/:id", tradeController.GetTradeByID)
 		protected.PUT("/trade/:id", tradeController.UpdateTradeStatus)
 		protected.DELETE("/trade/:id", tradeController.RemoveTrade)
+
+		protected.GET("/wallet", walletCntrl.GetBalance)
+		protected.POST("/wallet/deposit", walletCntrl.Deposit)
+		protected.POST("/wallet/withdraw", walletCntrl.Withdraw)
+		protected.GET("/wallet/transactions", walletCntrl.TransactionHistory)
 
 		protected.GET("/trader/subscribers", subscriberController.ListSubscribers)
 		protected.GET("/trader/subscribers/:id", subscriberController.GetSubscriber)

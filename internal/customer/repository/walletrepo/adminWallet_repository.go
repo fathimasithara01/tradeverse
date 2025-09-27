@@ -1,4 +1,5 @@
-package walletrepo 
+package walletrepo
+
 import (
 	"errors"
 	"time"

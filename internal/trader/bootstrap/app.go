@@ -42,18 +42,21 @@ func InitializeApp() (*App, error) {
 	subRepo := repository.NewSubscriberRepository(db)
 	liveRepo := repository.NewLiveTradeRepository(db)
 	profileRepo := repository.NewTraderProfileRepository(db)
+	walletrepo := repository.NewGormWalletRepository(db)
 
 	tradeService := service.NewTradeService(tradeRepo)
 	subService := service.NewSubscriberService(subRepo)
 	liveService := service.NewLiveTradeService(liveRepo)
 	profileService := service.NewTraderProfileService(profileRepo, userRepo)
+	walletService := service.NewWalletService(walletrepo)
 
 	tradeController := controllers.NewTradeController(tradeService)
 	subController := controllers.NewSubscriberController(subService)
 	liveController := controllers.NewLiveTradeController(liveService)
 	profileController := controllers.NewTraderProfileController(profileService)
+	walletController := controllers.NewWalletController(walletService)
 
-	r := router.SetupRouter(cfg, authController, profileController, tradeController, subController, liveController)
+	r := router.SetupRouter(cfg, authController, profileController, tradeController, subController, liveController, walletController)
 
 	return &App{
 		engine: r,
