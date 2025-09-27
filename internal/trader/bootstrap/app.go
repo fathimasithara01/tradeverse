@@ -37,7 +37,8 @@ func InitializeApp() (*App, error) {
 
 	authController := controllers.NewAuthController(userService)
 
-	tradeRepo := repository.NewTradeRepository(db)
+	// tradeRepo := repository.NewTradeRepository(db)
+	tradeRepo := repository.NewGormTradeRepository(db)
 	subRepo := repository.NewSubscriberRepository(db)
 	liveRepo := repository.NewLiveTradeRepository(db)
 	profileRepo := repository.NewTraderProfileRepository(db)
