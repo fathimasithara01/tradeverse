@@ -34,13 +34,9 @@ func SetupRouter(
 
 		protected.GET("/trades", tradeController.GetTraderTrades)
 		protected.POST("/trade", tradeController.CreateTrade)
+		protected.GET("/trades/:id", tradeController.GetTradeByID)
 		protected.PUT("/trade/:id", tradeController.UpdateTradeStatus)
 		protected.DELETE("/trade/:id", tradeController.RemoveTrade)
-		// protected.POST("/trader/trades", tradeController.CreateTrade)
-		// protected.GET("/trader/trades", tradeController.ListTrades)
-		// protected.GET("/trader/trades/:id", tradeController.GetTrade)
-		// protected.PUT("/trader/trades/:id", tradeController.UpdateTrade)
-		// protected.DELETE("/trader/trades/:id", tradeController.DeleteTrade)
 
 		protected.GET("/trader/subscribers", subscriberController.ListSubscribers)
 		protected.GET("/trader/subscribers/:id", subscriberController.GetSubscriber)

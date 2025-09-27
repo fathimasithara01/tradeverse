@@ -12,6 +12,7 @@ import (
 type TradeRepository interface {
 	CreateTrade(ctx context.Context, trade *models.Trade) error
 	GetTradeByID(ctx context.Context, tradeID uint) (*models.Trade, error)
+
 	GetTradesByTraderID(ctx context.Context, traderID uint, limit, offset int) ([]models.Trade, int64, error)
 	UpdateTrade(ctx context.Context, trade *models.Trade) error
 	DeleteTrade(ctx context.Context, tradeID uint) error
@@ -28,37 +29,32 @@ func NewGormTradeRepository(db *gorm.DB) TradeRepository {
 	return &gormTradeRepository{db: db}
 }
 
-// CreateTrade inserts a new trade into the database
 func (r *gormTradeRepository) CreateTrade(ctx context.Context, trade *models.Trade) error {
 	return r.db.WithContext(ctx).Create(trade).Error
 }
 
-// GetTradeByID retrieves a trade by its ID
 func (r *gormTradeRepository) GetTradeByID(ctx context.Context, tradeID uint) (*models.Trade, error) {
 	var trade models.Trade
 	err := r.db.WithContext(ctx).First(&trade, tradeID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil // Or return a specific error indicating not found
+			return nil, nil
 		}
 		return nil, err
 	}
 	return &trade, nil
 }
 
-// GetTradesByTraderID retrieves a list of trades for a specific trader with pagination
 func (r *gormTradeRepository) GetTradesByTraderID(ctx context.Context, traderID uint, limit, offset int) ([]models.Trade, int64, error) {
 	var trades []models.Trade
 	var total int64
 
 	query := r.db.WithContext(ctx).Where("trader_id = ?", traderID)
 
-	// Count total records
 	if err := query.Model(&models.Trade{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Fetch paginated trades
 	err := query.Limit(limit).Offset(offset).Order("created_at desc").Find(&trades).Error
 	if err != nil {
 		return nil, 0, err
@@ -66,17 +62,14 @@ func (r *gormTradeRepository) GetTradesByTraderID(ctx context.Context, traderID 
 	return trades, total, nil
 }
 
-// UpdateTrade updates an existing trade in the database
 func (r *gormTradeRepository) UpdateTrade(ctx context.Context, trade *models.Trade) error {
 	return r.db.WithContext(ctx).Save(trade).Error
 }
 
-// DeleteTrade removes a trade from the database
 func (r *gormTradeRepository) DeleteTrade(ctx context.Context, tradeID uint) error {
 	return r.db.WithContext(ctx).Delete(&models.Trade{}, tradeID).Error
 }
 
-// CloseTrade updates a trade's status to CLOSED and sets the close price and PnL
 func (r *gormTradeRepository) CloseTrade(ctx context.Context, tradeID uint, closePrice float64) (*models.Trade, error) {
 	trade, err := r.GetTradeByID(ctx, tradeID)
 	if err != nil {
@@ -93,7 +86,6 @@ func (r *gormTradeRepository) CloseTrade(ctx context.Context, tradeID uint, clos
 	trade.ClosedAt = models.TimePtr(time.Now())
 	trade.Status = models.TradeStatusClosed
 
-	// Calculate PnL (simplified example, needs actual logic)
 	pnl := (closePrice - trade.EntryPrice) * trade.Quantity * float64(trade.Leverage)
 	if trade.Side == models.TradeSideSell {
 		pnl = (trade.EntryPrice - closePrice) * trade.Quantity * float64(trade.Leverage)
@@ -107,7 +99,6 @@ func (r *gormTradeRepository) CloseTrade(ctx context.Context, tradeID uint, clos
 	return trade, nil
 }
 
-// CancelTrade updates a trade's status to CANCELLED
 func (r *gormTradeRepository) CancelTrade(ctx context.Context, tradeID uint) (*models.Trade, error) {
 	trade, err := r.GetTradeByID(ctx, tradeID)
 	if err != nil {
@@ -128,7 +119,6 @@ func (r *gormTradeRepository) CancelTrade(ctx context.Context, tradeID uint) (*m
 	return trade, nil
 }
 
-// CountTradesByTraderID counts the total number of trades for a given trader
 func (r *gormTradeRepository) CountTradesByTraderID(ctx context.Context, traderID uint) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&models.Trade{}).Where("trader_id = ?", traderID).Count(&count).Error

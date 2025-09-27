@@ -22,6 +22,39 @@ func NewTradeController(tradeService service.TradeService) *TradeController {
 	}
 }
 
+func (ctrl *TradeController) GetTradeByID(c *gin.Context) {
+	traderID, err := getTraderIDAndCheckRole(c)
+	if err != nil {
+		if err.Error() == "forbidden: only traders can access this resource" {
+			response.Error(c, http.StatusForbidden, err.Error())
+		} else {
+			response.Error(c, http.StatusUnauthorized, "Unauthorized")
+		}
+		return
+	}
+
+	tradeIDStr := c.Param("id")
+	tradeID, err := strconv.ParseUint(tradeIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid trade ID")
+		return
+	}
+
+	trade, err := ctrl.tradeService.GetTradeByID(c.Request.Context(), traderID, uint(tradeID))
+	if err != nil {
+		if errors.Is(err, constants.ErrNotFound("Trade")) {
+			response.Error(c, http.StatusNotFound, err.Error())
+		} else if errors.Is(err, constants.ErrForbidden) {
+			response.Error(c, http.StatusForbidden, err.Error())
+		} else {
+			response.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Trade retrieved successfully", trade)
+}
+
 func getTraderIDAndCheckRole(c *gin.Context) (uint, error) {
 	userIDVal, exists := c.Get("userID")
 	if !exists {
@@ -54,7 +87,7 @@ func (ctrl *TradeController) CreateTrade(c *gin.Context) {
 		if err.Error() == "forbidden: only traders can access this resource" {
 			response.Error(c, http.StatusForbidden, err.Error())
 		} else {
-			response.Error(c, http.StatusUnauthorized, "Unauthorized") 
+			response.Error(c, http.StatusUnauthorized, "Unauthorized")
 		}
 		return
 	}

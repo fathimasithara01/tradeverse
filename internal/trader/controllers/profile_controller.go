@@ -77,7 +77,7 @@ func (c *TraderProfileController) UpdateTraderProfile(ctx *gin.Context) {
 		return
 	}
 
-	userID := ctx.MustGet("userID").(uint) // Get userID from auth context
+	userID := ctx.MustGet("userID").(uint) 
 
 	existingProfile, err := c.traderService.GetProfile(userID)
 	if err != nil {
