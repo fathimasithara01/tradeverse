@@ -10,6 +10,7 @@ import (
 func SetupRouter(
 	cfg *config.Config,
 	authController *controllers.AuthController,
+	profileController *controllers.TraderProfileController,
 	tradeController *controllers.TradeController,
 	subscriberController *controllers.SubscriberController,
 	liveCtrl *controllers.LiveTradeController,
@@ -25,6 +26,11 @@ func SetupRouter(
 	protected := r.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
+
+		protected.GET("/trader/profile", profileController.GetTraderProfile)
+		protected.POST("/trader/profile", profileController.CreateTraderProfile)
+		protected.PUT("/trader/profile", profileController.UpdateTraderProfile)
+		protected.DELETE("/trader/profile", profileController.DeleteTraderProfile)
 
 		protected.POST("/trader/trades", tradeController.CreateTrade)
 		protected.GET("/trader/trades", tradeController.ListTrades)

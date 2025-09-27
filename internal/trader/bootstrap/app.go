@@ -40,16 +40,19 @@ func InitializeApp() (*App, error) {
 	tradeRepo := repository.NewTradeRepository(db)
 	subRepo := repository.NewSubscriberRepository(db)
 	liveRepo := repository.NewLiveTradeRepository(db)
+	profileRepo := repository.NewTraderProfileRepository(db)
 
 	tradeService := service.NewTradeService(tradeRepo)
 	subService := service.NewSubscriberService(subRepo)
 	liveService := service.NewLiveTradeService(liveRepo)
+	profileService := service.NewTraderProfileService(profileRepo, userRepo)
 
 	tradeController := controllers.NewTradeController(tradeService)
 	subController := controllers.NewSubscriberController(subService)
 	liveController := controllers.NewLiveTradeController(liveService)
+	profileController := controllers.NewTraderProfileController(profileService)
 
-	r := router.SetupRouter(cfg, authController, tradeController, subController, liveController)
+	r := router.SetupRouter(cfg, authController, profileController, tradeController, subController, liveController)
 
 	return &App{
 		engine: r,
