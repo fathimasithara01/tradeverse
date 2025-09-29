@@ -13,10 +13,10 @@ func SetupRouter(
 	profileController *controllers.ProfileController,
 	kycController *controllers.KYCController,
 	walletCtrl *controllers.WalletController,
-	customerTraderSubController *controllers.CustomerController,
+	adminSubCntrl *controllers.AdminSubscriptionController,
 	traderController *controllers.TraderController,
-	subCtrl *controllers.SubscriptionController,
-	traderWalletCtrl *controllers.TraderWalletController,
+	// subCtrl *controllers.SubscriptionController,
+	// traderWalletCtrl *controllers.TraderWalletController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -54,13 +54,13 @@ func SetupRouter(
 		walletRoutes.GET("/transactions", walletCtrl.GetWalletTransactions)
 	}
 
-	protected.GET("/subscriptions/plans", customerTraderSubController.ListTraderSubscriptionPlans)
-	protected.POST("/trader-plans/:plan_id/subscribe", customerTraderSubController.SubscribeToTraderPlan)
-	protected.GET("/trader-subscription", customerTraderSubController.GetCustomerTraderSubscription)
-	protected.POST("/trader-subscription/:subscription_id/cancel", customerTraderSubController.CancelCustomerTraderSubscription)
+	protected.GET("/subscriptions/plans", adminSubCntrl.ListTraderSubscriptionPlans)
+	protected.POST("/trader-plans/:plan_id/subscribe", adminSubCntrl.SubscribeToTraderPlan)
+	protected.GET("/trader-subscription", adminSubCntrl.GetCustomerTraderSubscription)
+	protected.POST("/trader-subscription/:subscription_id/cancel", adminSubCntrl.CancelCustomerTraderSubscription)
 
-	protected.POST("/subscribe", traderWalletCtrl.SubscribeCustomer)
-	protected.GET("/balance", traderWalletCtrl.GetBalance)
+	// protected.POST("/subscribe", traderWalletCtrl.SubscribeCustomer)
+	// protected.GET("/balance", traderWalletCtrl.GetBalance)
 
 	return r
 }

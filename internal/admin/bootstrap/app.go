@@ -73,7 +73,7 @@ func InitializeApp() (*App, error) {
 	adminWalletController := controllers.NewAdminWalletController(adminWalletService)
 	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService)
 
-	customerTraderSubscriptionRepo := customerRepo.NewTraderSubscriptionRepository(DB)
+	customerTraderSubscriptionRepo := customerRepo.NewIAdminSubscriptionRepository(DB)
 	customerWalletRepo := walletRepo.NewWalletRepository(DB)
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 

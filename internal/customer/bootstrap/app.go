@@ -39,29 +39,28 @@ func InitializeApp() (*App, error) {
 	walletRepo := walletrepo.NewWalletRepository(db)
 
 	kycRepo := customerrepo.NewKYCRepository(db)
-	subRepo := customerrepo.NewSubscriptionRepository(db)
+	// subRepo := customerrepo.NewSubscriptionRepository(db)
 	traderRepo := customerrepo.NewTraderRepository(db)
-	cusSubRepo := customerrepo.NewTraderSubscriptionRepository(db)
-
-	traderWalletRepo := walletrepo.NewTraderWalletRepository(db)
+	adminSubRepo := customerrepo.NewIAdminSubscriptionRepository(db)
+	// traderWalletRepo := walletrepo.NewTraderWalletRepository(db)
 
 	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	kycService := service.NewKYCService(kycRepo)
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 	walletService := service.NewWalletService(walletRepo, paymentClient, db)
 	traderService := service.NewTraderService(traderRepo, db)
-	subService := service.NewSubscriptionService(db, subRepo)
-	traderWalletService := service.NewTraderWalletService(db, traderWalletRepo)
-	customerService := service.NewCustomerService(cusSubRepo, walletService, walletRepo, db)
+	// subService := service.NewSubscriptionService(db, subRepo)
+	// traderWalletService := service.NewTraderWalletService(db, traderWalletRepo)
+	adminSubService := service.NewCustomerService(adminSubRepo, walletService, walletRepo, db)
 
 	authController := controllers.NewAuthController(userService)
 	profileController := controllers.NewProfileController(userService)
 	kycController := controllers.NewKYCController(kycService)
 	walletController := controllers.NewWalletController(walletService)
-	customerController := controllers.NewCustomerController(customerService)
+	adminSubController := controllers.NewAdminSubscriptionController(adminSubService)
 	traderController := controllers.NewTraderController(traderService)
-	subController := controllers.NewSubscriptionController(subService)
-	traderWalletController := controllers.NewTraderWalletController(traderWalletService)
+	// subController := controllers.NewSubscriptionController(subService)
+	// traderWalletController := controllers.NewTraderWalletController(traderWalletService)
 
 	r := router.SetupRouter(
 		cfg,
@@ -69,10 +68,10 @@ func InitializeApp() (*App, error) {
 		profileController,
 		kycController,
 		walletController,
-		customerController,
+		adminSubController,
 		traderController,
-		subController,
-		traderWalletController,
+		// subController,
+		// traderWalletController,
 	)
 
 	return &App{

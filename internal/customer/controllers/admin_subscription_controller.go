@@ -8,16 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CustomerController struct {
-	Service service.CustomerService
+type AdminSubscriptionController struct {
+	Service service.AdminSubscriptionService
 }
 
-func NewCustomerController(service service.CustomerService) *CustomerController {
-	return &CustomerController{Service: service}
+func NewAdminSubscriptionController(service service.AdminSubscriptionService) *AdminSubscriptionController {
+	return &AdminSubscriptionController{Service: service}
 }
 
-func (ctrl *CustomerController) ListTraderSubscriptionPlans(c *gin.Context) {
-	plans, err := ctrl.Service.ListTraderSubscriptionPlans() 
+func (ctrl *AdminSubscriptionController) ListTraderSubscriptionPlans(c *gin.Context) {
+	plans, err := ctrl.Service.ListTraderSubscriptionPlans()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -25,7 +25,7 @@ func (ctrl *CustomerController) ListTraderSubscriptionPlans(c *gin.Context) {
 	c.JSON(http.StatusOK, plans)
 }
 
-func (ctrl *CustomerController) SubscribeToTraderPlan(c *gin.Context) {
+func (ctrl *AdminSubscriptionController) SubscribeToTraderPlan(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
 	planIDStr := c.Param("plan_id")
@@ -50,7 +50,7 @@ func (ctrl *CustomerController) SubscribeToTraderPlan(c *gin.Context) {
 
 	c.JSON(http.StatusOK, sub)
 }
-func (ctrl *CustomerController) GetCustomerTraderSubscription(c *gin.Context) {
+func (ctrl *AdminSubscriptionController) GetCustomerTraderSubscription(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
 	sub, err := ctrl.Service.GetCustomerTraderSubscription(userID)
@@ -64,7 +64,7 @@ func (ctrl *CustomerController) GetCustomerTraderSubscription(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, sub)
 }
-func (ctrl *CustomerController) CancelCustomerTraderSubscription(c *gin.Context) {
+func (ctrl *AdminSubscriptionController) CancelCustomerTraderSubscription(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
 	subIDStr := c.Param("subscription_id")

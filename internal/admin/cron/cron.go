@@ -30,11 +30,11 @@ func (j *SubscriptionCronJob) Run() {
 
 // TraderSubscriptionCronJob encapsulates the customer trader subscription service for cron tasks
 type TraderSubscriptionCronJob struct {
-	CustomerService customerService.CustomerService
+	CustomerService customerService.AdminSubscriptionService
 }
 
 // NewTraderSubscriptionCronJob creates a new TraderSubscriptionCronJob instance
-func NewTraderSubscriptionCronJob(custService customerService.CustomerService) *TraderSubscriptionCronJob {
+func NewTraderSubscriptionCronJob(custService customerService.AdminSubscriptionService) *TraderSubscriptionCronJob {
 	return &TraderSubscriptionCronJob{
 		CustomerService: custService,
 	}
@@ -49,7 +49,7 @@ func (j *TraderSubscriptionCronJob) Run() {
 }
 
 // StartCronJobs initializes and starts all cron jobs
-func StartCronJobs(adminSubService service.ISubscriptionService, custSubService customerService.CustomerService) {
+func StartCronJobs(adminSubService service.ISubscriptionService, custSubService customerService.AdminSubscriptionService) {
 	c := cron.New() // Create a new cron scheduler
 
 	// Schedule the Admin Subscription Deactivation job

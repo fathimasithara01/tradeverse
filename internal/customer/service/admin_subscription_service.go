@@ -45,7 +45,7 @@ type UserTraderSubscriptionResponse struct {
 	IsActive  bool      `json:"is_active"`
 	Status    string    `json:"payment_status"`
 }
-type CustomerService interface {
+type AdminSubscriptionService interface {
 	ListTraderSubscriptionPlans() ([]TraderSubscriptionPlanResponse, error)
 	SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error)
 	GetCustomerTraderSubscription(userID uint) (*UserTraderSubscriptionResponse, error)
@@ -53,15 +53,15 @@ type CustomerService interface {
 	DeactivateExpiredTraderSubscriptions() error
 }
 
-type customerService struct {
-	repo       customerrepo.ITraderSubscriptionRepository
+type adminSubscriptionService struct {
+	repo       customerrepo.IAdminSubscriptionRepository
 	walletSvc  WalletService
 	walletRepo walletrepo.WalletRepository
 	db         *gorm.DB
 }
 
-func NewCustomerService(repo customerrepo.ITraderSubscriptionRepository, walletSvc WalletService, walletRepo walletrepo.WalletRepository, db *gorm.DB) CustomerService {
-	return &customerService{
+func NewCustomerService(repo customerrepo.IAdminSubscriptionRepository, walletSvc WalletService, walletRepo walletrepo.WalletRepository, db *gorm.DB) AdminSubscriptionService {
+	return &adminSubscriptionService{
 		repo:       repo,
 		walletSvc:  walletSvc,
 		walletRepo: walletRepo,
@@ -69,7 +69,7 @@ func NewCustomerService(repo customerrepo.ITraderSubscriptionRepository, walletS
 	}
 }
 
-func (s *customerService) ListTraderSubscriptionPlans() ([]TraderSubscriptionPlanResponse, error) {
+func (s *adminSubscriptionService) ListTraderSubscriptionPlans() ([]TraderSubscriptionPlanResponse, error) {
 	plans, err := s.repo.GetTraderSubscriptionPlans()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch trader subscription plans: %w", err)
@@ -95,7 +95,7 @@ func (s *customerService) ListTraderSubscriptionPlans() ([]TraderSubscriptionPla
 
 const AdminUserID uint = 1
 
-func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error) {
+func (s *adminSubscriptionService) SubscribeToTraderPlan(userID uint, planID uint) (*UserTraderSubscriptionResponse, error) {
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -117,10 +117,10 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 	}
 
 	existingSub, err := s.repo.GetUserTraderSubscription(userID)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) { 
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("failed to check existing trader subscription: %w", err)
 	}
-	if existingSub != nil && existingSub.IsActive { 
+	if existingSub != nil && existingSub.IsActive {
 		return nil, ErrAlreadyHasTraderSubscription
 	}
 
@@ -142,7 +142,7 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 			newAdminWallet := &models.Wallet{
 				UserID:   AdminUserID,
 				Balance:  0,
-				Currency: "INR", 
+				Currency: "INR",
 			}
 			if createErr := s.walletRepo.CreateWallet(newAdminWallet); createErr != nil {
 				return nil, fmt.Errorf("failed to auto-create admin wallet: %w", createErr)
@@ -188,7 +188,7 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 			return fmt.Errorf("failed to create trader subscription record in transaction: %w", err)
 		}
 
-		user.Role = models.RoleTrader 
+		user.Role = models.RoleTrader
 		if err := tx.Model(&models.User{}).Where("id = ?", userID).Update("role", models.RoleTrader).Error; err != nil {
 			return fmt.Errorf("failed to update user role to trader in transaction: %w", err)
 		}
@@ -243,7 +243,7 @@ func (s *customerService) SubscribeToTraderPlan(userID uint, planID uint) (*User
 	}, nil
 }
 
-func (s *customerService) GetCustomerTraderSubscription(userID uint) (*UserTraderSubscriptionResponse, error) {
+func (s *adminSubscriptionService) GetCustomerTraderSubscription(userID uint) (*UserTraderSubscriptionResponse, error) {
 	sub, err := s.repo.GetUserTraderSubscription(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user's trader subscription: %w", err)
@@ -266,7 +266,7 @@ func (s *customerService) GetCustomerTraderSubscription(userID uint) (*UserTrade
 	}, nil
 }
 
-func (s *customerService) CancelCustomerTraderSubscription(userID uint, subscriptionID uint) error {
+func (s *adminSubscriptionService) CancelCustomerTraderSubscription(userID uint, subscriptionID uint) error {
 	existingSub, err := s.repo.GetUserTraderSubscription(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -301,7 +301,7 @@ func calculateEndDate(start time.Time, interval string, duration int) time.Time 
 	}
 }
 
-func (s *customerService) DeactivateExpiredTraderSubscriptions() error {
+func (s *adminSubscriptionService) DeactivateExpiredTraderSubscriptions() error {
 	log.Println("Running cron job: Deactivating expired trader subscriptions...")
 	expiredTraderSubs, err := s.repo.GetExpiredActiveTraderSubscriptions()
 	if err != nil {
