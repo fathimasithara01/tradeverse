@@ -49,7 +49,7 @@ func (j *TraderSubscriptionCronJob) Run() {
 }
 
 // StartCronJobs initializes and starts all cron jobs
-func StartCronJobs(adminSubService service.ISubscriptionService, custSubService customerService.AdminSubscriptionService) {
+func StartCronJob(adminSubService service.ISubscriptionService, custSubService customerService.AdminSubscriptionService) {
 	c := cron.New() // Create a new cron scheduler
 
 	// Schedule the Admin Subscription Deactivation job

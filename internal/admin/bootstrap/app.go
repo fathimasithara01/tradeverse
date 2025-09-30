@@ -7,6 +7,8 @@ import (
 	"runtime"       // Import for getting current file path
 	"text/template"
 
+	cronn "github.com/robfig/cron/v3"
+
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
@@ -50,6 +52,7 @@ func InitializeApp() (*App, error) {
 	subscriptionPlanRepo := repository.NewSubscriptionPlanRepository(DB)
 	subscriptionRepo := repository.NewSubscriptionRepository(DB)
 	adminWalletRepo := repository.NewAdminWalletRepository(DB)
+	signalRepo := repository.NewSignalRepository(DB)
 
 	userService := service.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	roleService := service.NewRoleService(roleRepo, permissionRepo, userRepo)
@@ -57,10 +60,11 @@ func InitializeApp() (*App, error) {
 	permissionService := service.NewPermissionService(permissionRepo)
 	activityService := service.NewActivityService(activityRepo)
 	copyService := service.NewCopyService(copyRepo)
-	liveSignalService := service.NewLiveSignalService(userRepo)
+	// liveSignalService := service.NewLiveSignalService(userRepo)
 	subscriptionPlanService := service.NewSubscriptionPlanService(subscriptionPlanRepo)
 	adminWalletService := service.NewAdminWalletService(adminWalletRepo, DB)
 	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriptionPlanRepo, userRepo, adminWalletService, DB)
+	liveSignalService := service.NewLiveSignalService(signalRepo)
 
 	authController := controllers.NewAuthController(userService)
 	userController := controllers.NewUserController(userService)
@@ -69,9 +73,10 @@ func InitializeApp() (*App, error) {
 	permissionController := controllers.NewPermissionController(permissionService, roleService)
 	activityController := controllers.NewActivityController(activityService)
 	copyController := controllers.NewCopyController(copyService)
-	signalController := controllers.NewSignalController(liveSignalService)
+	// signalController := controllers.NewSignalController(liveSignalService)
 	adminWalletController := controllers.NewAdminWalletController(adminWalletService)
 	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService)
+	signalController := controllers.NewSignalController(liveSignalService)
 
 	customerTraderSubscriptionRepo := customerRepo.NewIAdminSubscriptionRepository(DB)
 	customerWalletRepo := walletRepo.NewWalletRepository(DB)
@@ -132,14 +137,19 @@ func InitializeApp() (*App, error) {
 		permissionController,
 		activityController,
 		roleService,
-		signalController,
 		adminWalletController,
 		subscriptionController,
 		transactionController,
+		DB,
+		signalController,
 	)
+	c := cronn.New()
 
-	cron.StartCronJobs(subscriptionService, customerServiceForTraderSubs)
-
+	cron.StartCronJobs(subscriptionService, customerServiceForTraderSubs, liveSignalService, DB)
+	c.AddFunc("@every 5m", func() {
+		log.Println("Starting market data fetch...")
+		cron.FetchAndSaveMarketData(DB)
+	})
 	return &App{
 		engine: r,
 		port:   cfg.AdminPort,
