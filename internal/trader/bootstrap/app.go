@@ -7,6 +7,7 @@ import (
 	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
 	"github.com/fathimasithara01/tradeverse/internal/trader/controllers"
+	"github.com/fathimasithara01/tradeverse/internal/trader/cron"
 	"github.com/fathimasithara01/tradeverse/internal/trader/repository"
 	"github.com/fathimasithara01/tradeverse/internal/trader/router"
 	"github.com/fathimasithara01/tradeverse/internal/trader/service"
@@ -37,28 +38,37 @@ func InitializeApp() (*App, error) {
 
 	authController := controllers.NewAuthController(userService)
 
-	tradeRepo := repository.NewGormTradeRepository(db)
+	// tradeRepo := repository.NewGormTradeRepository(db)
+	tradeSignlRepo := repository.NewSignalRepository(db)
 	profileRepo := repository.NewTraderProfileRepository(db)
 	walletrepo := repository.NewGormWalletRepository(db)
 	// subRepo := repository.NewSubscriptionRepository(db)
 	subRepo := repository.NewSubscriberRepository(db)
 	liveRepo := repository.NewLiveTradeRepository(db)
 
-	tradeService := service.NewTradeService(tradeRepo)
+	// tradeService := service.NewTradeService(tradeRepo)
 	// subService := service.NewSubscriptionService(subRepo)
 	subService := service.NewSubscriberService(subRepo)
 	liveService := service.NewLiveTradeService(liveRepo)
 	profileService := service.NewTraderProfileService(profileRepo, userRepo)
 	walletService := service.NewWalletService(walletrepo)
+	tradeSignlService := service.NewSignalService(tradeSignlRepo)
 
-	tradeController := controllers.NewTradeController(tradeService)
+	// tradeController := controllers.NewTradeController(tradeService)
 	// subController := controllers.NewSubscriptionController(subService)
 	subController := controllers.NewSubscriberController(subService)
 	liveController := controllers.NewLiveTradeController(liveService)
 	profileController := controllers.NewTraderProfileController(profileService)
 	walletController := controllers.NewWalletController(walletService)
+	tradeSignlController := controllers.NewSignalController(tradeSignlService)
 
-	r := router.SetupRouter(cfg, authController, profileController, tradeController, walletController, subController, liveController)
+	marketDataRepo := repository.NewMarketDataRepository(db)
+	marketDataService := service.NewMarketDataService(marketDataRepo)
+	marketDataHandler := controllers.NewMarketDataHandler(marketDataService)
+
+	r := router.SetupRouter(cfg, authController, profileController, walletController, subController, liveController, tradeSignlController, marketDataHandler)
+
+	cron.StartSignalCronJobs(service.NewSignalService(repository.NewSignalRepository(db)))
 
 	return &App{
 		engine: r,

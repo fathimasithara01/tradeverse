@@ -9,6 +9,9 @@ import (
 
 type Signal struct {
 	gorm.Model
+
+	UserID uint `gorm:"not null;default:1"`
+
 	TraderName   string  `gorm:"not null" json:"traderName"`
 	StopLoss     float64 `gorm:"type:numeric(18,8)" json:"stopLoss"`
 	EntryPrice   float64 `gorm:"type:numeric(18,8)" json:"entryPrice"`

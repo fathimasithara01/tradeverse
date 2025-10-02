@@ -32,7 +32,7 @@ func (ctrl *SignalController) ShowLiveSignalsPage(c *gin.Context) {
 			"Error":        "Failed to load signals",
 		})
 		return
-	}
+	}	
 
 	c.HTML(http.StatusOK, "signal_cards.html", gin.H{
 		"Title":        "Live Trading Signals",

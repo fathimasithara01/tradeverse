@@ -58,7 +58,7 @@ func FetchAndSaveMarketData(db *gorm.DB) {
 
 	for _, coin := range coins {
 		marketData := models.MarketData{
-			Symbol:         strings.ToUpper(coin.Symbol), 
+			Symbol:         strings.ToUpper(coin.Symbol),
 			Name:           coin.Name,
 			CurrentPrice:   coin.CurrentPrice,
 			PriceChange24H: coin.PriceChangePercentage24h,
@@ -98,7 +98,7 @@ func StartCronJobs(
 	// Cron for trader subscription status updates (example - keep as is)
 	c.AddFunc("@every 1h", func() {
 		log.Println("Running hourly trader subscription status update...")
-		
+
 	})
 
 	// Cron for fetching and saving general market data (every 5 minutes)

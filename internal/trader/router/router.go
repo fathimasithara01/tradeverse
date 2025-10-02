@@ -11,11 +11,13 @@ func SetupRouter(
 	cfg *config.Config,
 	authController *controllers.AuthController,
 	profileController *controllers.TraderProfileController,
-	tradeController *controllers.TradeController,
+	// tradeController *controllers.TradeController,
 	walletCntrl *controllers.WalletController,
 	// subscriberController *controllers.SubscriptionController,
 	subscriberController *controllers.SubscriberController,
 	liveCtrl *controllers.LiveTradeController,
+	tradeSignlCntrl *controllers.SignalController,
+	marketDataCnttl *controllers.MarketDataHandler,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -30,16 +32,24 @@ func SetupRouter(
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
 
+		protected.POST("/signal/", tradeSignlCntrl.CreateSignal)
+		protected.GET("/signal/", tradeSignlCntrl.GetAllSignals)
+		protected.GET("/signal/:id", tradeSignlCntrl.GetSignalByID)
+		protected.PUT("/signal/:id", tradeSignlCntrl.UpdateSignal)    // only pending
+		protected.DELETE("/signal/:id", tradeSignlCntrl.DeleteSignal) // only pending
+
+		protected.POST("/market-", marketDataCnttl.CreateMarketData)
+
 		protected.GET("/trader/profile", profileController.GetTraderProfile)
 		protected.POST("/trader/profile", profileController.CreateTraderProfile)
 		protected.PUT("/trader/profile", profileController.UpdateTraderProfile)
 		protected.DELETE("/trader/profile", profileController.DeleteTraderProfile)
 
-		protected.GET("/trades", tradeController.GetTraderTrades)
-		protected.POST("/trade", tradeController.CreateTrade)
-		protected.GET("/trades/:id", tradeController.GetTradeByID)
-		protected.PUT("/trade/:id", tradeController.UpdateTradeStatus)
-		protected.DELETE("/trade/:id", tradeController.RemoveTrade)
+		// protected.GET("/trades", tradeController.GetTraderTrades)
+		// protected.POST("/trade", tradeController.CreateTrade)
+		// protected.GET("/trades/:id", tradeController.GetTradeByID)
+		// protected.PUT("/trade/:id", tradeController.UpdateTradeStatus)
+		// protected.DELETE("/trade/:id", tradeController.RemoveTrade)
 
 		protected.GET("/wallet", walletCntrl.GetBalance)
 		protected.POST("/wallet/deposit", walletCntrl.Deposit)

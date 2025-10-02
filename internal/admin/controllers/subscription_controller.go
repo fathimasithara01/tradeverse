@@ -80,7 +80,7 @@ func (ctrl *SubscriptionController) UpdateTraderStatus(c *gin.Context) {
 
 	err = ctrl.SubscriptionService.UpdateUserTraderStatus(uint(userID), req.Status)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err != nil && err.Error() == "record not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User or Trader Profile not found"})
 			return
 		}
@@ -110,7 +110,7 @@ func (ctrl *SubscriptionController) GetSubscriptionPlanByID(c *gin.Context) {
 
 	plan, err := ctrl.SubscriptionPlanService.GetSubscriptionPlanByID(uint(id))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err != nil && err.Error() == "record not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Subscription plan not found"})
 			return
 		}
