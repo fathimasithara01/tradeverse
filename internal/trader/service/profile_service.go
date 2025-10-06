@@ -15,7 +15,6 @@ var (
 	ErrPermissionDenied      = errors.New("permission denied to perform this action")
 )
 
-// ITraderProfileService defines the interface for TraderProfile business logic.
 type ITraderProfileService interface {
 	GetProfile(userID uint) (*models.TraderProfile, error)
 	CreateProfile(userID uint, name, companyName, bio string) (*models.TraderProfile, error)
@@ -23,18 +22,14 @@ type ITraderProfileService interface {
 	DeleteProfile(userID uint, profileID uint) error // Assuming only the user or admin can delete their profile
 }
 
-// TraderProfileService implements ITraderProfileService.
 type TraderProfileService struct {
 	traderRepo repository.ITraderProfileRepository
-	userRepo   repository.IUserRepository // Assuming you have a User repository for user-related checks
 }
 
-// NewTraderProfileService creates a new TraderProfileService.
-func NewTraderProfileService(traderRepo repository.ITraderProfileRepository, userRepo repository.IUserRepository) *TraderProfileService {
-	return &TraderProfileService{traderRepo: traderRepo, userRepo: userRepo}
+func NewTraderProfileService(traderRepo repository.ITraderProfileRepository) *TraderProfileService {
+	return &TraderProfileService{traderRepo: traderRepo}
 }
 
-// GetProfile retrieves a trader's profile.
 func (s *TraderProfileService) GetProfile(userID uint) (*models.TraderProfile, error) {
 	profile, err := s.traderRepo.GetTraderProfileByUserID(userID)
 	if err != nil {
@@ -58,7 +53,7 @@ func (s *TraderProfileService) CreateProfile(userID uint, name, companyName, bio
 	}
 
 	// You might want to check if the user is actually designated as a 'trader' role in the User model
-	user, err := s.userRepo.GetUserByID(userID) // Assuming this method exists
+	user, err := s.traderRepo.GetUserByID(userID) // Assuming this method exists
 	if err != nil {
 		return nil, err
 	}

@@ -173,15 +173,15 @@ func (s *adminSubscriptionService) SubscribeToTraderPlan(userID uint, planID uin
 		now := time.Now()
 		endDate := calculateEndDate(now, plan.Interval, plan.Duration)
 
-		newSubscription := models.TraderSubscription{
-			UserID:                   userID,
-			TraderSubscriptionPlanID: plan.ID,
-			StartDate:                now,
-			EndDate:                  endDate,
-			IsActive:                 true,
-			PaymentStatus:            string(models.TxStatusSuccess),
-			AmountPaid:               plan.Price,
-			TransactionID:            paymentReferenceID,
+		newSubscription := models.Subscription{
+			UserID:             userID,
+			SubscriptionPlanID: plan.ID,
+			StartDate:          now,
+			EndDate:            endDate,
+			IsActive:           true,
+			PaymentStatus:      string(models.TxStatusSuccess),
+			AmountPaid:         plan.Price,
+			TransactionID:      paymentReferenceID,
 		}
 
 		if err := tx.Create(&newSubscription).Error; err != nil {

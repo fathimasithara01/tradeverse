@@ -29,14 +29,12 @@ func NewSignalService(repo repository.ISignalRepository) ISignalService {
 }
 
 func (s *SignalService) CreateSignal(ctx context.Context, signal *models.Signal) (*models.Signal, error) {
-	// Ensure symbol ends with USDT
 	if len(signal.Symbol) > 0 && !strings.HasSuffix(signal.Symbol, "USDT") {
 		signal.Symbol = strings.ToUpper(signal.Symbol) + "USDT"
 	} else {
 		signal.Symbol = strings.ToUpper(signal.Symbol)
 	}
 
-	// Set initial status
 	signal.Status = "Pending"
 
 	return s.repo.CreateSignal(ctx, signal)
@@ -46,7 +44,6 @@ func (s *SignalService) GetAllSignals(ctx context.Context) ([]models.Signal, err
 	return s.repo.GetAllSignals(ctx)
 }
 
-// Cron Job 1: Check pending signals against market price
 func (s *SignalService) UpdatePendingSignalsCurrentPrice(ctx context.Context) error {
 	pendingSignals, err := s.repo.GetPendingSignals(ctx)
 	if err != nil {
@@ -60,7 +57,6 @@ func (s *SignalService) UpdatePendingSignalsCurrentPrice(ctx context.Context) er
 			continue
 		}
 
-		// Activate signal if current price >= entry price
 		if md.CurrentPrice >= signal.EntryPrice {
 			err := s.repo.UpdateSignalStatus(ctx, signal.ID, "Active")
 			if err != nil {
@@ -70,7 +66,6 @@ func (s *SignalService) UpdatePendingSignalsCurrentPrice(ctx context.Context) er
 			}
 		}
 
-		// Update current price
 		err = s.repo.UpdateSignalCurrentPrice(ctx, signal.ID, md.CurrentPrice)
 		if err != nil {
 			log.Printf("Failed to update current price for signal %d: %v", signal.ID, err)
@@ -80,7 +75,6 @@ func (s *SignalService) UpdatePendingSignalsCurrentPrice(ctx context.Context) er
 	return nil
 }
 
-// Cron Job 2: Update active signals for Stop Loss / Target Hit
 func (s *SignalService) UpdateActiveSignalStatuses(ctx context.Context) error {
 	activeSignals, err := s.repo.GetActiveSignals(ctx)
 	if err != nil {
@@ -93,17 +87,14 @@ func (s *SignalService) UpdateActiveSignalStatuses(ctx context.Context) error {
 			continue
 		}
 
-		// Update current price
 		_ = s.repo.UpdateSignalCurrentPrice(ctx, signal.ID, md.CurrentPrice)
 
-		// Check Stop Loss
 		if md.CurrentPrice <= signal.StopLoss {
 			_ = s.repo.UpdateSignalStatus(ctx, signal.ID, "Stop Loss")
 			log.Printf("Signal %d hit Stop Loss", signal.ID)
 			continue
 		}
 
-		// Check Target Price
 		if md.CurrentPrice >= signal.TargetPrice {
 			_ = s.repo.UpdateSignalStatus(ctx, signal.ID, "Target Hit")
 			log.Printf("Signal %d hit Target Price", signal.ID)
@@ -114,20 +105,16 @@ func (s *SignalService) UpdateActiveSignalStatuses(ctx context.Context) error {
 	return nil
 }
 
-// in service/signal_service.go
-
 func (s *SignalService) GetSignalByID(ctx context.Context, id uint) (*models.Signal, error) {
 	return s.repo.GetSignalByID(ctx, id)
 }
 
 func (s *SignalService) UpdateSignal(ctx context.Context, updated *models.Signal) (*models.Signal, error) {
-	// ensure it exists first
 	existing, err := s.repo.GetSignalByID(ctx, updated.ID)
 	if err != nil {
 		return nil, fmt.Errorf("signal not found: %w", err)
 	}
 
-	// update fields (only allow certain fields to be updated)
 	existing.EntryPrice = updated.EntryPrice
 	existing.StopLoss = updated.StopLoss
 	existing.TargetPrice = updated.TargetPrice

@@ -112,6 +112,7 @@ func (s *SubscriptionService) DeactivateExpiredSubscriptions() error {
 			log.Printf("Deactivated subscription ID %d for user %d (Plan: %s)", sub.ID, sub.UserID, sub.SubscriptionPlan.Name)
 		}
 	}
+
 	log.Printf("Cron job finished: Deactivated %d subscriptions.", len(expiredSubs))
 	return nil
 }
@@ -169,7 +170,7 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 		case "yearly":
 			endDate = startDate.AddDate(plan.Duration, 0, 0)
 		default:
-			endDate = startDate.AddDate(0, 1, 0) // Default to 1 month if interval is not specified/recognized
+			endDate = startDate.AddDate(0, 1, 0)
 		}
 
 		newSubscription := &models.Subscription{
@@ -204,13 +205,13 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 }
 
 func (s *SubscriptionService) GetAllSubscriptions() ([]models.Subscription, error) {
-	log.Println("DEBUG: SubscriptionService.GetAllSubscriptions was called.") // Add this
+	log.Println("DEBUG: SubscriptionService.GetAllSubscriptions was called.")
 	subs, err := s.subscriptionRepo.GetAllSubscriptions()
 	if err != nil {
 		log.Printf("ERROR: SubscriptionService.GetAllSubscriptions failed: %v", err)
 		return nil, fmt.Errorf("failed to retrieve all subscriptions: %w", err)
 	}
-	log.Printf("DEBUG: SubscriptionService fetched %d subscriptions from repo.", len(subs)) // Add this
+	log.Printf("DEBUG: SubscriptionService fetched %d subscriptions from repo.", len(subs))
 	return subs, nil
 }
 

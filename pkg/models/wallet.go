@@ -70,6 +70,7 @@ type WalletTransaction struct {
 	// Type     WalletTransactionType `gorm:"type:varchar(20);not null;default:'DEPOSIT'" json:"type"`
 	Type   TransactionType `gorm:"type:varchar(20);not null" json:"type"`
 	UserID uint            `gorm:"not null;index" json:"user_id"` // <-- required for FK
+	Name   string          `gorm:"size:100;not null" json:"name"`
 
 	// UserID uint `gorm:"index;not null"`
 	User User `gorm:"foreignKey:UserID"`
@@ -79,7 +80,6 @@ type WalletTransaction struct {
 	Currency        string            `gorm:"size:3;not null"`
 	Status          TransactionStatus `gorm:"size:20;not null"`
 	Notes           string            `json:"notes,omitempty"`
-	// Status string `gorm:"type:varchar(20);default:'PENDING'" json:"status"`
 
 	ReferenceID        string  `gorm:"size:100"`
 	PaymentGatewayTxID string  `gorm:"size:100"`

@@ -13,9 +13,7 @@ type ISignalRepository interface {
 	GetAllSignals(ctx context.Context) ([]models.Signal, error)
 	GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error)
 	UpdateSignalCurrentPrice(ctx context.Context, signalID uint, newPrice float64) error
-	// NEW: Method to update signal status
 	UpdateSignalStatus(ctx context.Context, signalID uint, newStatus string) error
-	// NEW: Get all active/pending signals for status check
 	GetActiveAndPendingSignals(ctx context.Context) ([]models.Signal, error)
 }
 

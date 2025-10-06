@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"fmt" // Import fmt for structured errors
+	"fmt"
 	"log"
 	"time"
 
@@ -16,8 +16,7 @@ type ISubscriptionRepository interface {
 	GetSubscriptionsByUserID(userID uint) ([]models.Subscription, error)
 	UpdateSubscription(subscription *models.Subscription) error
 	DeleteSubscription(id uint) error
-	GetExpiredActiveSubscriptions() ([]models.Subscription, error) // New method
-
+	GetExpiredActiveSubscriptions() ([]models.Subscription, error)
 }
 
 type SubscriptionRepository struct {
@@ -42,7 +41,7 @@ func (r *SubscriptionRepository) CreateSubscription(subscription *models.Subscri
 }
 
 func (r *SubscriptionRepository) GetAllSubscriptions() ([]models.Subscription, error) {
-	log.Println("DEBUG: SubscriptionRepository.GetAllSubscriptions was called.") // Add this
+	log.Println("DEBUG: SubscriptionRepository.GetAllSubscriptions was called.")
 	var subscriptions []models.Subscription
 	err := r.DB.
 		Preload("User").
@@ -51,10 +50,10 @@ func (r *SubscriptionRepository) GetAllSubscriptions() ([]models.Subscription, e
 		Find(&subscriptions).Error
 
 	if err != nil {
-		log.Printf("ERROR: failed to fetch all subscriptions from DB: %v", err) // Add this
+		log.Printf("ERROR: failed to fetch all subscriptions from DB: %v", err)
 		return nil, fmt.Errorf("failed to fetch all subscriptions from DB: %w", err)
 	}
-	log.Printf("DEBUG: SubscriptionRepository found %d subscriptions.", len(subscriptions)) // Add this
+	log.Printf("DEBUG: SubscriptionRepository found %d subscriptions.", len(subscriptions))
 	return subscriptions, nil
 }
 

@@ -19,6 +19,8 @@ type ISignalRepository interface {
 	GetSignalByID(ctx context.Context, id uint) (*models.Signal, error)
 	UpdateSignal(ctx context.Context, signal *models.Signal) error
 	DeleteSignal(ctx context.Context, id uint) error
+
+	GetSignalsByTraderID(ctx context.Context, traderID uint) ([]models.Signal, error)
 }
 
 type SignalRepository struct {
@@ -27,6 +29,14 @@ type SignalRepository struct {
 
 func NewSignalRepository(db *gorm.DB) ISignalRepository {
 	return &SignalRepository{db: db}
+}
+
+func (r *SignalRepository) GetSignalsByTraderID(ctx context.Context, traderID uint) ([]models.Signal, error) {
+	var signals []models.Signal
+	if err := r.db.WithContext(ctx).Where("trader_id = ?", traderID).Find(&signals).Error; err != nil {
+		return nil, fmt.Errorf("failed to retrieve signals for trader %d: %w", traderID, err)
+	}
+	return signals, nil
 }
 
 func (r *SignalRepository) CreateSignal(ctx context.Context, signal *models.Signal) (*models.Signal, error) {

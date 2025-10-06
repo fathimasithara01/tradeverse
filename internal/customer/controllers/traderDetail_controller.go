@@ -51,7 +51,8 @@ func (ctrl *TraderController) ListTraders(c *gin.Context) {
 }
 
 func (ctrl *TraderController) GetTraderDetails(c *gin.Context) {
-	traderIDStr := c.Param("id")
+	traderIDStr := c.Param("trader_id")
+
 	traderID, err := strconv.ParseUint(traderIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid trader ID"})
@@ -72,7 +73,7 @@ func (ctrl *TraderController) GetTraderDetails(c *gin.Context) {
 }
 
 func (ctrl *TraderController) GetTraderPerformance(c *gin.Context) {
-	traderIDStr := c.Param("id")
+	traderIDStr := c.Param("trader_id")
 	traderID, err := strconv.ParseUint(traderIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid trader ID"})

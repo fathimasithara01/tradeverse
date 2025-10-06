@@ -4,10 +4,13 @@ import (
 	"log"
 
 	adminSvc "github.com/fathimasithara01/tradeverse/internal/admin/service"
+
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
+
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
+	traderSignalRepo "github.com/fathimasithara01/tradeverse/internal/trader/repository"
 
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 
@@ -37,12 +40,13 @@ func InitializeApp() (*App, error) {
 	userRepo := adminRepo.NewUserRepository(db)
 	roleRepo := adminRepo.NewRoleRepository(db)
 	walletRepo := walletrepo.NewWalletRepository(db)
-
 	kycRepo := customerrepo.NewKYCRepository(db)
 	// subRepo := customerrepo.NewSubscriptionRepository(db)
 	traderRepo := customerrepo.NewTraderRepository(db)
 	adminSubRepo := customerrepo.NewIAdminSubscriptionRepository(db)
 	// traderWalletRepo := walletrepo.NewTraderWalletRepository(db)
+	customerTraderSubRepo := customerrepo.NewTraderSubscriptionRepository(db)
+	traderSignalRepo := traderSignalRepo.NewSignalRepository(db)
 
 	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	kycService := service.NewKYCService(kycRepo)
@@ -52,6 +56,8 @@ func InitializeApp() (*App, error) {
 	// subService := service.NewSubscriptionService(db, subRepo)
 	// traderWalletService := service.NewTraderWalletService(db, traderWalletRepo)
 	adminSubService := service.NewCustomerService(adminSubRepo, walletService, walletRepo, db)
+	customerTraderSubSvc := service.NewTraderSubscriptionService(customerTraderSubRepo, db)
+	customerSignalSvc := service.NewCustomerSignalService(traderSignalRepo, customerTraderSubSvc)
 
 	authController := controllers.NewAuthController(userService)
 	profileController := controllers.NewProfileController(userService)
@@ -59,6 +65,9 @@ func InitializeApp() (*App, error) {
 	walletController := controllers.NewWalletController(walletService)
 	adminSubController := controllers.NewAdminSubscriptionController(adminSubService)
 	traderController := controllers.NewTraderController(traderService)
+	customerTraderSubCtrl := controllers.NewTraderSubscriptionController(customerTraderSubSvc)
+	customerSignalCtrl := controllers.NewCustomerSignalController(customerSignalSvc)
+
 	// subController := controllers.NewSubscriptionController(subService)
 	// traderWalletController := controllers.NewTraderWalletController(traderWalletService)
 
@@ -70,8 +79,8 @@ func InitializeApp() (*App, error) {
 		walletController,
 		adminSubController,
 		traderController,
-		// subController,
-		// traderWalletController,
+		customerTraderSubCtrl,
+		customerSignalCtrl,
 	)
 
 	return &App{

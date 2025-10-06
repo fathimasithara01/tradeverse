@@ -10,6 +10,7 @@ type ITraderProfileRepository interface {
 	CreateTraderProfile(profile *models.TraderProfile) error
 	UpdateTraderProfile(profile *models.TraderProfile) error
 	DeleteTraderProfile(profileID uint) error
+	GetUserByID(id uint) (*models.User, error)
 }
 
 type TraderProfileRepository struct {
@@ -18,6 +19,17 @@ type TraderProfileRepository struct {
 
 func NewTraderProfileRepository(db *gorm.DB) *TraderProfileRepository {
 	return &TraderProfileRepository{db: db}
+}
+
+func (r *TraderProfileRepository) GetUserByID(id uint) (*models.User, error) {
+	var user models.User
+	if err := r.db.Preload("TraderProfile").First(&user, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *TraderProfileRepository) GetTraderProfileByUserID(userID uint) (*models.TraderProfile, error) {

@@ -15,8 +15,8 @@ func SetupRouter(
 	walletCtrl *controllers.WalletController,
 	adminSubCntrl *controllers.AdminSubscriptionController,
 	traderController *controllers.TraderController,
-	// subCtrl *controllers.SubscriptionController,
-	// traderWalletCtrl *controllers.TraderWalletController,
+	customerTraderSubCtrl *controllers.TraderSubscriptionController,
+	customerSignalCtrl *controllers.CustomerSignalController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -26,9 +26,8 @@ func SetupRouter(
 		public.POST("/login", authController.Login)
 
 		public.GET("/traders", traderController.ListTraders)
-		public.GET("/traders/:id", traderController.GetTraderDetails)
-		public.GET("/traders/:id/performance", traderController.GetTraderPerformance)
-
+		public.GET("/traders/:trader_id", traderController.GetTraderDetails)
+		public.GET("/traders/:trader_id/performance", traderController.GetTraderPerformance)
 	}
 
 	protected := r.Group("/api/v1")
@@ -37,30 +36,29 @@ func SetupRouter(
 		protected.GET("/profile", profileController.GetProfile)
 		protected.PUT("/profile", profileController.UpdateProfile)
 		protected.DELETE("/account", profileController.DeleteAccount)
+
+		protected.POST("/traders/:trader_id/subscribe/:plan_id", customerTraderSubCtrl.SubscribeToTrader)
+		protected.GET("/trader-subscriptions", customerTraderSubCtrl.GetMyTraderSubscriptions)
+		protected.GET("/traders/:trader_id/plans", customerTraderSubCtrl.GetTraderSubscriptionPlans)
+
+		protected.GET("/traders/:trader_id/signals", customerSignalCtrl.GetTraderSignalsForCustomer)
+		protected.GET("/traders/:trader_id/signals/:signal_id", customerSignalCtrl.GetSignalCardForCustomer)
+
+		kycGroup := protected.Group("/customers")
+		{
+			kycGroup.POST("/kyc", kycController.SubmitKYCDocuments)
+			kycGroup.GET("/kyc/status", kycController.GetKYCStatus)
+		}
+
+		walletRoutes := protected.Group("/wallet")
+		{
+			walletRoutes.GET("/summary", walletCtrl.GetWalletSummary)
+			walletRoutes.POST("/deposit/initiate", walletCtrl.InitiateDeposit)
+			walletRoutes.POST("/deposit/:deposit_id/verify", walletCtrl.VerifyDeposit)
+			walletRoutes.POST("/withdraw/request", walletCtrl.RequestWithdrawal)
+			walletRoutes.GET("/transactions", walletCtrl.GetWalletTransactions)
+		}
 	}
-
-	kycGroup := protected.Group("/customers")
-	{
-		kycGroup.POST("/kyc", kycController.SubmitKYCDocuments)
-		kycGroup.GET("/kyc/status", kycController.GetKYCStatus)
-	}
-
-	walletRoutes := protected.Group("/wallet")
-	{
-		walletRoutes.GET("/summary", walletCtrl.GetWalletSummary)
-		walletRoutes.POST("/deposit/initiate", walletCtrl.InitiateDeposit)
-		walletRoutes.POST("/deposit/:deposit_id/verify", walletCtrl.VerifyDeposit)
-		walletRoutes.POST("/withdraw/request", walletCtrl.RequestWithdrawal)
-		walletRoutes.GET("/transactions", walletCtrl.GetWalletTransactions)
-	}
-
-	protected.GET("/subscriptions/plans", adminSubCntrl.ListTraderSubscriptionPlans)
-	protected.POST("/trader-plans/:plan_id/subscribe", adminSubCntrl.SubscribeToTraderPlan)
-	protected.GET("/trader-subscription", adminSubCntrl.GetCustomerTraderSubscription)
-	protected.POST("/trader-subscription/:subscription_id/cancel", adminSubCntrl.CancelCustomerTraderSubscription)
-
-	// protected.POST("/subscribe", traderWalletCtrl.SubscribeCustomer)
-	// protected.GET("/balance", traderWalletCtrl.GetBalance)
 
 	return r
 }

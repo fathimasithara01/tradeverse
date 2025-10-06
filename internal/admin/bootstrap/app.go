@@ -48,7 +48,7 @@ func InitializeApp() (*App, error) {
 	dashboardRepo := repository.NewDashboardRepository(DB)
 	permissionRepo := repository.NewPermissionRepository(DB)
 	activityRepo := repository.NewActivityRepository(DB)
-	copyRepo := repository.NewCopyRepository(DB)
+	// copyRepo := repository.NewCopyRepository(DB)
 	subscriptionPlanRepo := repository.NewSubscriptionPlanRepository(DB)
 	subscriptionRepo := repository.NewSubscriptionRepository(DB)
 	adminWalletRepo := repository.NewAdminWalletRepository(DB)
@@ -59,7 +59,7 @@ func InitializeApp() (*App, error) {
 	dashboardService := service.NewDashboardService(dashboardRepo)
 	permissionService := service.NewPermissionService(permissionRepo)
 	activityService := service.NewActivityService(activityRepo)
-	copyService := service.NewCopyService(copyRepo)
+	// copyService := service.NewCopyService(copyRepo)
 	// liveSignalService := service.NewLiveSignalService(userRepo)
 	subscriptionPlanService := service.NewSubscriptionPlanService(subscriptionPlanRepo)
 	adminWalletService := service.NewAdminWalletService(adminWalletRepo, DB)
@@ -72,7 +72,7 @@ func InitializeApp() (*App, error) {
 	dashboardController := controllers.NewDashboardController(dashboardService)
 	permissionController := controllers.NewPermissionController(permissionService, roleService)
 	activityController := controllers.NewActivityController(activityService)
-	copyController := controllers.NewCopyController(copyService)
+	// copyController := controllers.NewCopyController(copyService)
 	// signalController := controllers.NewSignalController(liveSignalService)
 	adminWalletController := controllers.NewAdminWalletController(adminWalletService)
 	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService)
@@ -126,7 +126,7 @@ func InitializeApp() (*App, error) {
 	r.LoadHTMLGlob(templatesPath)
 
 	router.WirePublicRoutes(r, authController, signalController)
-	router.WireFollowerRoutes(r, copyController, cfg)
+	// router.WireFollowerRoutes(r, copyController, cfg)
 	router.WireAdminRoutes(
 		r,
 		cfg,

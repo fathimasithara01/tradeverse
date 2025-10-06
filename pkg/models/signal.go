@@ -1,4 +1,3 @@
-// pkg/models/signal.go
 package models
 
 import (
@@ -10,7 +9,8 @@ import (
 type Signal struct {
 	gorm.Model
 
-	UserID uint `gorm:"not null;default:1"`
+	UserID   uint  `gorm:"not null;default:1"`
+	TraderID *uint `gorm:"index" json:"trader_id,omitempty"` // Link to the Trader (User.ID) if IsTraderPlan is true
 
 	TraderName   string  `gorm:"not null" json:"traderName"`
 	StopLoss     float64 `gorm:"type:numeric(18,8)" json:"stopLoss"`

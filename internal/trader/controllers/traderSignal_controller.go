@@ -43,7 +43,6 @@ func (ctrl *SignalController) GetAllSignals(c *gin.Context) {
 	c.JSON(http.StatusOK, signals)
 }
 
-// GET /trader/signals/:id
 func (ctrl *SignalController) GetSignalByID(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)

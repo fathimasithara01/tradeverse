@@ -50,7 +50,7 @@ func InitializeApp() (*App, error) {
 	// subService := service.NewSubscriptionService(subRepo)
 	subService := service.NewSubscriberService(subRepo)
 	liveService := service.NewLiveTradeService(liveRepo)
-	profileService := service.NewTraderProfileService(profileRepo, userRepo)
+	profileService := service.NewTraderProfileService(profileRepo)
 	walletService := service.NewWalletService(walletrepo)
 	tradeSignlService := service.NewSignalService(tradeSignlRepo)
 
