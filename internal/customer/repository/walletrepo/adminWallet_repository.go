@@ -2,6 +2,7 @@ package walletrepo
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -32,6 +33,7 @@ type WalletRepository interface {
 	CreateWithdrawRequest(req *models.WithdrawRequest) error
 	GetWithdrawRequestByID(reqID uint) (*models.WithdrawRequest, error)
 	UpdateWithdrawRequest(req *models.WithdrawRequest) error
+	GetOrCreateWallet(userID uint) (*models.Wallet, error)
 }
 
 type walletRepository struct {
@@ -52,6 +54,26 @@ func (r *walletRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
 		return nil, err
 	}
 	return &wallet, nil
+}
+
+func (r *walletRepository) GetOrCreateWallet(userID uint) (*models.Wallet, error) {
+	wallet, err := r.GetUserWallet(userID)
+	if err != nil {
+		if errors.Is(err, ErrWalletNotFound) {
+			// Create new wallet
+			wallet = &models.Wallet{
+				UserID:   userID,
+				Balance:  0,
+				Currency: "INR",
+			}
+			if err := r.CreateWallet(wallet); err != nil {
+				return nil, fmt.Errorf("failed to create wallet: %w", err)
+			}
+			return wallet, nil
+		}
+		return nil, err
+	}
+	return wallet, nil
 }
 
 func (r *walletRepository) CreateWallet(wallet *models.Wallet) error {

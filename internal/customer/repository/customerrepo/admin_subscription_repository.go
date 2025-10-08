@@ -27,8 +27,6 @@ type IAdminSubscriptionRepository interface {
 	UpdateTraderSubscription(sub *models.TraderSubscription) error
 }
 
-
-
 type adminSubscriptionRepository struct {
 	db *gorm.DB
 }

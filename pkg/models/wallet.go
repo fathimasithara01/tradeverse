@@ -6,15 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// type Wallet struct {
-// 	gorm.Model
-// 	UserID   uint    `gorm:"uniqueIndex;not null"`
-// 	Balance  float64 `gorm:"type:numeric(18,4);default:0.00"`
-// 	Currency string  `gorm:"size:10;not null;default:'USD'" json:"currency"` // Changed default to USD, as common for trading platforms
-
-// 	LastUpdated time.Time
-// }
-
 type Wallet struct {
 	gorm.Model
 	UserID      uint    `gorm:"uniqueIndex;not null" json:"user_id"`
@@ -40,6 +31,10 @@ const (
 	TxTypeTradeLoss          TransactionType = "TRADE_LOSS"
 	TxTypeCopyTradeFee       TransactionType = "COPY_TRADE_FEE"
 	TxTypeReferralCommission TransactionType = "REFERRAL_COMMISSION"
+	TxTypeCommission         TransactionType = "commission" // Admin commission
+	TxTypeCredit             TransactionType = "credit"     // General credit
+	TxTypeDebit              TransactionType = "debit"      // General debit
+
 )
 
 type TransactionStatus string

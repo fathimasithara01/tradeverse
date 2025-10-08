@@ -26,22 +26,25 @@ func (ctrl *AdminSubscriptionController) ListTraderSubscriptionPlans(c *gin.Cont
 }
 
 func (ctrl *AdminSubscriptionController) SubscribeToTraderPlan(c *gin.Context) {
-	userID := c.MustGet("userID").(uint)
+	var req struct {
+		CustomerID uint `json:"customer_id" binding:"required"`
+		PlanID     uint `json:"trader_subscription_plan_id" binding:"required"`
+	}
 
-	planIDStr := c.Param("plan_id")
-	planID, err := strconv.ParseUint(planIDStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid plan ID"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid request: " + err.Error()})
 		return
 	}
 
-	sub, err := ctrl.Service.SubscribeToTraderPlan(userID, uint(planID))
+	sub, err := ctrl.Service.SubscribeToTraderPlan(req.CustomerID, req.PlanID)
 	if err != nil {
 		switch err {
 		case service.ErrPlanNotFound:
 			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		case service.ErrAlreadyHasTraderSubscription, service.ErrNotTraderPlan:
 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		case service.ErrInsufficientFunds:
+			c.JSON(http.StatusBadRequest, gin.H{"message": "insufficient funds"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		}
@@ -50,6 +53,33 @@ func (ctrl *AdminSubscriptionController) SubscribeToTraderPlan(c *gin.Context) {
 
 	c.JSON(http.StatusOK, sub)
 }
+
+// func (ctrl *AdminSubscriptionController) SubscribeToTraderPlan(c *gin.Context) {
+// 	userID := c.MustGet("userID").(uint)
+
+// 	planIDStr := c.Param("plan_id")
+// 	planID, err := strconv.ParseUint(planIDStr, 10, 32)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"message": "invalid plan ID"})
+// 		return
+// 	}
+
+// 	sub, err := ctrl.Service.SubscribeToTraderPlan(userID, uint(planID))
+// 	if err != nil {
+// 		switch err {
+// 		case service.ErrPlanNotFound:
+// 			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+// 		case service.ErrAlreadyHasTraderSubscription, service.ErrNotTraderPlan:
+// 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+// 		default:
+// 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+// 		}
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, sub)
+// }
+
 func (ctrl *AdminSubscriptionController) GetCustomerTraderSubscription(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 

@@ -15,7 +15,7 @@ func SetupRouter(
 	walletCtrl *controllers.WalletController,
 	adminSubCntrl *controllers.AdminSubscriptionController,
 	traderController *controllers.TraderController,
-	customerTraderSubCtrl *controllers.TraderSubscriptionController,
+	customerTraderSubCtrl *controllers.CustomerSubscriptionController,
 	customerSignalCtrl *controllers.CustomerSignalController,
 ) *gin.Engine {
 	r := gin.Default()
@@ -33,14 +33,22 @@ func SetupRouter(
 	protected := r.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
+
+		protected.GET("/subscription-plans", adminSubCntrl.ListTraderSubscriptionPlans)
+		protected.POST("/subscription-plans/:plan_id/subscribe", adminSubCntrl.SubscribeToTraderPlan)
+		protected.GET("/trader-subscription", adminSubCntrl.GetCustomerTraderSubscription)
+		protected.DELETE("/trader-subscription/:subscription_id", adminSubCntrl.CancelCustomerTraderSubscription)
+
 		protected.GET("/profile", profileController.GetProfile)
 		protected.PUT("/profile", profileController.UpdateProfile)
 		protected.DELETE("/account", profileController.DeleteAccount)
 
-		protected.POST("/traders/:trader_id/subscribe/:plan_id", customerTraderSubCtrl.SubscribeToTrader)
-		protected.GET("/trader-subscriptions", customerTraderSubCtrl.GetMyTraderSubscriptions)
-		protected.GET("/traders/:trader_id/plans", customerTraderSubCtrl.GetTraderSubscriptionPlans)
-
+		// protected.POST("/traders/:trader_id/subscribe/:plan_id", customerTraderSubCtrl.SubscribeToTrader)
+		// protected.GET("/trader-subscriptions", customerTraderSubCtrl.GetMyTraderSubscriptions)
+		// protected.GET("/traders/:trader_id/plans", customerTraderSubCtrl.GetTraderSubscriptionPlans)
+		protected.POST("/traders/:trader_id/subscribe", customerTraderSubCtrl.SubscribeCustomer)
+		protected.GET("/trader-subscriptions", customerTraderSubCtrl.GetCustomerTraderSubscriptions)
+		protected.GET("/trader-subscriptions/:subscription_id", customerTraderSubCtrl.GetCustomerTraderSubscriptionByID)
 		protected.GET("/traders/:trader_id/signals", customerSignalCtrl.GetTraderSignalsForCustomer)
 		protected.GET("/traders/:trader_id/signals/:signal_id", customerSignalCtrl.GetSignalCardForCustomer)
 

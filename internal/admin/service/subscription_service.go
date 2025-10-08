@@ -164,11 +164,11 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 
 		switch plan.Interval {
 		case "days":
-			endDate = startDate.AddDate(0, 0, plan.Duration)
+			endDate = startDate.AddDate(0, 0, int(plan.Duration))
 		case "monthly":
-			endDate = startDate.AddDate(0, plan.Duration, 0)
+			endDate = startDate.AddDate(0, int(plan.Duration), 0)
 		case "yearly":
-			endDate = startDate.AddDate(plan.Duration, 0, 0)
+			endDate = startDate.AddDate(int(plan.Duration), 0, 0)
 		default:
 			endDate = startDate.AddDate(0, 1, 0)
 		}

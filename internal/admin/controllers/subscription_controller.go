@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -128,7 +129,7 @@ func (ctrl *SubscriptionController) GetSubscriptionPlanByID(c *gin.Context) {
 		Name:            plan.Name,
 		Description:     plan.Description,
 		Price:           plan.Price,
-		Duration:        plan.Duration,
+		Duration:        int(plan.Duration),
 		Interval:        plan.Interval,
 		MaxFollowers:    plan.MaxFollowers,
 		Status:          status,
@@ -161,7 +162,7 @@ func (ctrl *SubscriptionController) GetSubscriptionPlans(c *gin.Context) {
 			Name:            plan.Name,
 			Description:     plan.Description,
 			Price:           plan.Price,
-			Duration:        plan.Duration,
+			Duration:        int(plan.Duration),
 			Interval:        plan.Interval,
 			MaxFollowers:    plan.MaxFollowers,
 			Status:          status,
@@ -231,7 +232,7 @@ func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
 		Name:            req.Name,
 		Description:     req.Description,
 		Price:           req.Price,
-		Duration:        req.Duration,
+		Duration:        time.Duration(req.Duration),
 		Interval:        req.Interval,
 		MaxFollowers:    req.MaxFollowers,
 		Features:        req.Features,
@@ -252,7 +253,7 @@ func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
 		Name:            newPlan.Name,
 		Description:     newPlan.Description,
 		Price:           newPlan.Price,
-		Duration:        newPlan.Duration,
+		Duration:        int(newPlan.Duration),
 		Interval:        newPlan.Interval,
 		MaxFollowers:    newPlan.MaxFollowers,
 		Status:          map[bool]string{true: "active", false: "inactive"}[newPlan.IsActive],
@@ -291,7 +292,7 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 	existingPlan.Name = req.Name
 	existingPlan.Description = req.Description
 	existingPlan.Price = req.Price
-	existingPlan.Duration = req.Duration
+	existingPlan.Duration = time.Duration(req.Duration)
 	existingPlan.Interval = req.Interval
 	existingPlan.MaxFollowers = req.MaxFollowers
 	existingPlan.Features = req.Features
@@ -316,7 +317,7 @@ func (ctrl *SubscriptionController) UpdateSubscriptionPlan(c *gin.Context) {
 		Name:            existingPlan.Name,
 		Description:     existingPlan.Description,
 		Price:           existingPlan.Price,
-		Duration:        existingPlan.Duration,
+		Duration:        int(existingPlan.Duration),
 		Interval:        existingPlan.Interval,
 		MaxFollowers:    existingPlan.MaxFollowers,
 		Status:          status,

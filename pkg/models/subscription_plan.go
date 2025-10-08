@@ -1,15 +1,22 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type SubscriptionPlan struct {
 	gorm.Model
-	Name        string  `gorm:"size:100;not null;unique" json:"name"`
+	Name     string        `gorm:"size:100;not null;unique" json:"name"`
+	UserID   *uint         `gorm:"index" json:"user_id,omitempty"`        // Nullable, refers to Trader.ID if IsTraderPlan is true
+	Duration time.Duration `gorm:"type:integer;not null" json:"duration"` // Duration in seconds, minutes, hours, or days (e.g., 30 * 24 * time.Hour for 30 days)
+
 	Description string  `gorm:"type:text" json:"description"`
 	Price       float64 `gorm:"type:numeric(18,4);not null" json:"price"`
-	Duration    int     `gorm:"not null" json:"duration"`         // Duration in days/months
-	Interval    string  `gorm:"size:20;not null" json:"interval"` // e.g., "day", "month", "year"
-	IsActive    bool    `gorm:"default:true" json:"is_active"`
+	// Duration    int     `gorm:"not null" json:"duration"`         // Duration in days/months
+	Interval string `gorm:"size:20;not null" json:"interval"` // e.g., "day", "month", "year"
+	IsActive bool   `gorm:"default:true" json:"is_active"`
 
 	Currency string `gorm:"size:10;not null;default:'USD'" json:"currency"`
 
@@ -21,3 +28,5 @@ type SubscriptionPlan struct {
 	AnalyticsAccess  string  `gorm:"size:50" json:"analytics_access,omitempty"`
 	CreatedByAdminID uint    `json:"created_by_admin_id"` // Who created this plan (Admin UserID)
 }
+
+

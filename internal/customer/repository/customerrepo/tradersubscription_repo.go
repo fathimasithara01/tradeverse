@@ -1,7 +1,9 @@
 package customerrepo
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -9,22 +11,19 @@ import (
 )
 
 var (
-	ErrSubscriptionNotFound = errors.New("trader subscription not found")
+	ErrTraderSubscriptionNotFound = errors.New("trader subscription not found")
+	ErrSubscriptionAlreadyActive  = errors.New("customer already has an active subscription with this trader")
 )
 
 type ITraderSubscriptionRepository interface {
-	CreateTraderSubscription(tx *gorm.DB, subscription *models.TraderSubscription) error
-	GetActiveTraderSubscription(customerID, traderID uint) (*models.TraderSubscription, error)
-	GetTraderSubscriptionByID(subscriptionID uint) (*models.TraderSubscription, error)
-	GetTraderSubscriptionPlan(planID uint) (*models.SubscriptionPlan, error)
-	GetTraderByID(traderID uint) (*models.User, error)
-	GetUserWallet(userID uint) (*models.Wallet, error)
-	UpdateTraderSubscription(tx *gorm.DB, subscription *models.TraderSubscription) error
-	// Helper to debit/credit wallet within the repository
-	CreditWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
-	DebitWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
-	CreateWalletTransaction(tx *gorm.DB, walletTx *models.WalletTransaction) error
-	GetAdminUser() (*models.User, error) // To find the admin for commission
+	CreateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error
+	GetActiveTraderSubscriptionForCustomer(ctx context.Context, customerID, traderID uint) (*models.TraderSubscription, error)
+	GetTraderSubscriptionByID(ctx context.Context, subscriptionID uint) (*models.TraderSubscription, error)
+	UpdateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error
+	DeactivateExpiredTraderSubscriptions(ctx context.Context) error
+	GetCustomerTraderSubscriptions(ctx context.Context, customerID uint) ([]models.TraderSubscription, error)
+	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
+	GetSubscriptionPlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error)
 }
 
 type traderSubscriptionRepository struct {
@@ -35,154 +34,89 @@ func NewTraderSubscriptionRepository(db *gorm.DB) ITraderSubscriptionRepository 
 	return &traderSubscriptionRepository{db: db}
 }
 
-func (r *traderSubscriptionRepository) CreateTraderSubscription(tx *gorm.DB, subscription *models.TraderSubscription) error {
-	return tx.Create(subscription).Error
+func (r *traderSubscriptionRepository) CreateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error {
+	return r.db.WithContext(ctx).Create(sub).Error
 }
 
-func (r *traderSubscriptionRepository) GetActiveTraderSubscription(customerID, traderID uint) (*models.TraderSubscription, error) {
+func (r *traderSubscriptionRepository) GetActiveTraderSubscriptionForCustomer(ctx context.Context, customerID, traderID uint) (*models.TraderSubscription, error) {
 	var sub models.TraderSubscription
-	err := r.db.
-		Preload("TraderSubscriptionPlan").
-		Preload("Trader").
+	err := r.db.WithContext(ctx).
 		Where("user_id = ? AND trader_id = ? AND is_active = ? AND end_date > ?", customerID, traderID, true, time.Now()).
 		First(&sub).Error
-
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSubscriptionNotFound
-		}
-		return nil, err
+		return nil, fmt.Errorf("failed to get active trader subscription: %w", err)
 	}
 	return &sub, nil
 }
 
-func (r *traderSubscriptionRepository) GetTraderSubscriptionByID(subscriptionID uint) (*models.TraderSubscription, error) {
+func (r *traderSubscriptionRepository) GetTraderSubscriptionByID(ctx context.Context, subscriptionID uint) (*models.TraderSubscription, error) {
 	var sub models.TraderSubscription
-	err := r.db.
-		Preload("TraderSubscriptionPlan").
-		Preload("User").
-		Preload("Trader").
-		First(&sub, subscriptionID).Error
-
+	err := r.db.WithContext(ctx).First(&sub, subscriptionID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrTraderSubscriptionNotFound
+	}
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSubscriptionNotFound
-		}
-		return nil, err
+		return nil, fmt.Errorf("failed to get trader subscription by ID: %w", err)
 	}
 	return &sub, nil
 }
 
-func (r *traderSubscriptionRepository) GetTraderSubscriptionPlan(planID uint) (*models.SubscriptionPlan, error) {
-	var plan models.SubscriptionPlan
-	err := r.db.First(&plan, planID).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("subscription plan not found")
-		}
-		return nil, err
+func (r *traderSubscriptionRepository) UpdateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error {
+	return r.db.WithContext(ctx).Save(sub).Error
+}
+
+func (r *traderSubscriptionRepository) DeactivateExpiredTraderSubscriptions(ctx context.Context) error {
+	result := r.db.WithContext(ctx).
+		Model(&models.TraderSubscription{}).
+		Where("is_active = ? AND end_date <= ?", true, time.Now()).
+		Update("is_active", false)
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to deactivate expired trader subscriptions: %w", result.Error)
 	}
-	if !plan.IsTraderPlan {
-		return nil, errors.New("plan is not a trader subscription plan")
+	if result.RowsAffected > 0 {
+		fmt.Printf("Deactivated %d expired trader subscriptions.\n", result.RowsAffected)
+	}
+	return nil
+}
+
+func (r *traderSubscriptionRepository) GetCustomerTraderSubscriptions(ctx context.Context, customerID uint) ([]models.TraderSubscription, error) {
+	var subs []models.TraderSubscription
+	err := r.db.WithContext(ctx).
+		Preload("Trader").
+		Preload("TraderSubscriptionPlan").
+		Where("user_id = ?", customerID).
+		Order("end_date DESC").
+		Find(&subs).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get customer's trader subscriptions: %w", err)
+	}
+	return subs, nil
+}
+
+func (r *traderSubscriptionRepository) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
+	var user models.User
+	err := r.db.WithContext(ctx).First(&user, userID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("user not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+	}
+	return &user, nil
+}
+
+func (r *traderSubscriptionRepository) GetSubscriptionPlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error) {
+	var plan models.SubscriptionPlan
+	err := r.db.WithContext(ctx).First(&plan, planID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("subscription plan not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subscription plan by ID: %w", err)
 	}
 	return &plan, nil
-}
-
-func (r *traderSubscriptionRepository) GetTraderByID(traderID uint) (*models.User, error) {
-	var trader models.User
-	err := r.db.Where("id = ? AND role = ?", traderID, models.RoleTrader).First(&trader).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("trader not found")
-		}
-		return nil, err
-	}
-	return &trader, nil
-}
-
-func (r *traderSubscriptionRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
-	var wallet models.Wallet
-	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("wallet not found for user")
-		}
-		return nil, err
-	}
-	return &wallet, nil
-}
-
-func (r *traderSubscriptionRepository) UpdateTraderSubscription(tx *gorm.DB, subscription *models.TraderSubscription) error {
-	return tx.Save(subscription).Error
-}
-
-func (r *traderSubscriptionRepository) CreditWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
-	var wallet models.Wallet
-	if err := tx.First(&wallet, walletID).Error; err != nil {
-		return err
-	}
-	balanceBefore := wallet.Balance
-	wallet.Balance += amount
-	wallet.LastUpdated = time.Now()
-	if err := tx.Save(&wallet).Error; err != nil {
-		return err
-	}
-	walletTx := &models.WalletTransaction{
-		WalletID:        walletID,
-		UserID:          wallet.UserID,
-		TransactionType: transactionType,
-		Amount:          amount,
-		Currency:        wallet.Currency,
-		Status:          models.TxStatusSuccess,
-		ReferenceID:     referenceID,
-		Description:     description,
-		BalanceBefore:   balanceBefore,
-		BalanceAfter:    wallet.Balance,
-	}
-	return r.CreateWalletTransaction(tx, walletTx)
-}
-
-func (r *traderSubscriptionRepository) DebitWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
-	var wallet models.Wallet
-	if err := tx.First(&wallet, walletID).Error; err != nil {
-		return err
-	}
-	if wallet.Balance < amount {
-		return errors.New("insufficient funds for debit")
-	}
-	balanceBefore := wallet.Balance
-	wallet.Balance -= amount
-	wallet.LastUpdated = time.Now()
-	if err := tx.Save(&wallet).Error; err != nil {
-		return err
-	}
-	walletTx := &models.WalletTransaction{
-		WalletID:        walletID,
-		UserID:          wallet.UserID,
-		TransactionType: transactionType,
-		Amount:          amount,
-		Currency:        wallet.Currency,
-		Status:          models.TxStatusSuccess,
-		ReferenceID:     referenceID,
-		Description:     description,
-		BalanceBefore:   balanceBefore,
-		BalanceAfter:    wallet.Balance,
-	}
-	return r.CreateWalletTransaction(tx, walletTx)
-}
-
-func (r *traderSubscriptionRepository) CreateWalletTransaction(tx *gorm.DB, walletTx *models.WalletTransaction) error {
-	return tx.Create(walletTx).Error
-}
-
-func (r *traderSubscriptionRepository) GetAdminUser() (*models.User, error) {
-	var adminUser models.User
-	err := r.db.Where("role = ?", models.RoleAdmin).First(&adminUser).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("admin user not found")
-		}
-		return nil, err
-	}
-	return &adminUser, nil
 }
