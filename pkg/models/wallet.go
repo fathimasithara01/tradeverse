@@ -61,13 +61,11 @@ const (
 
 type WalletTransaction struct {
 	gorm.Model
-	WalletID uint `gorm:"index;not null" json:"wallet_id"`
-	// Type     WalletTransactionType `gorm:"type:varchar(20);not null;default:'DEPOSIT'" json:"type"`
-	Type   TransactionType `gorm:"type:varchar(20);not null" json:"type"`
-	UserID uint            `gorm:"not null;index" json:"user_id"` // <-- required for FK
-	Name   string          `gorm:"size:100;not null" json:"name"`
+	WalletID uint            `gorm:"index;not null" json:"wallet_id"`
+	Type     TransactionType `gorm:"type:varchar(20);not null" json:"type"`
+	UserID   uint            `gorm:"not null;index" json:"user_id"`
+	Name     string          `gorm:"size:100;not null" json:"name"`
 
-	// UserID uint `gorm:"index;not null"`
 	User User `gorm:"foreignKey:UserID"`
 
 	TransactionType TransactionType   `gorm:"size:30;not null"`
@@ -76,11 +74,13 @@ type WalletTransaction struct {
 	Status          TransactionStatus `gorm:"size:20;not null"`
 	Notes           string            `json:"notes,omitempty"`
 
-	ReferenceID        string  `gorm:"size:100"`
+	ReferenceID        string  `gorm:"size:100"`	
 	PaymentGatewayTxID string  `gorm:"size:100"`
 	Description        string  `gorm:"type:text"`
 	BalanceBefore      float64 `gorm:"type:numeric(18,4)"`
 	BalanceAfter       float64 `gorm:"type:numeric(18,4)"`
+
+	TransactionID string `gorm:"size:255" json:"transaction_id"`
 
 	TradeID              *uint `gorm:"index" json:"trade_id,omitempty"`
 	CopyTradeID          *uint `gorm:"index" json:"copy_trade_id,omitempty"`
@@ -88,6 +88,36 @@ type WalletTransaction struct {
 	SubscriptionID       *uint `gorm:"index" json:"subscription_id,omitempty"`
 	TraderSubscriptionID *uint `gorm:"index" json:"trader_subscription_id,omitempty"`
 }
+
+// type WalletTransaction struct {
+// 	gorm.Model
+// 	WalletID uint `gorm:"index;not null" json:"wallet_id"`
+// 	// Type     WalletTransactionType `gorm:"type:varchar(20);not null;default:'DEPOSIT'" json:"type"`
+// 	Type   TransactionType `gorm:"type:varchar(20);not null" json:"type"`
+// 	UserID uint            `gorm:"not null;index" json:"user_id"` // <-- required for FK
+// 	Name   string          `gorm:"size:100;not null" json:"name"`
+
+// 	// UserID uint `gorm:"index;not null"`
+// 	User User `gorm:"foreignKey:UserID"`
+
+// 	TransactionType TransactionType   `gorm:"size:30;not null"`
+// 	Amount          float64           `gorm:"type:numeric(18,4);not null"`
+// 	Currency        string            `gorm:"size:3;not null"`
+// 	Status          TransactionStatus `gorm:"size:20;not null"`
+// 	Notes           string            `json:"notes,omitempty"`
+
+// 	ReferenceID        string  `gorm:"size:100"`
+// 	PaymentGatewayTxID string  `gorm:"size:100"`
+// 	Description        string  `gorm:"type:text"`
+// 	BalanceBefore      float64 `gorm:"type:numeric(18,4)"`
+// 	BalanceAfter       float64 `gorm:"type:numeric(18,4)"`
+
+// 	TradeID              *uint `gorm:"index" json:"trade_id,omitempty"`
+// 	CopyTradeID          *uint `gorm:"index" json:"copy_trade_id,omitempty"`
+// 	ReferralID           *uint `gorm:"index" json:"referral_id,omitempty"`
+// 	SubscriptionID       *uint `gorm:"index" json:"subscription_id,omitempty"`
+// 	TraderSubscriptionID *uint `gorm:"index" json:"trader_subscription_id,omitempty"`
+// }
 
 type DepositRequest struct {
 	gorm.Model

@@ -46,7 +46,7 @@ func SetupRouter(
 		// protected.POST("/traders/:trader_id/subscribe/:plan_id", customerTraderSubCtrl.SubscribeToTrader)
 		// protected.GET("/trader-subscriptions", customerTraderSubCtrl.GetMyTraderSubscriptions)
 		// protected.GET("/traders/:trader_id/plans", customerTraderSubCtrl.GetTraderSubscriptionPlans)
-		protected.POST("/traders/:trader_id/subscribe", customerTraderSubCtrl.SubscribeCustomer)
+		protected.POST("/traders/:trader_id/subscribe", customerTraderSubCtrl.SubscribeTrader)
 		protected.GET("/trader-subscriptions", customerTraderSubCtrl.GetCustomerTraderSubscriptions)
 		protected.GET("/trader-subscriptions/:subscription_id", customerTraderSubCtrl.GetCustomerTraderSubscriptionByID)
 		protected.GET("/traders/:trader_id/signals", customerSignalCtrl.GetTraderSignalsForCustomer)

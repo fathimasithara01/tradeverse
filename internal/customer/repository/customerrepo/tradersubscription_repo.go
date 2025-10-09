@@ -24,6 +24,9 @@ type ITraderSubscriptionRepository interface {
 	GetCustomerTraderSubscriptions(ctx context.Context, customerID uint) ([]models.TraderSubscription, error)
 	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
 	GetSubscriptionPlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error)
+	GetPlanByID(planID uint) (*models.SubscriptionPlan, error)
+	CheckExistingSubscription(customerID, traderID uint) (*models.TraderSubscription, error)
+	CreateSubscription(sub *models.TraderSubscription) error
 }
 
 type traderSubscriptionRepository struct {
@@ -34,6 +37,25 @@ func NewTraderSubscriptionRepository(db *gorm.DB) ITraderSubscriptionRepository 
 	return &traderSubscriptionRepository{db: db}
 }
 
+func (r *traderSubscriptionRepository) CreateSubscription(sub *models.TraderSubscription) error {
+	return r.db.Create(sub).Error
+}
+func (r *traderSubscriptionRepository) GetPlanByID(planID uint) (*models.SubscriptionPlan, error) {
+	var plan models.SubscriptionPlan
+	if err := r.db.First(&plan, planID).Error; err != nil {
+		return nil, err
+	}
+	return &plan, nil
+}
+
+func (r *traderSubscriptionRepository) CheckExistingSubscription(customerID, traderID uint) (*models.TraderSubscription, error) {
+	var sub models.TraderSubscription
+	err := r.db.Where("user_id = ? AND trader_id = ? AND is_active = ?", customerID, traderID, true).First(&sub).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &sub, err
+}
 func (r *traderSubscriptionRepository) CreateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error {
 	return r.db.WithContext(ctx).Create(sub).Error
 }

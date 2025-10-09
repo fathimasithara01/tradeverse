@@ -81,7 +81,7 @@ func (s *customerSignalService) GetSignalCardForCustomer(ctx context.Context, cu
 	}
 
 	// 3. Ensure the signal belongs to the specified trader
-	if signal.TraderID == nil || *signal.TraderID != traderID {
+	if signal.TraderID != traderID {
 		return nil, ErrSignalTraderMismatch
 	}
 

@@ -2,7 +2,6 @@ package walletrepo
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -34,47 +33,88 @@ type WalletRepository interface {
 	GetWithdrawRequestByID(reqID uint) (*models.WithdrawRequest, error)
 	UpdateWithdrawRequest(req *models.WithdrawRequest) error
 	GetOrCreateWallet(userID uint) (*models.Wallet, error)
+	// UpdateWallet(wallet *models.Wallet) error
+	CreateTransaction(tx *models.WalletTransaction) error
+	UpdateWallet(wallet *models.Wallet) error
+	UpdateWalletTx(tx *gorm.DB, wallet *models.Wallet) error
 }
 
 type walletRepository struct {
 	db *gorm.DB
 }
 
-func NewWalletRepository(db *gorm.DB) WalletRepository {
-	return &walletRepository{db: db}
+func (r *walletRepository) UpdateWallet(wallet *models.Wallet) error {
+	return r.db.Save(wallet).Error
+}
+
+func (r *walletRepository) UpdateWalletTx(tx *gorm.DB, wallet *models.Wallet) error {
+	return tx.Save(wallet).Error
 }
 
 func (r *walletRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
 	var wallet models.Wallet
-	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrWalletNotFound
-		}
+	if err := r.db.Where("user_id = ?", userID).First(&wallet).Error; err != nil {
 		return nil, err
 	}
 	return &wallet, nil
 }
 
 func (r *walletRepository) GetOrCreateWallet(userID uint) (*models.Wallet, error) {
-	wallet, err := r.GetUserWallet(userID)
-	if err != nil {
-		if errors.Is(err, ErrWalletNotFound) {
-			// Create new wallet
-			wallet = &models.Wallet{
-				UserID:   userID,
-				Balance:  0,
-				Currency: "INR",
-			}
-			if err := r.CreateWallet(wallet); err != nil {
-				return nil, fmt.Errorf("failed to create wallet: %w", err)
-			}
-			return wallet, nil
+	var wallet models.Wallet
+	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		wallet = models.Wallet{
+			UserID:   userID,
+			Balance:  0,
+			Currency: "USD",
 		}
-		return nil, err
+		if err := r.db.Create(&wallet).Error; err != nil {
+			return nil, err
+		}
+		return &wallet, nil
 	}
-	return wallet, nil
+	return &wallet, err
 }
+
+func (r *walletRepository) CreateTransaction(tx *models.WalletTransaction) error {
+	return r.db.Create(tx).Error
+}
+
+func NewWalletRepository(db *gorm.DB) WalletRepository {
+	return &walletRepository{db: db}
+}
+
+// func (r *walletRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
+// 	var wallet models.Wallet
+// 	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
+// 	if err != nil {
+// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+// 			return nil, ErrWalletNotFound
+// 		}
+// 		return nil, err
+// 	}
+// 	return &wallet, nil
+// }
+
+// func (r *walletRepository) GetOrCreateWallet(userID uint) (*models.Wallet, error) {
+// 	wallet, err := r.GetUserWallet(userID)
+// 	if err != nil {
+// 		if errors.Is(err, ErrWalletNotFound) {
+// 			// Create new wallet
+// 			wallet = &models.Wallet{
+// 				UserID:   userID,
+// 				Balance:  0,
+// 				Currency: "INR",
+// 			}
+// 			if err := r.CreateWallet(wallet); err != nil {
+// 				return nil, fmt.Errorf("failed to create wallet: %w", err)
+// 			}
+// 			return wallet, nil
+// 		}
+// 		return nil, err
+// 	}
+// 	return wallet, nil
+// }
 
 func (r *walletRepository) CreateWallet(wallet *models.Wallet) error {
 	return r.db.Create(wallet).Error

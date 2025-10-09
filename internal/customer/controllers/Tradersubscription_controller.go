@@ -19,20 +19,20 @@ func NewCustomerSubscriptionController(svc service.ITraderSubscriptionService) *
 	return &CustomerSubscriptionController{TraderSubscriptionService: svc}
 }
 
-func (h *CustomerSubscriptionController) SubscribeCustomer(c *gin.Context) {
+func (c *CustomerSubscriptionController) SubscribeTrader(ctx *gin.Context) {
 	var req models.TraderSubscriptionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := h.TraderSubscriptionService.SubscribeCustomer(&req)
+	resp, err := c.TraderSubscriptionService.SubscribeCustomer(req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 // func (ctrl *CustomerSubscriptionController) SubscribeToTrader(c *gin.Context) {
