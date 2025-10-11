@@ -54,7 +54,7 @@ func InitializeApp() (*App, error) {
 	profileService := service.NewTraderProfileService(profileRepo)
 	walletService := service.NewWalletService(walletrepo)
 	tradeSignlService := service.NewSignalService(tradeSignlRepo)
-	traderSubsService := service.NewTraderSubscriptionService(traderSubsRepo, db) // Pass db for transactions
+	traderSubsService := service.NewTraderSubscriptionService(traderSubsRepo, db)
 
 	// tradeController := controllers.NewTradeController(tradeService)
 	// subController := controllers.NewSubscriptionController(subService)

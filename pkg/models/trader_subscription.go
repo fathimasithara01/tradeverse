@@ -9,62 +9,29 @@ import (
 type UserSubscription struct {
 	gorm.Model
 	UserID             uint             `gorm:"index;not null" json:"user_id"`
-	User               User             `gorm:"foreignKey:UserID"` // Association to User
+	User               User             `gorm:"foreignKey:UserID"`
 	SubscriptionPlanID uint             `gorm:"index;not null" json:"subscription_plan_id"`
-	Plan               SubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID"` // Association to SubscriptionPlan
+	Plan               SubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID"`
 	StartDate          time.Time        `gorm:"not null" json:"start_date"`
 	EndDate            time.Time        `gorm:"not null" json:"end_date"`
 	IsActive           bool             `gorm:"default:true" json:"is_active"`
-	TransactionID      uint             `gorm:"index" json:"transaction_id"` // Link to
+	TransactionID      uint             `gorm:"index" json:"transaction_id"`
 }
-
-// type TraderSubscriptionPlan struct {
-// 	gorm.Model
-// 	User   User `gorm:"foreignKey:UserID" json:"user"`
-// 	UserID uint `gorm:"not null;index" json:"user_id"` // Customer
-
-//		TraderID                  uint              `gorm:"index;not null" json:"trader_id"` // The trader (User.ID) offering this plan
-//		Name                      string            `gorm:"not null" json:"name"`            // e.g., "Monthly Access to My Signals"
-//		Description               string            `gorm:"type:text" json:"description"`
-//		Price                     float64           `gorm:"type:numeric(18,4);not null" json:"price"`
-//		Currency                  string            `gorm:"size:10;not null;default:'USD'" json:"currency"`
-//		DurationDays              uint              `json:"duration_days"` // How long the customer gets access for
-//		IsActive                  bool              `gorm:"default:true" json:"is_active"`
-//		AdminCommissionPercentage float64           `gorm:"type:numeric(5,2);default:0.00" json:"admin_commission_percentage"` // e.g., 10.00 for 10%
-//		AmountPaid                float64           `gorm:"type:numeric(18,4);not null" json:"amount_paid"`
-//		StartDate                 time.Time         `gorm:"not null" json:"start_date"`
-//		EndDate                   time.Time         `gorm:"not null" json:"end_date"`
-//		Trader                    User              `gorm:"foreignKey:TraderID"`
-//		PaymentStatus             string            `gorm:"size:50;not null" json:"payment_status"`
-//		TraderSubscriptionPlan    *SubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID" json:"trader_subscription_plan"`
-//		TraderSubscriptionPlanID  uint              `gorm:"not null;index" json:"trader_subscription_plan_id"`
-//	}
 
 type TraderSubscriptionPlan struct {
 	gorm.Model
 
-	TraderID        uint    `gorm:"index;not null" json:"trader_id"` // The trader (User.ID) offering this plan
-	Name            string  `gorm:"not null" json:"name"`            // e.g., "My Premium Signals Monthly"
+	TraderID        uint    `gorm:"index;not null" json:"trader_id"`
+	Name            string  `gorm:"not null" json:"name"`
 	Description     string  `gorm:"type:text" json:"description"`
 	Price           float64 `gorm:"type:numeric(18,4);not null" json:"price"`
 	Currency        string  `gorm:"size:10;not null;default:'USD'" json:"currency"`
-	DurationDays    uint    `json:"duration_days"` // How long the customer gets access for
+	DurationDays    uint    `json:"duration_days"`
 	IsActive        bool    `gorm:"default:true" json:"is_active"`
 	AdminCommission float64 `gorm:"column:admin_commission;type:numeric(5,2);default:0.00" json:"admin_commission_percentage"`
-	TraderShare     float64 `gorm:"type:numeric(18,4);not null;default:0.00" json:"trader_share"` // Keep this if you want it as a plan property
+	TraderShare     float64 `gorm:"type:numeric(18,4);not null;default:0.00" json:"trader_share"`
 
-	// REMOVE THESE LINES:
-	// TraderSubscriptionPlan    *SubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID" json:"trader_subscription_plan"`
-	// TraderSubscriptionPlanID  uint              `gorm:"not null;index" json:"trader_subscription_plan_id"` // <-- THIS IS THE PROBLEM FIELD
-
-	// The fields below (AmountPaid, StartDate, EndDate, PaymentStatus)
-	// were also likely misplaced from CustomerTraderSubscription and should be removed if they are still present.
-	// AmountPaid                float64           `gorm:"type:numeric(18,4);not null" json:"amount_paid"`
-	// StartDate                 time.Time         `gorm:"not null" json:"start_date"`
-	// EndDate                   time.Time         `gorm:"not null" json:"end_date"`
-	// PaymentStatus             string            `gorm:"size:50;not null" json:"payment_status"`
-
-	Trader User `gorm:"foreignKey:TraderID"` // Association to the Trader who owns this plan
+	Trader User `gorm:"foreignKey:TraderID"`
 }
 
 type CustomerTraderSubscription struct {
@@ -72,18 +39,17 @@ type CustomerTraderSubscription struct {
 	CustomerID uint `gorm:"index;not null" json:"customer_id"`
 	Customer   User `gorm:"foreignKey:CustomerID"`
 
-	TraderID uint `gorm:"index;not null" json:"trader_id"` // Foreign key to the User who is the trader
-	Trader   User `gorm:"foreignKey:TraderID"`             // Association to the Trader User
+	TraderID uint `gorm:"index;not null" json:"trader_id"`
+	Trader   User `gorm:"foreignKey:TraderID"`
 
-	// THIS IS WHERE TraderSubscriptionPlanID should be used, linking to the PLAN DEFINITION
-	TraderSubscriptionPlanID uint                   `gorm:"index;not null" json:"trader_subscription_plan_id"` // Correctly links to the TraderSubscriptionPlan
-	Plan                     TraderSubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID"`               // Association to the TraderSubscriptionPlan
+	TraderSubscriptionPlanID uint                   `gorm:"index;not null" json:"trader_subscription_plan_id"`
+	Plan                     TraderSubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID"`
 
 	StartDate           time.Time `gorm:"not null" json:"start_date"`
 	EndDate             time.Time `gorm:"not null" json:"end_date"`
 	IsActive            bool      `gorm:"default:true" json:"is_active"`
 	WalletTransactionID *uint     `gorm:"index" json:"wallet_transaction_id"`
-	TransactionID       uint      // ID of the WalletTransaction that paid for this
+	TransactionID       uint
 
 	PaymentStatus          string  `gorm:"size:50;not null" json:"payment_status"`
 	AmountPaid             float64 `gorm:"type:numeric(18,4);not null" json:"amount_paid"`

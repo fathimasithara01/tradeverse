@@ -3,7 +3,7 @@ package bootstrap
 import (
 	"log"
 
-	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository" // Use adminRepo alias consistently
+	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	adminSvc "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
@@ -34,12 +34,12 @@ func InitializeApp() (*App, error) {
 		return nil, err
 	}
 
-	userRepo := adminRepo.NewUserRepository(db) // admin user repo
+	userRepo := adminRepo.NewUserRepository(db)
 	roleRepo := adminRepo.NewRoleRepository(db)
-	// adminWalletRepo := adminRepo.NewAdminWalletRepository(db) // Renamed for clarity
+	// adminWalletRepo := adminRepo.NewAdminWalletRepository(db)
 	kycRepo := customerrepo.NewKYCRepository(db)
 	traderRepo := customerrepo.NewTraderRepository(db)
-	adminSubRepo := customerrepo.NewIAdminSubscriptionRepository(db) // Typo: should be NewAdminSubscriptionRepository?
+	adminSubRepo := customerrepo.NewIAdminSubscriptionRepository(db)
 	customerWalletRepo := walletrepo.NewWalletRepository(db)
 	// customerSignalRepo := customerrepo.NewCustomerSignalRepository(db)
 	// customerUserRepo := customerrepo.NewUserRepository(db) // Renamed for clarity vs admin userRepo
@@ -52,7 +52,7 @@ func InitializeApp() (*App, error) {
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 	walletService := service.NewWalletService(db, customerWalletRepo, paymentClient)
 	traderService := service.NewTraderService(traderRepo, db)
-	adminSubService := service.NewAdminSubscriptionService(adminSubRepo, walletService, customerWalletRepo, db) // Assuming this is the correct constructor
+	adminSubService := service.NewAdminSubscriptionService(adminSubRepo, walletService, customerWalletRepo, db)
 	customerTraderSubsService := service.NewCustomerTraderSubscriptionService(customerTraderSubsRepo, db)
 
 	customerTraderSubsController := controllers.NewCustomerTraderSubscriptionController(customerTraderSubsService)

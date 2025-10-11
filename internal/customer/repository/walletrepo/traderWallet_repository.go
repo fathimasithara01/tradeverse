@@ -18,7 +18,6 @@ var (
 	ErrWithdrawalRequestNotFound = errors.New("withdrawal request not found")
 )
 
-// WalletRepository defines the interface for generic wallet operations.
 type WalletRepository interface {
 	GetUserWallet(userID uint) (*models.Wallet, error)
 	GetOrCreateWallet(userID uint) (*models.Wallet, error)

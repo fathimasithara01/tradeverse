@@ -43,9 +43,9 @@ func (c *TransactionController) GetTransactionsPage(ctx *gin.Context) {
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	search := ctx.Query("search")
-	selectedYear, _ := strconv.Atoi(ctx.DefaultQuery("year", "0"))  
-	selectedMonth, _ := strconv.Atoi(ctx.DefaultQuery("month", "0")) 
-	selectedDay, _ := strconv.Atoi(ctx.DefaultQuery("day", "0"))  
+	selectedYear, _ := strconv.Atoi(ctx.DefaultQuery("year", "0"))
+	selectedMonth, _ := strconv.Atoi(ctx.DefaultQuery("month", "0"))
+	selectedDay, _ := strconv.Atoi(ctx.DefaultQuery("day", "0"))
 
 	transactions, total, err := c.service.GetTransactions(page, limit, search, selectedYear, selectedMonth, selectedDay)
 	if err != nil {
@@ -58,7 +58,6 @@ func (c *TransactionController) GetTransactionsPage(ctx *gin.Context) {
 		totalPages = 1
 	}
 
-	// Generate page numbers for iteration
 	pages := make([]int, totalPages)
 	for i := 0; i < totalPages; i++ {
 		pages[i] = i + 1
@@ -92,7 +91,7 @@ func (c *TransactionController) GetTransactionsPage(ctx *gin.Context) {
 		"selectedYear":  selectedYear,
 		"selectedMonth": selectedMonth,
 		"selectedDay":   selectedDay,
-		"ActiveTab":     "financials",  
-		"ActiveSubTab":  "transactions", 
+		"ActiveTab":     "financials",
+		"ActiveSubTab":  "transactions",
 	})
 }

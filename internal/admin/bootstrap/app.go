@@ -45,7 +45,6 @@ func InitializeApp() (*App, error) {
 
 	seeder.CreateAdminSeeder(DB, *cfg)
 
-	// Admin-side dependencies
 	adminUserRepo := adminRepo.NewUserRepository(DB)
 	adminRoleRepo := adminRepo.NewRoleRepository(DB)
 	adminDashboardRepo := adminRepo.NewDashboardRepository(DB)
@@ -79,25 +78,22 @@ func InitializeApp() (*App, error) {
 	adminSignalController := controllers.NewSignalController(adminLiveSignalService)
 	adminTransactionController := controllers.NewTransactionController(adminTransactionService)
 
-	// Customer-side dependencies (used by cron or other services)
-	customerAdminSubscriptionRepository := customerRepo.NewIAdminSubscriptionRepository(DB)  // Assuming this is the correct constructor
-	customerWalletConcreteRepo := walletRepo.NewWalletRepository(DB)                         // Concrete customer wallet repo
-	customerSubscriptionPlanRepo := customerRepo.NewCustomerTraderSubscriptionRepository(DB) // For customer's subscription plan
+	customerAdminSubscriptionRepository := customerRepo.NewIAdminSubscriptionRepository(DB)
+	customerWalletConcreteRepo := walletRepo.NewWalletRepository(DB)
+	customerSubscriptionPlanRepo := customerRepo.NewCustomerTraderSubscriptionRepository(DB)
 
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 
-	customerWalletService := customerService.NewWalletService(DB, customerWalletConcreteRepo, paymentClient) // Returns customerService.IWalletService
-
+	customerWalletService := customerService.NewWalletService(DB, customerWalletConcreteRepo, paymentClient)
 	_ = customerService.NewCustomerTraderSubscriptionService(
 		customerSubscriptionPlanRepo,
 		DB,
 	)
 
-	// This service is specifically for cron jobs that interact with customer subscriptions from an admin perspective.
 	customerAdminSubscriptionServiceForCron := customerService.NewAdminSubscriptionService(
-		customerAdminSubscriptionRepository, // Pass the repository
-		customerWalletService,               // Pass the customer wallet service
-		customerWalletConcreteRepo,          // Pass the concrete customer wallet repository
+		customerAdminSubscriptionRepository,
+		customerWalletService,
+		customerWalletConcreteRepo,
 		DB,
 	)
 
@@ -105,7 +101,6 @@ func InitializeApp() (*App, error) {
 
 	_, filename, _, _ := runtime.Caller(0)
 	currentDir := filepath.Dir(filename)
-	// Assuming projectRoot is three levels up from the currentDir (bootstrap directory)
 	projectRoot := filepath.Join(currentDir, "..", "..", "..")
 	templatesPath := filepath.Join(projectRoot, "templates", "*.html")
 
@@ -132,7 +127,6 @@ func InitializeApp() (*App, error) {
 
 	r.LoadHTMLGlob(templatesPath)
 
-	router.WirePublicRoutes(r, adminAuthController, adminSignalController)
 	router.WireAdminRoutes(
 		r,
 		cfg,
@@ -142,7 +136,7 @@ func InitializeApp() (*App, error) {
 		adminRoleController,
 		adminPermissionController,
 		adminActivityController,
-		adminRoleService, // This seems to be passed as a service to the router
+		adminRoleService,
 		adminAdminWalletController,
 		adminSubscriptionController,
 		adminTransactionController,
@@ -150,14 +144,13 @@ func InitializeApp() (*App, error) {
 		adminSignalController,
 	)
 
-	// Cron job setup
 	c := cronn.New()
 	cron.StartCronJobs(adminSubscriptionService, customerAdminSubscriptionServiceForCron, adminLiveSignalService, DB)
 	c.AddFunc("@every 5m", func() {
 		log.Println("Starting market data fetch...")
 		cron.FetchAndSaveMarketData(DB)
 	})
-	c.Start() // Don't forget to start the cron scheduler!
+	c.Start()
 
 	return &App{
 		engine: r,

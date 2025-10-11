@@ -38,13 +38,13 @@ func (ctrl *AuthController) LoginUser(c *gin.Context) {
 	token, user, err := ctrl.UserSvc.Login(email, password)
 	if err != nil {
 		log.Printf("[LOGIN FAILED] for user '%s': %v", email, err)
-		c.Redirect(http.StatusFound, "/login?error="+err.Error()) // Redirects on error with message
+		c.Redirect(http.StatusFound, "/login?error="+err.Error())
 		return
 	}
 
 	log.Printf("[LOGIN SUCCESS] User '%s' logged in successfully. Role: %s\n", user.Email, user.Role)
-	c.SetCookie("admin_token", token, 86400, "/", config.AppConfig.CookieDomain, true, true) // Secure flag set to true
-	c.Redirect(http.StatusFound, "/admin/dashboard")                                         // Redirects to dashboard on success
+	c.SetCookie("admin_token", token, 86400, "/", config.AppConfig.CookieDomain, true, true)
+	c.Redirect(http.StatusFound, "/admin/dashboard")
 }
 
 func (ctrl *AuthController) RegisterCustomer(c *gin.Context) {

@@ -109,7 +109,7 @@ func StartCronJobs(
 		}
 	})
 
-	c.AddFunc("@every 30s", func() { // Run more frequently for critical status changes
+	c.AddFunc("@every 30s", func() {
 		log.Println("Starting signal status evaluation (SL/Target/Activation)...")
 		if err := liveSignalService.CheckAndSetSignalStatuses(context.Background()); err != nil {
 			log.Printf("Error checking and setting signal statuses: %v", err)

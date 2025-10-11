@@ -9,7 +9,6 @@ type Subscriber struct {
 	TraderID   uint    `json:"trader_id"`
 	UserID     uint    `json:"user_id"`
 	Allocation float64 `json:"allocation"`
-	Risk       string  `json:"risk"`   // e.g., "low", "medium", "high"
-	Status     string  `json:"status"` // e.g., "active", "inactive"
-
+	Risk       string  `json:"risk"`
+	Status     string  `json:"status"`
 }

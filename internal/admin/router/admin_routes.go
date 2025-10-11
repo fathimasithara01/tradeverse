@@ -31,10 +31,6 @@ func WireAdminRoutes(
 
 	admin := r.Group("/admin")
 	{
-
-		// protected := admin.Group("")
-		// protected.Use(middleware.JWTMiddleware(cfg))
-
 		{
 			admin.Use(middleware.DBMiddleware(db))
 
