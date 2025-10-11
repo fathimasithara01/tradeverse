@@ -15,16 +15,16 @@ var (
 type IAdminSubscriptionRepository interface {
 	GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error)
 	GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
-	CreateTraderSubscription(sub *models.TraderSubscription) error
-	GetUserTraderSubscription(userID uint) (*models.TraderSubscription, error)
+	CreateTraderSubscription(sub *models.TraderSubscriptionPlan) error
+	GetUserTraderSubscription(userID uint) (*models.TraderSubscriptionPlan, error)
 	CancelTraderSubscription(userID uint, subscriptionID uint) error
 
 	GetUserByID(userID uint) (*models.User, error)
 	UpdateUserRole(userID uint, role models.UserRole) error
 	CreateTraderProfile(profile *models.TraderProfile) error
 
-	GetExpiredActiveTraderSubscriptions() ([]models.TraderSubscription, error)
-	UpdateTraderSubscription(sub *models.TraderSubscription) error
+	GetExpiredActiveTraderSubscriptions() ([]models.TraderSubscriptionPlan, error)
+	UpdateTraderSubscription(sub *models.TraderSubscriptionPlan) error
 }
 
 type adminSubscriptionRepository struct {
@@ -35,8 +35,8 @@ func NewIAdminSubscriptionRepository(db *gorm.DB) IAdminSubscriptionRepository {
 	return &adminSubscriptionRepository{db: db}
 }
 
-func (r *adminSubscriptionRepository) GetExpiredActiveTraderSubscriptions() ([]models.TraderSubscription, error) {
-	var subs []models.TraderSubscription
+func (r *adminSubscriptionRepository) GetExpiredActiveTraderSubscriptions() ([]models.TraderSubscriptionPlan, error) {
+	var subs []models.TraderSubscriptionPlan
 	err := r.db.
 		Where("is_active = ? AND end_date < ?", true, time.Now()).
 		Preload("TraderSubscriptionPlan"). // Preload plan details for logging
@@ -44,7 +44,7 @@ func (r *adminSubscriptionRepository) GetExpiredActiveTraderSubscriptions() ([]m
 	return subs, err
 }
 
-func (r *adminSubscriptionRepository) UpdateTraderSubscription(sub *models.TraderSubscription) error {
+func (r *adminSubscriptionRepository) UpdateTraderSubscription(sub *models.TraderSubscriptionPlan) error {
 	return r.db.Save(sub).Error
 }
 func (r *adminSubscriptionRepository) GetTraderSubscriptionPlans() ([]models.SubscriptionPlan, error) {
@@ -65,12 +65,12 @@ func (r *adminSubscriptionRepository) GetSubscriptionPlanByID(id uint) (*models.
 	return &plan, nil
 }
 
-func (r *adminSubscriptionRepository) CreateTraderSubscription(sub *models.TraderSubscription) error {
+func (r *adminSubscriptionRepository) CreateTraderSubscription(sub *models.TraderSubscriptionPlan) error {
 	return r.db.Create(sub).Error
 }
 
-func (r *adminSubscriptionRepository) GetUserTraderSubscription(userID uint) (*models.TraderSubscription, error) {
-	var sub models.TraderSubscription
+func (r *adminSubscriptionRepository) GetUserTraderSubscription(userID uint) (*models.TraderSubscriptionPlan, error) {
+	var sub models.TraderSubscriptionPlan
 	err := r.db.
 		Where("user_id = ? AND is_active = ? AND end_date > ?", userID, true, time.Now()).
 		Preload("TraderSubscriptionPlan").
@@ -85,7 +85,7 @@ func (r *adminSubscriptionRepository) GetUserTraderSubscription(userID uint) (*m
 }
 
 func (r *adminSubscriptionRepository) CancelTraderSubscription(userID uint, subscriptionID uint) error {
-	return r.db.Model(&models.TraderSubscription{}).
+	return r.db.Model(&models.TraderSubscriptionPlan{}).
 		Where("id = ? AND user_id = ?", subscriptionID, userID).
 		Updates(map[string]interface{}{"is_active": false, "end_date": time.Now()}).Error
 }

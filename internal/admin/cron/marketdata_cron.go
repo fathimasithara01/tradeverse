@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	cronn "github.com/robfig/cron/v3"
 
@@ -28,7 +27,6 @@ type CoinGeckoCoin struct {
 }
 
 func FetchAndSaveMarketData(db *gorm.DB) {
-	// FIX: Changed vs_currency from "usdt" to "usd" which is a commonly accepted value.
 	apiURL := "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h"
 
 	resp, err := http.Get(apiURL)
@@ -63,17 +61,17 @@ func FetchAndSaveMarketData(db *gorm.DB) {
 			CurrentPrice:   coin.CurrentPrice,
 			PriceChange24H: coin.PriceChangePercentage24h,
 			LogoURL:        coin.Image,
-			LastUpdated:    time.Now(),
+			// LastUpdated:    time.Now(),
 		}
+		log.Printf(" current data for %s", coin.CurrentPrice)
 
 		result := db.Where(models.MarketData{Symbol: marketData.Symbol}).Assign(marketData).FirstOrCreate(&marketData)
 		if result.Error != nil {
 			log.Printf("Error saving/updating market data for %s: %v", coin.Symbol, result.Error)
 		} else if result.RowsAffected == 0 {
-			// No row was created or updated, meaning it existed and was identical or some other issue
-			// log.Printf("Market data for %s was already up-to-date or no change needed.", coin.Symbol)
+
 		} else {
-			// log.Printf("Saved/Updated market data for %s (Current Price: %.4f)", coin.Symbol, coin.CurrentPrice)
+			log.Printf("Saved/Updated market data for %s (Current Price: %.4f)", coin.Symbol, coin.CurrentPrice)
 		}
 	}
 	log.Println("Market data fetch complete.")
@@ -87,7 +85,6 @@ func StartCronJobs(
 ) {
 	c := cronn.New()
 
-	// Cron for subscription expiry checks (keep as is)
 	c.AddFunc("@daily", func() {
 		log.Println("Running daily subscription check...")
 		if err := subscriptionService.DeactivateExpiredSubscriptions(); err != nil {
@@ -95,20 +92,16 @@ func StartCronJobs(
 		}
 	})
 
-	// Cron for trader subscription status updates (example - keep as is)
 	c.AddFunc("@every 1h", func() {
 		log.Println("Running hourly trader subscription status update...")
 
 	})
 
-	// Cron for fetching and saving general market data (every 5 minutes)
 	c.AddFunc("@every 5m", func() {
 		log.Println("Starting market data fetch...")
 		FetchAndSaveMarketData(db)
 	})
 
-	// CRON JOB 1: Update current prices of ALL signals using fetched market data (e.g., every 1 minute)
-	// This job ensures that the `CurrentPrice` field in `models.Signal` is always up-to-date.
 	c.AddFunc("@every 1m", func() {
 		log.Println("Starting signal current price update from market data...")
 		if err := liveSignalService.UpdateAllSignalsCurrentPrices(context.Background()); err != nil {
@@ -116,10 +109,6 @@ func StartCronJobs(
 		}
 	})
 
-	// CRON JOB 2: Check and update the STATUS of active/pending signals (e.g., every 10 seconds or 30 seconds)
-	// This job relies on the `CurrentPrice` being updated by the previous cron.
-	// Running it more frequently than the price update might lead to stale data in some rare cases,
-	// but generally, it's fine as the price update is also frequent.
 	c.AddFunc("@every 30s", func() { // Run more frequently for critical status changes
 		log.Println("Starting signal status evaluation (SL/Target/Activation)...")
 		if err := liveSignalService.CheckAndSetSignalStatuses(context.Background()); err != nil {

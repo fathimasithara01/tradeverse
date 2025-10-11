@@ -11,6 +11,7 @@ import (
 
 type IUserRepository interface {
 	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
+	// Add other user-related methods as needed
 }
 
 type userRepository struct {
@@ -24,11 +25,11 @@ func NewUserRepository(db *gorm.DB) IUserRepository {
 func (r *userRepository) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
 	var user models.User
 	err := r.db.WithContext(ctx).First(&user, userID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("user not found")
+	}
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
-		}
-		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+		return nil, fmt.Errorf("failed to get user by ID %d: %w", userID, err)
 	}
 	return &user, nil
 }

@@ -1,7 +1,7 @@
+// internal/customer/controllers/trader_subscription.go - **NEW FILE**
 package controllers
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,95 +11,129 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CustomerSubscriptionController struct {
-	TraderSubscriptionService service.ITraderSubscriptionService // Renamed for clarity
+type CustomerTraderSubscriptionController struct {
+	subsService service.ICustomerTraderSubscriptionService
 }
 
-func NewCustomerSubscriptionController(svc service.ITraderSubscriptionService) *CustomerSubscriptionController {
-	return &CustomerSubscriptionController{TraderSubscriptionService: svc}
+func NewCustomerTraderSubscriptionController(subsService service.ICustomerTraderSubscriptionService) *CustomerTraderSubscriptionController {
+	return &CustomerTraderSubscriptionController{subsService: subsService}
 }
 
-func (c *CustomerSubscriptionController) SubscribeTrader(ctx *gin.Context) {
-	var req models.TraderSubscriptionRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// @Summary Get available traders with their subscription plans
+// @Description Retrieve a list of traders who offer subscription plans for their signals.
+// @Tags Customer Subscriptions
+// @Produce json
+// @Success 200 {array} models.User "List of traders with plans"
+// @Failure 500 {object} gin.H "Error fetching traders"
+// @Router /customer/traders [get]
+func (ctrl *CustomerTraderSubscriptionController) GetAvailableTradersWithPlans(c *gin.Context) {
+	traders, err := ctrl.subsService.GetAvailableTradersWithPlans(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to fetch available traders: %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, traders)
+}
+
+func (ctrl *CustomerTraderSubscriptionController) SubscribeToTrader(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
+		return
+	}
+	customerID := userID.(uint)
+
+	var input models.SubscribeToTraderInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := c.TraderSubscriptionService.SubscribeCustomer(req)
+	err := ctrl.subsService.SubscribeToTrader(c, customerID, input)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err.Error() == "insufficient funds in wallet" || err.Error() == "you are already subscribed to this plan" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to subscribe to trader: %v", err)})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, gin.H{"message": "successfully subscribed to trader's plan"})
 }
 
-// func (ctrl *CustomerSubscriptionController) SubscribeToTrader(c *gin.Context) {
-// 	customerID := c.MustGet("userID").(uint) // Assuming userID is set by auth middleware
+func (ctrl *CustomerTraderSubscriptionController) GetSignalsFromSubscribedTraders(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
+		return
+	}
+	customerID := userID.(uint)
 
-// 	traderIDStr := c.Param("trader_id")
-// 	traderID, err := strconv.ParseUint(traderIDStr, 10, 32)
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid trader ID format"})
-// 		return
-// 	}
-
-// 	var req models.TraderSubscriptionRequest
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Invalid request payload: %v", err.Error())})
-// 		return
-// 	}
-// 	req.TraderID = uint(traderID)
-// 	req.CustomerID = customerID
-
-// 	response, err := ctrl.TraderSubscriptionService.SubscribeCustomerToTrader(c.Request.Context(), req)
-// 	if err != nil {
-// 		statusCode := http.StatusInternalServerError
-// 		if errors.Is(err, service.ErrTraderNotFound) || errors.Is(err, service.ErrSubscriptionPlanNotFound) {
-// 			statusCode = http.StatusNotFound
-// 		} else if errors.Is(err, service.ErrInsufficientFunds) || errors.Is(err, service.ErrAlreadySubscribed) {
-// 			statusCode = http.StatusConflict // Use 409 for conflict states like already subscribed or insufficient funds
-// 		} else if errors.Is(err, service.ErrCustomerWalletNotFound) {
-// 			statusCode = http.StatusPreconditionFailed // Wallet must exist
-// 		}
-// 		c.JSON(statusCode, gin.H{"message": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, response)
-// }
-
-func (ctrl *CustomerSubscriptionController) GetCustomerTraderSubscriptions(c *gin.Context) {
-	customerID := c.MustGet("userID").(uint)
-
-	subscriptions, err := ctrl.TraderSubscriptionService.GetCustomerTraderSubscriptions(c.Request.Context(), customerID)
+	signals, err := ctrl.subsService.GetSubscribedTradersSignals(c, customerID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Failed to retrieve subscriptions: %v", err.Error())})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to fetch signals from subscribed traders: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, signals)
+}
+
+// @Summary Get a customer's active trader subscriptions
+// @Description Retrieves all active subscriptions a customer has to various traders.
+// @Tags Customer Subscriptions
+// @Produce json
+// @Success 200 {array} models.CustomerTraderSubscription "List of active trader subscriptions"
+// @Failure 401 {object} gin.H "Unauthorized"
+// @Failure 500 {object} gin.H "Internal server error"
+// @Router /customer/my-trader-subscriptions [get]
+func (ctrl *CustomerTraderSubscriptionController) GetMyActiveTraderSubscriptions(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
+		return
+	}
+	customerID := userID.(uint)
+
+	subscriptions, err := ctrl.subsService.GetActiveSubscriptions(c, customerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to fetch active subscriptions: %v", err)})
 		return
 	}
 
 	c.JSON(http.StatusOK, subscriptions)
 }
 
-func (ctrl *CustomerSubscriptionController) GetCustomerTraderSubscriptionByID(c *gin.Context) {
-	customerID := c.MustGet("userID").(uint)
-	subIDStr := c.Param("subscription_id")
-	subID, err := strconv.ParseUint(subIDStr, 10, 32)
+// @Summary Check if customer is subscribed to a specific trader
+// @Description Checks if the current customer has an active subscription to a given trader.
+// @Tags Customer Subscriptions
+// @Param traderId path int true "Trader ID"
+// @Produce json
+// @Success 200 {object} gin.H "Subscription status"
+// @Failure 400 {object} gin.H "Invalid trader ID"
+// @Failure 401 {object} gin.H "Unauthorized"
+// @Failure 500 {object} gin.H "Internal server error"
+// @Router /customer/subscribed-to-trader/:traderId [get]
+func (ctrl *CustomerTraderSubscriptionController) IsSubscribedToTrader(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
+		return
+	}
+	customerID := userID.(uint)
+
+	traderIDParam := c.Param("traderId")
+	traderID, err := strconv.ParseUint(traderIDParam, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid subscription ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid trader ID"})
 		return
 	}
 
-	subscription, err := ctrl.TraderSubscriptionService.GetCustomerTraderSubscriptionByID(c.Request.Context(), customerID, uint(subID))
+	isSubscribed, err := ctrl.subsService.IsCustomerSubscribedToTrader(c, customerID, uint(traderID))
 	if err != nil {
-		statusCode := http.StatusInternalServerError
-		if errors.Is(err, service.ErrSubscriptionNotFound) || errors.Is(err, service.ErrNotAuthorized) {
-			statusCode = http.StatusNotFound // or Forbidden if it's not their subscription
-		}
-		c.JSON(statusCode, gin.H{"message": fmt.Sprintf("Failed to retrieve subscription: %v", err.Error())})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to check subscription status: %v", err)})
 		return
 	}
 
-	c.JSON(http.StatusOK, subscription)
+	c.JSON(http.StatusOK, gin.H{"is_subscribed": isSubscribed, "trader_id": traderID})
 }

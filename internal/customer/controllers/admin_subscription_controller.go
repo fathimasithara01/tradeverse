@@ -104,7 +104,7 @@ func (ctrl *AdminSubscriptionController) CancelCustomerTraderSubscription(c *gin
 		return
 	}
 
-	err = ctrl.Service.CancelCustomerTraderSubscription(userID, uint(subID))
+	err = ctrl.Service.CancelCustomerTraderSubscription(c, userID, uint(subID))
 	if err != nil {
 		if err == service.ErrNoActiveTraderSubscription {
 			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})

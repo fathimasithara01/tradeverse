@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,21 +13,26 @@
         /* General Body and Layout */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa; /* Light background */
+            background-color: #f8f9fa;
+            /* Light background */
             transition: background-color 0.3s ease, color 0.3s ease;
             min-height: 100vh;
-            display: flex; /* For sidebar layout */
+            display: flex;
+            /* For sidebar layout */
         }
 
         /* Dark Mode Styles */
         body.dark-mode {
-            background-color: #343a40; /* Darker background */
-            color: #f8f9fa; /* Light text */
+            background-color: #343a40;
+            /* Darker background */
+            color: #f8f9fa;
+            /* Light text */
         }
 
         body.dark-mode .navbar,
         body.dark-mode .card {
-            background-color: #454d55 !important; /* Darker components */
+            background-color: #454d55 !important;
+            /* Darker components */
             color: #f8f9fa !important;
             border-color: #6c757d !important;
         }
@@ -41,6 +47,7 @@
         body.dark-mode .form-control::placeholder {
             color: #ced4da;
         }
+
         body.dark-mode .form-check-label {
             color: #f8f9fa;
         }
@@ -68,7 +75,8 @@
         #sidebar {
             min-width: 250px;
             max-width: 250px;
-            background: #343a40; /* Dark background for sidebar */
+            background: #343a40;
+            /* Dark background for sidebar */
             color: #fff;
             transition: all 0.3s;
             position: sticky;
@@ -83,7 +91,8 @@
 
         #sidebar .sidebar-header {
             padding: 20px;
-            background: #212529; /* Even darker header */
+            background: #212529;
+            /* Even darker header */
             text-align: center;
         }
 
@@ -106,9 +115,11 @@
             background: #f8f9fa;
         }
 
-        #sidebar ul li.active > a, a[aria-expanded="true"] {
+        #sidebar ul li.active>a,
+        a[aria-expanded="true"] {
             color: #fff;
-            background: #6d7fcc; /* Highlight active */
+            background: #6d7fcc;
+            /* Highlight active */
         }
 
         /* Content Area */
@@ -120,7 +131,8 @@
         }
 
         #content.active {
-            width: calc(100% + 250px); /* Adjust width when sidebar is collapsed */
+            width: calc(100% + 250px);
+            /* Adjust width when sidebar is collapsed */
         }
 
         /* Card specific styles */
@@ -134,22 +146,27 @@
             #sidebar {
                 margin-left: -250px;
             }
+
             #sidebar.active {
                 margin-left: 0;
             }
+
             #content {
                 width: 100%;
             }
+
             #content.active {
                 width: calc(100% - 250px);
             }
+
             /* Hide toggle button on smaller screens if sidebar is always visible or full-width */
-             .d-none.d-md-block {
+            .d-none.d-md-block {
                 display: none !important;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="wrapper">
         <!-- Sidebar -->
@@ -187,30 +204,37 @@
                         <form id="createSignalForm">
                             <div class="mb-3">
                                 <label for="traderName" class="form-label">Trader Name</label>
-                                <input type="text" class="form-control" id="traderName" name="traderName" placeholder="e.g., TraderOne" required>
+                                <input type="text" class="form-control" id="traderName" name="traderName"
+                                    placeholder="e.g., TraderOne" required>
                             </div>
                             <div class="mb-3">
                                 <label for="symbol" class="form-label">Symbol (e.g., BTCUSDT)</label>
-                                <input type="text" class="form-control" id="symbol" name="symbol" placeholder="e.g., BTCUSDT" required>
+                                <input type="text" class="form-control" id="symbol" name="symbol"
+                                    placeholder="e.g., BTCUSDT" required>
                             </div>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label for="stopLoss" class="form-label">Stop Loss ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="stopLoss" name="stopLoss" placeholder="e.g., 43000" required>
+                                    <input type="number" step="0.01" class="form-control" id="stopLoss" name="stopLoss"
+                                        placeholder="e.g., 43000" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="entryPrice" class="form-label">Entry Price ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="entryPrice" name="entryPrice" placeholder="e.g., 45000" required>
+                                    <input type="number" step="0.01" class="form-control" id="entryPrice"
+                                        name="entryPrice" placeholder="e.g., 45000" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="targetPrice" class="form-label">Target Price ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="targetPrice" name="targetPrice" placeholder="e.g., 50000" required>
+                                    <input type="number" step="0.01" class="form-control" id="targetPrice"
+                                        name="targetPrice" placeholder="e.g., 50000" required>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label for="currentPrice" class="form-label">Current Price ($)</label>
-                                <input type="number" step="0.0001" class="form-control" id="currentPrice" name="currentPrice" placeholder="e.g., 0.006184" value="0" readonly>
-                                <small class="form-text text-muted">This will be auto-updated by the system from market data.</small>
+                                <input type="number" step="0.0001" class="form-control" id="currentPrice"
+                                    name="currentPrice" placeholder="e.g., 0.006184" value="0" readonly>
+                                <small class="form-text text-muted">This will be auto-updated by the system from market
+                                    data.</small>
                             </div>
                             <div class="mb-3">
                                 <label for="strategy" class="form-label">Strategy</label>
@@ -245,8 +269,10 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="totalDuration" class="form-label">Total Duration (e.g., 4 weeks 2 days)</label>
-                                <input type="text" class="form-control" id="totalDuration" name="totalDuration" readonly placeholder="Auto-calculated">
+                                <label for="totalDuration" class="form-label">Total Duration (e.g., 4 weeks 2
+                                    days)</label>
+                                <input type="text" class="form-control" id="totalDuration" name="totalDuration" readonly
+                                    placeholder="Auto-calculated">
                             </div>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>Create Signal
@@ -272,7 +298,7 @@
             });
 
             // Dark Mode Toggle Functionality
-            $('#darkModeSwitch').on('change', function() {
+            $('#darkModeSwitch').on('change', function () {
                 if (this.checked) {
                     $('body').addClass('dark-mode');
                     localStorage.setItem('darkMode', 'enabled');
@@ -297,7 +323,7 @@
                 $.ajax({
                     url: '/admin/api/market-data', // Your endpoint to get market data
                     method: 'GET',
-                    success: function(response) {
+                    success: function (response) {
                         // Assuming response is an array of market data objects and we need to find the specific one
                         const marketData = response.find(item => item.symbol.toUpperCase() === symbol.toUpperCase());
                         if (marketData && typeof marketData.current_price === 'number') {
@@ -307,7 +333,7 @@
                             callback(0); // Return 0 if no data found
                         }
                     },
-                    error: function(jqXHR, textStatus, errorThrown) {
+                    error: function (jqXHR, textStatus, errorThrown) {
                         console.error("Error fetching market data:", textStatus, errorThrown);
                         callback(0); // Indicate failure by returning 0
                     }
@@ -315,10 +341,12 @@
             }
 
             // Fetch current price when symbol changes or input loses focus
-            $('#symbol').on('change blur', function() {
+            $('#symbol').on('change blur', function () {
                 const symbol = $(this).val();
+                console.log('#currentPrice').val(price.toFixed(8));
+
                 if (symbol) {
-                    fetchCurrentMarketPrice(symbol, function(price) {
+                    fetchCurrentMarketPrice(symbol, function (price) {
                         $('#currentPrice').val(price.toFixed(8)); // Display with higher precision
                     });
                 } else {
@@ -327,7 +355,7 @@
             });
 
             // Auto-calculate duration
-            $('#startDate, #endDate').on('change', function() {
+            $('#startDate, #endDate').on('change', function () {
                 const startDateStr = $('#startDate').val();
                 const endDateStr = $('#endDate').val();
 
@@ -374,7 +402,7 @@
 
 
             // Handle form submission
-            $('#createSignalForm').on('submit', function(e) {
+            $('#createSignalForm').on('submit', function (e) {
                 e.preventDefault(); // Prevent default form submission
 
                 // Collect form data and ensure numbers are parsed correctly
@@ -414,12 +442,12 @@
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
-                    success: function(response) {
+                    success: function (response) {
                         alert('Signal created successfully!');
                         // Optionally, redirect to the signals list page
                         window.location.href = '/admin/signals';
                     },
-                    error: function(jqXHR, textStatus, errorThrown) {
+                    error: function (jqXHR, textStatus, errorThrown) {
                         console.error("Error creating signal:", textStatus, errorThrown, jqXHR.responseText);
                         let errorMessage = 'Failed to create signal: ' + (jqXHR.responseJSON && jqXHR.responseJSON.error ? jqXHR.responseJSON.error : errorThrown);
                         alert(errorMessage);
@@ -429,4 +457,5 @@
         });
     </script>
 </body>
+
 </html>

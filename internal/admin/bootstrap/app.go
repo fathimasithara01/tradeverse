@@ -3,17 +3,18 @@ package bootstrap
 import (
 	"fmt"
 	"log"
-	"path/filepath" // Import for path manipulation
-	"runtime"       // Import for getting current file path
+	"path/filepath"
+	"runtime"
 	"text/template"
 
 	cronn "github.com/robfig/cron/v3"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
-	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
+	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/internal/admin/router"
-	"github.com/fathimasithara01/tradeverse/internal/admin/service"
+	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
+
 	customerRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
 	walletRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	customerService "github.com/fathimasithara01/tradeverse/internal/customer/service"
@@ -31,6 +32,7 @@ type App struct {
 }
 
 func InitializeApp() (*App, error) {
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("error loading config: %w", err)
@@ -43,55 +45,59 @@ func InitializeApp() (*App, error) {
 
 	seeder.CreateAdminSeeder(DB, *cfg)
 
-	userRepo := repository.NewUserRepository(DB)
-	roleRepo := repository.NewRoleRepository(DB)
-	dashboardRepo := repository.NewDashboardRepository(DB)
-	permissionRepo := repository.NewPermissionRepository(DB)
-	activityRepo := repository.NewActivityRepository(DB)
-	// copyRepo := repository.NewCopyRepository(DB)
-	subscriptionPlanRepo := repository.NewSubscriptionPlanRepository(DB)
-	subscriptionRepo := repository.NewSubscriptionRepository(DB)
-	adminWalletRepo := repository.NewAdminWalletRepository(DB)
-	signalRepo := repository.NewSignalRepository(DB)
+	// Admin-side dependencies
+	adminUserRepo := adminRepo.NewUserRepository(DB)
+	adminRoleRepo := adminRepo.NewRoleRepository(DB)
+	adminDashboardRepo := adminRepo.NewDashboardRepository(DB)
+	adminPermissionRepo := adminRepo.NewPermissionRepository(DB)
+	adminActivityRepo := adminRepo.NewActivityRepository(DB)
+	adminSubscriptionPlanRepo := adminRepo.NewSubscriptionPlanRepository(DB)
+	adminSubscriptionRepo := adminRepo.NewSubscriptionRepository(DB)
+	adminAdminWalletRepo := adminRepo.NewAdminWalletRepository(DB)
+	adminSignalRepo := adminRepo.NewSignalRepository(DB)
+	adminTransactionRepo := adminRepo.NewTransactionRepository(DB)
 
-	userService := service.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
-	roleService := service.NewRoleService(roleRepo, permissionRepo, userRepo)
-	dashboardService := service.NewDashboardService(dashboardRepo)
-	permissionService := service.NewPermissionService(permissionRepo)
-	activityService := service.NewActivityService(activityRepo)
-	// copyService := service.NewCopyService(copyRepo)
-	// liveSignalService := service.NewLiveSignalService(userRepo)
-	subscriptionPlanService := service.NewSubscriptionPlanService(subscriptionPlanRepo)
-	adminWalletService := service.NewAdminWalletService(adminWalletRepo, DB)
-	subscriptionService := service.NewSubscriptionService(subscriptionRepo, subscriptionPlanRepo, userRepo, adminWalletService, DB)
-	liveSignalService := service.NewLiveSignalService(signalRepo)
+	adminUserService := adminService.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWTSecret)
+	adminRoleService := adminService.NewRoleService(adminRoleRepo, adminPermissionRepo, adminUserRepo)
+	adminDashboardService := adminService.NewDashboardService(adminDashboardRepo)
+	adminPermissionService := adminService.NewPermissionService(adminPermissionRepo)
+	adminActivityService := adminService.NewActivityService(adminActivityRepo)
+	adminSubscriptionPlanService := adminService.NewSubscriptionPlanService(adminSubscriptionPlanRepo)
+	adminAdminWalletService := adminService.NewAdminWalletService(adminAdminWalletRepo, DB)
+	adminSubscriptionService := adminService.NewSubscriptionService(adminSubscriptionRepo, adminSubscriptionPlanRepo, adminUserRepo, adminAdminWalletService, DB)
+	adminLiveSignalService := adminService.NewLiveSignalService(adminSignalRepo)
+	adminTransactionService := adminService.NewTransactionService(adminTransactionRepo)
 
-	authController := controllers.NewAuthController(userService)
-	userController := controllers.NewUserController(userService)
-	roleController := controllers.NewRoleController(roleService)
-	dashboardController := controllers.NewDashboardController(dashboardService)
-	permissionController := controllers.NewPermissionController(permissionService, roleService)
-	activityController := controllers.NewActivityController(activityService)
-	// copyController := controllers.NewCopyController(copyService)
-	// signalController := controllers.NewSignalController(liveSignalService)
-	adminWalletController := controllers.NewAdminWalletController(adminWalletService)
-	subscriptionController := controllers.NewSubscriptionController(subscriptionService, subscriptionPlanService)
-	signalController := controllers.NewSignalController(liveSignalService)
+	adminAuthController := controllers.NewAuthController(adminUserService)
+	adminUserController := controllers.NewUserController(adminUserService)
+	adminRoleController := controllers.NewRoleController(adminRoleService)
+	adminDashboardController := controllers.NewDashboardController(adminDashboardService)
+	adminPermissionController := controllers.NewPermissionController(adminPermissionService, adminRoleService)
+	adminActivityController := controllers.NewActivityController(adminActivityService)
+	adminAdminWalletController := controllers.NewAdminWalletController(adminAdminWalletService)
+	adminSubscriptionController := controllers.NewSubscriptionController(adminSubscriptionService, adminSubscriptionPlanService)
+	adminSignalController := controllers.NewSignalController(adminLiveSignalService)
+	adminTransactionController := controllers.NewTransactionController(adminTransactionService)
 
-	customerTraderSubscriptionRepo := customerRepo.NewIAdminSubscriptionRepository(DB)
-	customerWalletRepo := walletRepo.NewWalletRepository(DB)
+	// Customer-side dependencies (used by cron or other services)
+	customerAdminSubscriptionRepository := customerRepo.NewIAdminSubscriptionRepository(DB)  // Assuming this is the correct constructor
+	customerWalletConcreteRepo := walletRepo.NewWalletRepository(DB)                         // Concrete customer wallet repo
+	customerSubscriptionPlanRepo := customerRepo.NewCustomerTraderSubscriptionRepository(DB) // For customer's subscription plan
+
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 
-	customerWalletService := customerService.NewWalletService(customerWalletRepo, paymentClient, DB)
+	customerWalletService := customerService.NewWalletService(DB, customerWalletConcreteRepo, paymentClient) // Returns customerService.IWalletService
 
-	transactionRepo := repository.NewTransactionRepository(DB)
-	transactionService := service.NewTransactionService(transactionRepo)
-	transactionController := controllers.NewTransactionController(transactionService)
+	_ = customerService.NewCustomerTraderSubscriptionService(
+		customerSubscriptionPlanRepo,
+		DB,
+	)
 
-	customerServiceForTraderSubs := customerService.NewCustomerService(
-		customerTraderSubscriptionRepo,
-		customerWalletService,
-		customerWalletRepo,
+	// This service is specifically for cron jobs that interact with customer subscriptions from an admin perspective.
+	customerAdminSubscriptionServiceForCron := customerService.NewAdminSubscriptionService(
+		customerAdminSubscriptionRepository, // Pass the repository
+		customerWalletService,               // Pass the customer wallet service
+		customerWalletConcreteRepo,          // Pass the concrete customer wallet repository
 		DB,
 	)
 
@@ -99,6 +105,7 @@ func InitializeApp() (*App, error) {
 
 	_, filename, _, _ := runtime.Caller(0)
 	currentDir := filepath.Dir(filename)
+	// Assuming projectRoot is three levels up from the currentDir (bootstrap directory)
 	projectRoot := filepath.Join(currentDir, "..", "..", "..")
 	templatesPath := filepath.Join(projectRoot, "templates", "*.html")
 
@@ -125,31 +132,33 @@ func InitializeApp() (*App, error) {
 
 	r.LoadHTMLGlob(templatesPath)
 
-	router.WirePublicRoutes(r, authController, signalController)
-	// router.WireFollowerRoutes(r, copyController, cfg)
+	router.WirePublicRoutes(r, adminAuthController, adminSignalController)
 	router.WireAdminRoutes(
 		r,
 		cfg,
-		authController,
-		dashboardController,
-		userController,
-		roleController,
-		permissionController,
-		activityController,
-		roleService,
-		adminWalletController,
-		subscriptionController,
-		transactionController,
+		adminAuthController,
+		adminDashboardController,
+		adminUserController,
+		adminRoleController,
+		adminPermissionController,
+		adminActivityController,
+		adminRoleService, // This seems to be passed as a service to the router
+		adminAdminWalletController,
+		adminSubscriptionController,
+		adminTransactionController,
 		DB,
-		signalController,
+		adminSignalController,
 	)
-	c := cronn.New()
 
-	cron.StartCronJobs(subscriptionService, customerServiceForTraderSubs, liveSignalService, DB)
+	// Cron job setup
+	c := cronn.New()
+	cron.StartCronJobs(adminSubscriptionService, customerAdminSubscriptionServiceForCron, adminLiveSignalService, DB)
 	c.AddFunc("@every 5m", func() {
 		log.Println("Starting market data fetch...")
 		cron.FetchAndSaveMarketData(DB)
 	})
+	c.Start() // Don't forget to start the cron scheduler!
+
 	return &App{
 		engine: r,
 		port:   cfg.AdminPort,

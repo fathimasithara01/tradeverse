@@ -196,7 +196,7 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 		walletTx := models.WalletTransaction{
 			WalletID:           wallet.ID,
 			UserID:             wallet.UserID,
-			TransactionType:    models.TxTypeWithdraw,
+			TransactionType:    models.TxTypeWithdrawal,
 			Amount:             input.Amount,
 			Currency:           wallet.Currency,
 			Status:             models.TxStatusPending,
@@ -257,7 +257,7 @@ func (s *AdminWalletService) AdminRequestWithdrawal(input models.WithdrawalReque
 		walletTx := models.WalletTransaction{
 			WalletID:           wallet.ID,
 			UserID:             wallet.UserID,
-			TransactionType:    models.TxTypeWithdraw,
+			TransactionType:    models.TxTypeWithdrawal,
 			Amount:             input.Amount,
 			Currency:           wallet.Currency,
 			Status:             models.TxStatusPending,

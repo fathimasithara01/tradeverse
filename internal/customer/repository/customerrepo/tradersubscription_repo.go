@@ -2,7 +2,6 @@ package customerrepo
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -10,135 +9,182 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	ErrTraderSubscriptionNotFound = errors.New("trader subscription not found")
-	ErrSubscriptionAlreadyActive  = errors.New("customer already has an active subscription with this trader")
-)
-
-type ITraderSubscriptionRepository interface {
-	CreateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error
-	GetActiveTraderSubscriptionForCustomer(ctx context.Context, customerID, traderID uint) (*models.TraderSubscription, error)
-	GetTraderSubscriptionByID(ctx context.Context, subscriptionID uint) (*models.TraderSubscription, error)
-	UpdateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error
-	DeactivateExpiredTraderSubscriptions(ctx context.Context) error
-	GetCustomerTraderSubscriptions(ctx context.Context, customerID uint) ([]models.TraderSubscription, error)
-	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
-	GetSubscriptionPlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error)
-	GetPlanByID(planID uint) (*models.SubscriptionPlan, error)
-	CheckExistingSubscription(customerID, traderID uint) (*models.TraderSubscription, error)
-	CreateSubscription(sub *models.TraderSubscription) error
+type ICustomerTraderSubscriptionRepository interface {
+	GetTradersWithPlans(ctx context.Context) ([]models.User, error)
+	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error)
+	CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSubscription) (*models.CustomerTraderSubscription, error)
+	IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error)
+	GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error)
+	GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) // New method
+	GetTraderByID(ctx context.Context, traderID uint) (*models.User, error)
+	UpdateWalletBalance(ctx context.Context, userID uint, amount float64, tx *gorm.DB) error
+	CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error
+	GetAdminWallet(ctx context.Context) (*models.Wallet, error)
+	GetTraderWallet(ctx context.Context, traderID uint) (*models.Wallet, error)
+	IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error) // New
 }
 
-type traderSubscriptionRepository struct {
+type CustomerTraderSubscriptionRepository struct {
 	db *gorm.DB
 }
 
-func NewTraderSubscriptionRepository(db *gorm.DB) ITraderSubscriptionRepository {
-	return &traderSubscriptionRepository{db: db}
+func NewCustomerTraderSubscriptionRepository(db *gorm.DB) ICustomerTraderSubscriptionRepository {
+	return &CustomerTraderSubscriptionRepository{db: db}
 }
 
-func (r *traderSubscriptionRepository) CreateSubscription(sub *models.TraderSubscription) error {
-	return r.db.Create(sub).Error
+func (r *CustomerTraderSubscriptionRepository) GetTraderByID(ctx context.Context, traderID uint) (*models.User, error) {
+	var trader models.User
+	// --- FIX HERE ---
+	// Changed "is_trader = ?" to "role = ?" and true to models.RoleTrader
+	if err := r.db.WithContext(ctx).Where("id = ? AND role = ?", traderID, models.RoleTrader).First(&trader).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("trader not found")
+		}
+		return nil, fmt.Errorf("failed to get trader: %w", err)
+	}
+	return &trader, nil
 }
-func (r *traderSubscriptionRepository) GetPlanByID(planID uint) (*models.SubscriptionPlan, error) {
-	var plan models.SubscriptionPlan
-	if err := r.db.First(&plan, planID).Error; err != nil {
-		return nil, err
+
+func (r *CustomerTraderSubscriptionRepository) GetTradersWithPlans(ctx context.Context) ([]models.User, error) {
+	var traders []models.User
+	// Fetch users who are marked as traders and have at least one active TraderSubscriptionPlan
+	err := r.db.WithContext(ctx).
+		Preload("TraderSubscriptionPlans", func(db *gorm.DB) *gorm.DB {
+			return db.Where("is_active = ?", true)
+		}).
+		// --- FIX HERE ---
+		// Changed "is_trader = ?" to "role = ?" and true to models.RoleTrader
+		Where("role = ?", models.RoleTrader).
+		Find(&traders).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get traders with plans: %w", err)
+	}
+
+	// Filter out traders who genuinely have no active plans after preloading
+	var activeTraders []models.User
+	for _, trader := range traders {
+		if len(trader.TraderSubscriptionPlans) > 0 {
+			activeTraders = append(activeTraders, trader)
+		}
+	}
+
+	return activeTraders, nil
+}
+
+func (r *CustomerTraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
+	var plan models.TraderSubscriptionPlan
+	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("trader subscription plan not found")
+		}
+		return nil, fmt.Errorf("failed to get trader subscription plan: %w", err)
 	}
 	return &plan, nil
 }
 
-func (r *traderSubscriptionRepository) CheckExistingSubscription(customerID, traderID uint) (*models.TraderSubscription, error) {
-	var sub models.TraderSubscription
-	err := r.db.Where("user_id = ? AND trader_id = ? AND is_active = ?", customerID, traderID, true).First(&sub).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
+func (r *CustomerTraderSubscriptionRepository) CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSubscription) (*models.CustomerTraderSubscription, error) {
+	if err := r.db.WithContext(ctx).Create(sub).Error; err != nil {
+		return nil, fmt.Errorf("failed to create customer-trader subscription: %w", err)
 	}
-	return &sub, err
-}
-func (r *traderSubscriptionRepository) CreateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error {
-	return r.db.WithContext(ctx).Create(sub).Error
+	return sub, nil
 }
 
-func (r *traderSubscriptionRepository) GetActiveTraderSubscriptionForCustomer(ctx context.Context, customerID, traderID uint) (*models.TraderSubscription, error) {
-	var sub models.TraderSubscription
+func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error) {
+	var count int64
 	err := r.db.WithContext(ctx).
-		Where("user_id = ? AND trader_id = ? AND is_active = ? AND end_date > ?", customerID, traderID, true, time.Now()).
-		First(&sub).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
+		Model(&models.CustomerTraderSubscription{}).
+		Where("customer_id = ? AND trader_id = ? AND end_date > ? AND is_active = ?", customerID, traderID, time.Now(), true).
+		Count(&count).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get active trader subscription: %w", err)
+		return false, fmt.Errorf("failed to check customer subscription status: %w", err)
 	}
-	return &sub, nil
+	return count > 0, nil
 }
 
-func (r *traderSubscriptionRepository) GetTraderSubscriptionByID(ctx context.Context, subscriptionID uint) (*models.TraderSubscription, error) {
-	var sub models.TraderSubscription
-	err := r.db.WithContext(ctx).First(&sub, subscriptionID).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrTraderSubscriptionNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get trader subscription by ID: %w", err)
-	}
-	return &sub, nil
-}
-
-func (r *traderSubscriptionRepository) UpdateTraderSubscription(ctx context.Context, sub *models.TraderSubscription) error {
-	return r.db.WithContext(ctx).Save(sub).Error
-}
-
-func (r *traderSubscriptionRepository) DeactivateExpiredTraderSubscriptions(ctx context.Context) error {
-	result := r.db.WithContext(ctx).
-		Model(&models.TraderSubscription{}).
-		Where("is_active = ? AND end_date <= ?", true, time.Now()).
-		Update("is_active", false)
-
-	if result.Error != nil {
-		return fmt.Errorf("failed to deactivate expired trader subscriptions: %w", result.Error)
-	}
-	if result.RowsAffected > 0 {
-		fmt.Printf("Deactivated %d expired trader subscriptions.\n", result.RowsAffected)
-	}
-	return nil
-}
-
-func (r *traderSubscriptionRepository) GetCustomerTraderSubscriptions(ctx context.Context, customerID uint) ([]models.TraderSubscription, error) {
-	var subs []models.TraderSubscription
+func (r *CustomerTraderSubscriptionRepository) GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error) {
+	var subscriptions []models.CustomerTraderSubscription
 	err := r.db.WithContext(ctx).
-		Preload("Trader").
-		Preload("TraderSubscriptionPlan").
-		Where("user_id = ?", customerID).
-		Order("end_date DESC").
-		Find(&subs).Error
+		Preload("Trader").Preload("Plan").
+		Where("customer_id = ? AND end_date > ? AND is_active = ?", customerID, time.Now(), true).
+		Find(&subscriptions).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get customer's trader subscriptions: %w", err)
+		return nil, fmt.Errorf("failed to get active trader subscriptions for customer: %w", err)
 	}
-	return subs, nil
+	return subscriptions, nil
 }
 
-func (r *traderSubscriptionRepository) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
-	var user models.User
-	err := r.db.WithContext(ctx).First(&user, userID).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.New("user not found")
-	}
+func (r *CustomerTraderSubscriptionRepository) GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) {
+	var signals []models.Signal
+
+	// First, get all trader IDs the customer is subscribed to
+	var subscribedTraderIDs []uint
+	err := r.db.WithContext(ctx).
+		Model(&models.CustomerTraderSubscription{}).
+		Select("DISTINCT trader_id").
+		Where("customer_id = ? AND end_date > ? AND is_active = ?", customerID, time.Now(), true).
+		Pluck("trader_id", &subscribedTraderIDs).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user by ID: %w", err)
+		return nil, fmt.Errorf("failed to get subscribed trader IDs: %w", err)
 	}
-	return &user, nil
+
+	if len(subscribedTraderIDs) == 0 {
+		return []models.Signal{}, nil // No subscriptions, no signals
+	}
+
+	// Then, fetch all signals from those traders
+	err = r.db.WithContext(ctx).
+		Where("trader_id IN (?)", subscribedTraderIDs).
+		Order("published_at DESC"). // Order by publication date, newest first
+		Find(&signals).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to get signals from subscribed traders: %w", err)
+	}
+	return signals, nil
 }
 
-func (r *traderSubscriptionRepository) GetSubscriptionPlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error) {
-	var plan models.SubscriptionPlan
-	err := r.db.WithContext(ctx).First(&plan, planID).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.New("subscription plan not found")
+func (r *CustomerTraderSubscriptionRepository) UpdateWalletBalance(ctx context.Context, userID uint, amount float64, tx *gorm.DB) error {
+	return tx.WithContext(ctx).Model(&models.Wallet{}).Where("user_id = ?", userID).
+		Update("balance", gorm.Expr("balance + ?", amount)).Error
+}
+
+func (r *CustomerTraderSubscriptionRepository) CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error {
+	return tx.WithContext(ctx).Create(transaction).Error
+}
+
+func (r *CustomerTraderSubscriptionRepository) GetAdminWallet(ctx context.Context) (*models.Wallet, error) {
+	var adminUser models.User
+	// Assuming there's an admin user with RoleAdmin
+	// --- FIX HERE ---
+	// Changed "is_admin = ?" to "role = ?" and true to models.RoleAdmin
+	if err := r.db.WithContext(ctx).Where("role = ?", models.RoleAdmin).First(&adminUser).Error; err != nil {
+		return nil, fmt.Errorf("admin user not found: %w", err)
 	}
+	var adminWallet models.Wallet
+	if err := r.db.WithContext(ctx).Where("user_id = ?", adminUser.ID).First(&adminWallet).Error; err != nil {
+		return nil, fmt.Errorf("admin wallet not found: %w", err)
+	}
+	return &adminWallet, nil
+}
+
+func (r *CustomerTraderSubscriptionRepository) GetTraderWallet(ctx context.Context, traderID uint) (*models.Wallet, error) {
+	var traderWallet models.Wallet
+	if err := r.db.WithContext(ctx).Where("user_id = ?", traderID).First(&traderWallet).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("trader wallet not found for trader ID %d", traderID)
+		}
+		return nil, fmt.Errorf("failed to get trader wallet: %w", err)
+	}
+	return &traderWallet, nil
+}
+
+func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&models.CustomerTraderSubscription{}).
+		Where("customer_id = ? AND trader_subscription_plan_id = ? AND end_date > ? AND is_active = ?", customerID, planID, time.Now(), true).
+		Count(&count).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to get subscription plan by ID: %w", err)
+		return false, fmt.Errorf("failed to check customer subscription to plan status: %w", err)
 	}
-	return &plan, nil
+	return count > 0, nil
 }

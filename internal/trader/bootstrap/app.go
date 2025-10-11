@@ -45,6 +45,7 @@ func InitializeApp() (*App, error) {
 	// subRepo := repository.NewSubscriptionRepository(db)
 	subRepo := repository.NewSubscriberRepository(db)
 	liveRepo := repository.NewLiveTradeRepository(db)
+	traderSubsRepo := repository.NewTraderSubscriptionRepository(db)
 
 	// tradeService := service.NewTradeService(tradeRepo)
 	// subService := service.NewSubscriptionService(subRepo)
@@ -53,6 +54,7 @@ func InitializeApp() (*App, error) {
 	profileService := service.NewTraderProfileService(profileRepo)
 	walletService := service.NewWalletService(walletrepo)
 	tradeSignlService := service.NewSignalService(tradeSignlRepo)
+	traderSubsService := service.NewTraderSubscriptionService(traderSubsRepo, db) // Pass db for transactions
 
 	// tradeController := controllers.NewTradeController(tradeService)
 	// subController := controllers.NewSubscriptionController(subService)
@@ -61,12 +63,13 @@ func InitializeApp() (*App, error) {
 	profileController := controllers.NewTraderProfileController(profileService)
 	walletController := controllers.NewWalletController(walletService)
 	tradeSignlController := controllers.NewSignalController(tradeSignlService)
+	traderSubsController := controllers.NewTraderSubscriptionController(traderSubsService)
 
 	marketDataRepo := repository.NewMarketDataRepository(db)
 	marketDataService := service.NewMarketDataService(marketDataRepo)
 	marketDataHandler := controllers.NewMarketDataHandler(marketDataService)
 
-	r := router.SetupRouter(cfg, authController, profileController, walletController, subController, liveController, tradeSignlController, marketDataHandler)
+	r := router.SetupRouter(cfg, authController, profileController, walletController, subController, liveController, tradeSignlController, marketDataHandler, traderSubsController)
 
 	cron.StartSignalCronJobs(service.NewSignalService(repository.NewSignalRepository(db)))
 

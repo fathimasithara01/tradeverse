@@ -3,16 +3,16 @@ package bootstrap
 import (
 	"log"
 
-	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
+	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository" // Use adminRepo alias consistently
 	adminSvc "github.com/fathimasithara01/tradeverse/internal/admin/service"
+	traderControllers "github.com/fathimasithara01/tradeverse/internal/trader/controllers"
+	"github.com/fathimasithara01/tradeverse/internal/trader/repository"
+	traderSvc "github.com/fathimasithara01/tradeverse/internal/trader/service"
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
-
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
-
-	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/router"
 	"github.com/fathimasithara01/tradeverse/migrations"
@@ -37,56 +37,45 @@ func InitializeApp() (*App, error) {
 		return nil, err
 	}
 
-	userRepo := adminRepo.NewUserRepository(db)
+	userRepo := adminRepo.NewUserRepository(db) // admin user repo
 	roleRepo := adminRepo.NewRoleRepository(db)
-	walletRepo := repository.NewAdminWalletRepository(db)
+	// adminWalletRepo := adminRepo.NewAdminWalletRepository(db) // Renamed for clarity
 	kycRepo := customerrepo.NewKYCRepository(db)
-	// subRepo := customerrepo.NewSubscriptionRepository(db)
 	traderRepo := customerrepo.NewTraderRepository(db)
-	adminSubRepo := customerrepo.NewIAdminSubscriptionRepository(db)
-	customerWalletRepo := walletrepo.NewWalletRepository(db) // Your existing customer wallet repo
+	adminSubRepo := customerrepo.NewIAdminSubscriptionRepository(db) // Typo: should be NewAdminSubscriptionRepository?
+	customerWalletRepo := walletrepo.NewWalletRepository(db)
+	// customerSignalRepo := customerrepo.NewCustomerSignalRepository(db)
+	// customerUserRepo := customerrepo.NewUserRepository(db) // Renamed for clarity vs admin userRepo
+	// subscriptionPlanRepo := customerrepo.NewSubscriptionPlanRepository(db)
+	customerTraderSubsRepo := customerrepo.NewCustomerTraderSubscriptionRepository(db)
+	traderSubsRepo := repository.NewTraderSubscriptionRepository(db)
 
-	// traderWalletRepo := walletrepo.NewTraderWalletRepository(db)
-	customerTraderSubRepo := customerrepo.NewTraderSubscriptionRepository(db)
-	// traderSignalRepo := traderSignalRepo.NewSignalRepository(db)
-	customerSignalRepo := customerrepo.NewCustomerSignalRepository(db)
-	userrRepo := customerrepo.NewUserRepository(db) // New user repo
-
+	// --- Services ---
 	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	kycService := service.NewKYCService(kycRepo)
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
-	walletService := service.NewWalletService(customerWalletRepo, paymentClient, db)
+	walletService := service.NewWalletService(db, customerWalletRepo, paymentClient)
 	traderService := service.NewTraderService(traderRepo, db)
-	// subService := service.NewSubscriptionService(db, subRepo)
-	// traderWalletService := service.NewTraderWalletService(db, traderWalletRepo)
-	adminSubService := service.NewCustomerService(adminSubRepo, walletService, customerWalletRepo, db)
-	// customerTraderSubSvc := service.NewTraderSubscriptionService(customerTraderSubRepo, db)
+	adminSubService := service.NewAdminSubscriptionService(adminSubRepo, walletService, customerWalletRepo, db) // Assuming this is the correct constructor
+	customerTraderSubsService := service.NewCustomerTraderSubscriptionService(customerTraderSubsRepo, db)
+	traderSubsService := traderSvc.NewTraderSubscriptionService(traderSubsRepo, db) // Pass db for transactions
 
-	traderSubscriptionService := service.NewTraderSubscriptionService(
-		db,
-		customerWalletRepo,
-		walletRepo,
-		customerTraderSubRepo,
-		userrRepo,
-		customerTraderSubRepo,
-	)
-	customerSignalService := service.NewCustomerSignalService(
-		customerSignalRepo,
-		customerTraderSubRepo,
-	)
-
-	customerSubscriptionController := controllers.NewCustomerSubscriptionController(traderSubscriptionService)
-	customerSignalController := controllers.NewCustomerSignalController(customerSignalService) // Update if needed
+	customerTraderSubsController := controllers.NewCustomerTraderSubscriptionController(customerTraderSubsService)
+	// customerSubscriptionController := controllers.NewCustomerSubscriptionController(traderSubscriptionService, customerSignalService)
+	// customerSignalController := controllers.NewCustomerSignalController(customerSignalService) // This now correctly injects signalService
 	authController := controllers.NewAuthController(userService)
 	profileController := controllers.NewProfileController(userService)
 	kycController := controllers.NewKYCController(kycService)
 	walletController := controllers.NewWalletController(walletService)
 	adminSubController := controllers.NewAdminSubscriptionController(adminSubService)
 	traderController := controllers.NewTraderController(traderService)
-	// customerTraderSubCtrl := controllers.NewTraderSubscriptionController(customerTraderSubSvc)
-	// customerSignalCtrl := controllers.NewCustomerSignalController(customerSignalSvc)
-	// subController := controllers.NewSubscriptionController(subService)
-	// traderWalletController := controllers.NewTraderWalletController(traderWalletService)
+	traderSubsController := traderControllers.NewTraderSubscriptionController(traderSubsService)
+
+	// Unused controllers (commented out in your original)
+	// customerTraderSubCtrl := controllers.NewTraderSubscriptionController(customerTraderSubSvc) // Requires customerTraderSubSvc if exists
+	// customerSignalCtrl := controllers.NewCustomerSignalController(customerSignalSvc) // Requires customerSignalSvc if exists
+	// subController := controllers.NewSubscriptionController(subService) // Requires subService if exists
+	// traderWalletController := controllers.NewTraderWalletController(traderWalletService) // Requires traderWalletService if exists
 
 	r := router.SetupRouter(
 		cfg,
@@ -96,8 +85,8 @@ func InitializeApp() (*App, error) {
 		walletController,
 		adminSubController,
 		traderController,
-		customerSubscriptionController,
-		customerSignalController,
+		customerTraderSubsController,
+		traderSubsController,
 	)
 
 	return &App{

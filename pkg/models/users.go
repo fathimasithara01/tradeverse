@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// UserRole defines the possible roles a user can have.
 type UserRole string
 
 const (
@@ -13,41 +14,60 @@ const (
 	RoleTrader   UserRole = "trader"
 )
 
+// User represents a user in the system.
 type User struct {
 	gorm.Model
 	Name     string `gorm:"size:100;not null" json:"name"`
 	Email    string `gorm:"size:100;uniqueIndex;not null" json:"email"`
-	Password string `gorm:"size:255;not null" json:"-"`
+	Password string `gorm:"size:255;not null" json:"-"` // Stored hashed, excluded from JSON output
+	Phone    string `json:"phone"`
 
 	Role UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
 
-	RoleID *uint `json:"role_id"`
+	RoleID    *uint `json:"role_id"`
+	RoleModel Role  `gorm:"foreignKey:RoleID" json:"role_model,omitempty"` // Assuming Role struct exists
 
-	RoleModel Role `gorm:"foreignKey:RoleID" json:"role_model,omitempty"`
+	IsBlocked    bool   `gorm:"default:false" json:"is_blocked"`
+	IsVerified   bool   `gorm:"default:false" json:"is_verified"`
+	ProfilePic   string `json:"profile_pic"`
+	ReferralCode string `gorm:"unique" json:"referral_code"`
 
-	IsBlocked bool `gorm:"default:false" json:"is_blocked"`
+	CustomerProfile CustomerProfile `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"customer_profile,omitempty"`
+	// Profile for a trader (pointer because not all users are traders)
+	TraderProfile *TraderProfile `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"trader_profile,omitempty"`
 
-	CustomerProfile     CustomerProfile      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"customer_profile,omitempty"`
-	TraderProfile       *TraderProfile        `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"trader_profile,omitempty"`
-	Subscriptions       []Subscription       `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"`
-	TraderSubscriptions []TraderSubscription `gorm:"foreignKey:UserID" json:"trader_subscriptions,omitempty"`
-	Wallet              Wallet               `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"wallet,omitempty"`
+	// Generic subscriptions a user might have (e.g., to platform features)
+	Subscriptions []UserSubscription `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"`
 
-	Trades []Trade `gorm:"foreignKey:TraderID" json:"trades,omitempty"` // Trades initiated by this user if they are a trader
-	// CopiedTrades      []CopyTrade           `gorm:"foreignKey:CustomerID" json:"copied_trades,omitempty"`    // Trades copied by this user if they are a customer
-	// CopySettings      []CustomerCopySetting `gorm:"foreignKey:CustomerID" json:"copy_settings,omitempty"`    // Copy settings for various traders
-	TraderPerformance *TraderPerformance `gorm:"foreignKey:TraderID" json:"trader_performance,omitempty"` // Performance metrics if this user is a trader
-	Notifications     []Notification     `gorm:"foreignKey:UserID" json:"notifications,omitempty"`
-	Referrals         []Referral         `gorm:"foreignKey:ReferrerID" json:"referrals,omitempty"`  // Referrals made by this user
-	ReferredBy        *Referral          `gorm:"foreignKey:RefereeID" json:"referred_by,omitempty"` // If this user was referred by someone
-	AdminActionLogs   []AdminActionLog   `gorm:"foreignKey:AdminID" json:"admin_action_logs,omitempty"`
+	TraderSubscriptionPlans []TraderSubscriptionPlan `gorm:"foreignKey:TraderID;constraint:OnDelete:CASCADE;" json:"trader_subscription_plans,omitempty"` // Renamed json tag for clarity
+
+	CustomerTraderSubscriptions []CustomerTraderSubscription `gorm:"foreignKey:CustomerID;constraint:OnDelete:CASCADE;" json:"customer_trader_subscriptions,omitempty"`
+
+	Wallet Wallet `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"wallet,omitempty"`
+
+	// Trades initiated by this user if they are a trader
+	Trades []Trade `gorm:"foreignKey:TraderID;constraint:OnDelete:SET NULL;" json:"trades,omitempty"`
+
+	// Performance metrics if this user is a trader
+	TraderPerformance *TraderPerformance `gorm:"foreignKey:TraderID;constraint:OnDelete:CASCADE;" json:"trader_performance,omitempty"`
+
+	Notifications []Notification `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"notifications,omitempty"`
+
+	// Referrals made by this user (this user is the referrer)
+	Referrals []Referral `gorm:"foreignKey:ReferrerID;constraint:OnDelete:SET NULL;" json:"referrals,omitempty"`
+	// If this user was referred by someone (this user is the referee)
+	ReferredBy *Referral `gorm:"foreignKey:RefereeID;constraint:OnDelete:SET NULL;" json:"referred_by,omitempty"`
+
+	AdminActionLogs []AdminActionLog `gorm:"foreignKey:AdminID;constraint:OnDelete:SET NULL;" json:"admin_action_logs,omitempty"`
 }
 
+// AfterCreate is a GORM hook that runs after a new User record is created.
+// It automatically creates a new Wallet for the user.
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	wallet := Wallet{
 		UserID:   u.ID,
 		Balance:  0,
-		Currency: "USD",
+		Currency: "USD", // Default currency
 	}
 	if err := tx.Create(&wallet).Error; err != nil {
 		return err
@@ -55,6 +75,7 @@ func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
+// SetPassword hashes the given password and stores it in the User struct.
 func (u *User) SetPassword(password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -64,15 +85,22 @@ func (u *User) SetPassword(password string) error {
 	return nil
 }
 
+// CheckPassword compares a plaintext password with the stored hashed password.
 func (u *User) CheckPassword(password string) bool {
-
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil // Returns true if passwords match, false otherwise
 }
 
-func (u *User) IsAdmin() bool    { return u.Role == RoleAdmin }
-func (u *User) IsTrader() bool   { return u.Role == RoleTrader }
-func (u *User) IsCustomer() bool { return u.Role == RoleCustomer }
+// IsAdmin returns true if the user's role is RoleAdmin.
+func (u *User) IsAdmin() bool {
+	return u.Role == RoleAdmin
+}
+
+func (u *User) IsTrader() bool {
+	return u.Role == RoleTrader
+}
+
+// IsCustomer returns true if the user's role is RoleCustomer.
+func (u *User) IsCustomer() bool {
+	return u.Role == RoleCustomer
+}

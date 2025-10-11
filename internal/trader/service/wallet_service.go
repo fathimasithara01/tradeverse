@@ -55,8 +55,8 @@ func (s *walletService) Deposit(ctx context.Context, userID uint, amount float64
 	tx := &models.WalletTransaction{
 		WalletID: wallet.ID,
 		UserID:   userID,
-		Type:     models.Deposit,
-		Amount:   amount,
+		// Type:     models.Deposit,
+		Amount: amount,
 	}
 	if err := s.repo.CreateTransaction(ctx, tx); err != nil {
 		return nil, err
@@ -89,8 +89,8 @@ func (s *walletService) Withdraw(ctx context.Context, userID uint, amount float6
 	tx := &models.WalletTransaction{
 		WalletID: wallet.ID,
 		UserID:   userID,
-		Type:     models.Withdraw,
-		Amount:   amount,
+		// Type:     models.Withdrawal,
+		Amount: amount,
 	}
 	if err := s.repo.CreateTransaction(ctx, tx); err != nil {
 		return nil, err

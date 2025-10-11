@@ -18,7 +18,7 @@ func SetupRouter(
 	liveCtrl *controllers.LiveTradeController,
 	tradeSignlCntrl *controllers.SignalController,
 	marketDataCnttl *controllers.MarketDataHandler,
-
+	subsController *controllers.TraderSubscriptionController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -31,12 +31,6 @@ func SetupRouter(
 	protected := r.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
-
-		protected.POST("/signal/", tradeSignlCntrl.CreateSignal)
-		protected.GET("/signal/", tradeSignlCntrl.GetAllSignals)
-		protected.GET("/signal/:id", tradeSignlCntrl.GetSignalByID)
-		protected.PUT("/signal/:id", tradeSignlCntrl.UpdateSignal)    // only pending
-		protected.DELETE("/signal/:id", tradeSignlCntrl.DeleteSignal) // only pending
 
 		protected.POST("/market-", marketDataCnttl.CreateMarketData)
 
@@ -64,6 +58,21 @@ func SetupRouter(
 
 		protected.POST("/trader/live", liveCtrl.PublishLiveTrade)
 		protected.GET("/trader/live", liveCtrl.GetActiveTrades)
+
+		protected.POST("/signals", tradeSignlCntrl.CreateSignal)
+		protected.GET("/signals", tradeSignlCntrl.GetAllSignals) // Or GetSignalsByTraderID
+		protected.GET("/signals/:id", tradeSignlCntrl.GetSignalByID)
+		protected.PUT("/signals/:id", tradeSignlCntrl.UpdateSignal)
+		protected.DELETE("/signals/:id", tradeSignlCntrl.DeleteSignal)
+
+		protected.POST("/plans", subsController.CreateTraderSubscriptionPlan)
+		protected.GET("/plans", subsController.GetMyTraderSubscriptionPlans)
+		protected.GET("/plans/:planId", subsController.GetTraderSubscriptionPlanByID)
+		protected.PUT("/plans/:planId", subsController.UpdateTraderSubscriptionPlan)
+		protected.DELETE("/plans/:planId", subsController.DeleteTraderSubscriptionPlan)
+
+		// protected.GET("/admin-plans", subsController.GetAllAdminSubscriptionPlans)
+		// protected.POST("/subscribe-to-admin-plan/:planId", traderSubsController.SubscribeToAdminPlan)
 
 	}
 

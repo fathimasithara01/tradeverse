@@ -358,14 +358,13 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div aria-live="polite" aria-atomic="true" class="position-fixed" id="toastContainer">
+    <!-- Toast Container - Added positioning classes -->
+    <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3" id="toastContainer">
         <!-- Toasts will be appended here -->
     </div>
 
-
+    <!-- Bootstrap JavaScript Bundle (only one needed) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const walletBalanceEl = document.getElementById('walletBalance');
@@ -431,10 +430,10 @@
 
 
             // Renamed and updated function to fetch only Admin's wallet transactions
-            function fetchAdminWalletTransactions(page = 1, limit = 10, searchQuery = '') { 
-                let url = `/admin/financials/api/wallet/transactions?page=${page}&limit=${limit}`; 
+            function fetchAdminWalletTransactions(page = 1, limit = 10, searchQuery = '') {
+                let url = `/admin/financials/api/wallet/transactions?page=${page}&limit=${limit}`;
                 if (searchQuery) {
-                    url += `&search=${encodeURIComponent(searchQuery)}`; 
+                    url += `&search=${encodeURIComponent(searchQuery)}`;
                 }
 
                 fetch(url)
@@ -539,7 +538,7 @@
                         const page = parseInt(this.dataset.page);
                         if (!isNaN(page) && page > 0 && page <= totalPages) {
                             // Update this condition to use the new function name
-                            if (fetchDataFunction === fetchAdminWalletTransactions) { 
+                            if (fetchDataFunction === fetchAdminWalletTransactions) {
                                 currentTransactionPage = page;
                                 fetchDataFunction(page, limit, transactionSearch.value);
                             } else if (fetchDataFunction === fetchPendingWithdrawals) {
@@ -556,6 +555,12 @@
                 e.preventDefault();
                 const amount = parseFloat(document.getElementById('depositAmount').value);
                 const currency = document.getElementById('depositCurrency').value;
+
+                // Basic validation for amount
+                if (isNaN(amount) || amount <= 0) {
+                    showToast('Please enter a valid amount for deposit.', 'danger');
+                    return;
+                }
 
                 fetch('/admin/financials/api/wallet/deposit', {
                     method: 'POST',
@@ -621,6 +626,16 @@
                 const currency = document.getElementById('withdrawCurrency').value;
                 const beneficiaryAccount = document.getElementById('beneficiaryAccount').value;
 
+                // Basic validation for amount and account details
+                if (isNaN(amount) || amount <= 0) {
+                    showToast('Please enter a valid amount for withdrawal.', 'danger');
+                    return;
+                }
+                if (!beneficiaryAccount.trim()) {
+                    showToast('Please provide beneficiary account details.', 'danger');
+                    return;
+                }
+
                 fetch('/admin/financials/api/wallet/withdraw', {
                     method: 'POST',
                     headers: {
@@ -653,6 +668,9 @@
 
             // Fetch Pending Customer Withdrawals
             function fetchPendingWithdrawals(page = 1, limit = 10) {
+                pendingWithdrawalsTableBody.innerHTML = `<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading pending withdrawals...</td></tr>`;
+                pendingWithdrawalsPagination.innerHTML = ''; // Clear pagination while loading
+
                 fetch(`/admin/financials/api/withdrawals/pending?page=${page}&limit=${limit}`)
                     .then(response => {
                         if (!response.ok) {
@@ -661,7 +679,7 @@
                         return response.json();
                     })
                     .then(data => {
-                        pendingWithdrawalsTableBody.innerHTML = '';
+                        pendingWithdrawalsTableBody.innerHTML = ''; // Clear loading message
                         if (data.withdrawals && data.withdrawals.length > 0) {
                             data.withdrawals.forEach(withdrawal => {
                                 const row = `

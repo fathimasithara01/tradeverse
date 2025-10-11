@@ -2,250 +2,51 @@ package walletrepo
 
 import (
 	"errors"
-	"time"
+	"fmt"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var (
-	ErrWalletNotFound          = errors.New("wallet not found for user")
-	ErrInsufficientFunds       = errors.New("insufficient funds")
-	ErrDepositRequestNotFound  = errors.New("deposit request not found")
-	ErrWithdrawRequestNotFound = errors.New("withdrawal request not found")
+	ErrAdminWalletNotFound = errors.New("admin wallet not found")
 )
 
-type WalletRepository interface {
-	GetUserWallet(userID uint) (*models.Wallet, error)
-	CreateWallet(wallet *models.Wallet) error
-	CreditWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
-	DebitWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error
-	CreateWalletTransaction(tx *gorm.DB, walletTx *models.WalletTransaction) error
-	GetWalletTransactions(userID uint, pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
-	GetWalletTransactionByID(txID uint) (*models.WalletTransaction, error)
-
-	CreateDepositRequest(req *models.DepositRequest) error
-	GetDepositRequestByID(reqID uint) (*models.DepositRequest, error)
-	UpdateDepositRequest(req *models.DepositRequest) error
-
-	CreateWithdrawRequest(req *models.WithdrawRequest) error
-	GetWithdrawRequestByID(reqID uint) (*models.WithdrawRequest, error)
-	UpdateWithdrawRequest(req *models.WithdrawRequest) error
-	GetOrCreateWallet(userID uint) (*models.Wallet, error)
-	// UpdateWallet(wallet *models.Wallet) error
-	CreateTransaction(tx *models.WalletTransaction) error
-	UpdateWallet(wallet *models.Wallet) error
-	UpdateWalletTx(tx *gorm.DB, wallet *models.Wallet) error
+type IAdminWalletRepository interface {
+	GetAdminWallet() (*models.Wallet, error)
+	// UpdateWalletBalance takes a GORM transaction object for atomic updates
+	UpdateWalletBalance(tx *gorm.DB, adminWallet *models.Wallet) error
+	// You might also have methods for admin-specific transactions
+	CreateAdminWallet(adminWallet *models.Wallet) error // To initialize if not exists
 }
 
-type walletRepository struct {
+type adminWalletRepository struct {
 	db *gorm.DB
 }
 
-func (r *walletRepository) UpdateWallet(wallet *models.Wallet) error {
-	return r.db.Save(wallet).Error
+func NewAdminWalletRepository(db *gorm.DB) IAdminWalletRepository {
+	return &adminWalletRepository{db: db}
 }
 
-func (r *walletRepository) UpdateWalletTx(tx *gorm.DB, wallet *models.Wallet) error {
-	return tx.Save(wallet).Error
-}
-
-func (r *walletRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
-	var wallet models.Wallet
-	if err := r.db.Where("user_id = ?", userID).First(&wallet).Error; err != nil {
-		return nil, err
-	}
-	return &wallet, nil
-}
-
-func (r *walletRepository) GetOrCreateWallet(userID uint) (*models.Wallet, error) {
-	var wallet models.Wallet
-	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
+func (r *adminWalletRepository) GetAdminWallet() (*models.Wallet, error) {
+	var adminWallet models.Wallet
+	// Assuming there's only one admin wallet or a specific way to identify it (e.g., ID 1)
+	err := r.db.First(&adminWallet).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		wallet = models.Wallet{
-			UserID:   userID,
-			Balance:  0,
-			Currency: "USD",
-		}
-		if err := r.db.Create(&wallet).Error; err != nil {
-			return nil, err
-		}
-		return &wallet, nil
+		return nil, ErrAdminWalletNotFound
 	}
-	return &wallet, err
-}
-
-func (r *walletRepository) CreateTransaction(tx *models.WalletTransaction) error {
-	return r.db.Create(tx).Error
-}
-
-func NewWalletRepository(db *gorm.DB) WalletRepository {
-	return &walletRepository{db: db}
-}
-
-// func (r *walletRepository) GetUserWallet(userID uint) (*models.Wallet, error) {
-// 	var wallet models.Wallet
-// 	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
-// 	if err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			return nil, ErrWalletNotFound
-// 		}
-// 		return nil, err
-// 	}
-// 	return &wallet, nil
-// }
-
-// func (r *walletRepository) GetOrCreateWallet(userID uint) (*models.Wallet, error) {
-// 	wallet, err := r.GetUserWallet(userID)
-// 	if err != nil {
-// 		if errors.Is(err, ErrWalletNotFound) {
-// 			// Create new wallet
-// 			wallet = &models.Wallet{
-// 				UserID:   userID,
-// 				Balance:  0,
-// 				Currency: "INR",
-// 			}
-// 			if err := r.CreateWallet(wallet); err != nil {
-// 				return nil, fmt.Errorf("failed to create wallet: %w", err)
-// 			}
-// 			return wallet, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	return wallet, nil
-// }
-
-func (r *walletRepository) CreateWallet(wallet *models.Wallet) error {
-	return r.db.Create(wallet).Error
-}
-
-func (r *walletRepository) CreditWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
-	var wallet models.Wallet
-	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&wallet, walletID).Error; err != nil {
-		return err
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve admin wallet: %w", err)
 	}
-
-	balanceBefore := wallet.Balance
-	wallet.Balance += amount
-	wallet.LastUpdated = time.Now()
-	if err := tx.Save(&wallet).Error; err != nil {
-		return err
-	}
-
-	walletTx := &models.WalletTransaction{
-		WalletID:        walletID,
-		UserID:          wallet.UserID,
-		TransactionType: transactionType,
-		Amount:          amount,
-		Currency:        wallet.Currency,
-		Status:          models.TxStatusSuccess,
-		ReferenceID:     referenceID,
-		Description:     description,
-		BalanceBefore:   balanceBefore,
-		BalanceAfter:    wallet.Balance,
-	}
-	return r.CreateWalletTransaction(tx, walletTx)
+	return &adminWallet, nil
 }
 
-func (r *walletRepository) DebitWallet(tx *gorm.DB, walletID uint, amount float64, transactionType models.TransactionType, referenceID string, description string) error {
-	var wallet models.Wallet
-	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&wallet, walletID).Error; err != nil {
-		return err
-	}
-
-	if wallet.Balance < amount {
-		return ErrInsufficientFunds
-	}
-
-	balanceBefore := wallet.Balance
-	wallet.Balance -= amount
-	wallet.LastUpdated = time.Now()
-	if err := tx.Save(&wallet).Error; err != nil {
-		return err
-	}
-
-	walletTx := &models.WalletTransaction{
-		WalletID:        walletID,
-		UserID:          wallet.UserID,
-		TransactionType: transactionType,
-		Amount:          amount,
-		Currency:        wallet.Currency,
-		Status:          models.TxStatusSuccess,
-		ReferenceID:     referenceID,
-		Description:     description,
-		BalanceBefore:   balanceBefore,
-		BalanceAfter:    wallet.Balance,
-	}
-	return r.CreateWalletTransaction(tx, walletTx)
+// UpdateWalletBalance updates the admin wallet within a transaction
+func (r *adminWalletRepository) UpdateWalletBalance(tx *gorm.DB, adminWallet *models.Wallet) error {
+	// Use the provided transaction object for saving
+	return tx.Save(adminWallet).Error
 }
 
-func (r *walletRepository) CreateWalletTransaction(tx *gorm.DB, walletTx *models.WalletTransaction) error {
-	return tx.Create(walletTx).Error
-}
-
-func (r *walletRepository) GetWalletTransactions(userID uint, pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
-	var transactions []models.WalletTransaction
-	var total int64
-
-	query := r.db.Where("user_id = ?", userID)
-
-	if err := query.Model(&models.WalletTransaction{}).Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	if err := query.Limit(pagination.Limit).Offset((pagination.Page - 1) * pagination.Limit).Order("created_at DESC").Find(&transactions).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return transactions, total, nil
-}
-
-func (r *walletRepository) GetWalletTransactionByID(txID uint) (*models.WalletTransaction, error) {
-	var transaction models.WalletTransaction
-	if err := r.db.First(&transaction, txID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("transaction not found")
-		}
-		return nil, err
-	}
-	return &transaction, nil
-}
-
-func (r *walletRepository) CreateDepositRequest(req *models.DepositRequest) error {
-	return r.db.Create(req).Error
-}
-
-func (r *walletRepository) GetDepositRequestByID(reqID uint) (*models.DepositRequest, error) {
-	var req models.DepositRequest
-	if err := r.db.First(&req, reqID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrDepositRequestNotFound
-		}
-		return nil, err
-	}
-	return &req, nil
-}
-
-func (r *walletRepository) UpdateDepositRequest(req *models.DepositRequest) error {
-	return r.db.Save(req).Error
-}
-
-func (r *walletRepository) CreateWithdrawRequest(req *models.WithdrawRequest) error {
-	return r.db.Create(req).Error
-}
-
-func (r *walletRepository) GetWithdrawRequestByID(reqID uint) (*models.WithdrawRequest, error) {
-	var req models.WithdrawRequest
-	if err := r.db.First(&req, reqID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrWithdrawRequestNotFound
-		}
-		return nil, err
-	}
-	return &req, nil
-}
-
-func (r *walletRepository) UpdateWithdrawRequest(req *models.WithdrawRequest) error {
-	return r.db.Save(req).Error
+func (r *adminWalletRepository) CreateAdminWallet(adminWallet *models.Wallet) error {
+	return r.db.Create(adminWallet).Error
 }

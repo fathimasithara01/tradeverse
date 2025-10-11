@@ -1,29 +1,38 @@
+// internal/customer/controllers/wallet_controller.go
 package controllers
 
 import (
+	// <--- Import context
 	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
+	"github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo" // Keep walletrepo for its errors
 	"github.com/fathimasithara01/tradeverse/internal/customer/service"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
 type WalletController struct {
-	WalletSvc service.WalletService
+	WalletSvc service.IWalletService // <--- Use the EXPORTED INTERFACE
 }
 
-func NewWalletController(walletSvc service.WalletService) *WalletController {
+// NewWalletController expects an IWalletService
+func NewWalletController(walletSvc service.IWalletService) *WalletController { // <--- Use the EXPORTED INTERFACE
 	return &WalletController{WalletSvc: walletSvc}
 }
 
 func (ctrl *WalletController) GetWalletSummary(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
+	// Call the new GetWalletSummary method
 	summary, err := ctrl.WalletSvc.GetWalletSummary(userID)
 	if err != nil {
+		// Use the exported errors from the service package
+		if errors.Is(err, service.ErrUserWalletNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
@@ -64,9 +73,11 @@ func (ctrl *WalletController) VerifyDeposit(c *gin.Context) {
 	resp, err := ctrl.WalletSvc.VerifyDeposit(uint(depositID), input)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
+		// Use the EXPORTED errors from the service package
 		if errors.Is(err, service.ErrDepositAlreadyProcessed) || errors.Is(err, service.ErrInvalidDepositStatus) {
 			statusCode = http.StatusBadRequest
 		} else if errors.Is(err, service.ErrUserWalletNotFound) || errors.Is(err, walletrepo.ErrDepositRequestNotFound) {
+			// Note: walletrepo.ErrDepositRequestNotFound should be defined in your walletrepo package.
 			statusCode = http.StatusNotFound
 		}
 		c.JSON(statusCode, gin.H{"message": err.Error()})
@@ -87,7 +98,8 @@ func (ctrl *WalletController) RequestWithdrawal(c *gin.Context) {
 	resp, err := ctrl.WalletSvc.RequestWithdrawal(userID, input)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if errors.Is(err, walletrepo.ErrInsufficientFunds) {
+		// Use the EXPORTED errors from the service package
+		if errors.Is(err, service.ErrWalletServiceInsufficientFunds) { // Use the service-level error
 			statusCode = http.StatusBadRequest
 		} else if errors.Is(err, service.ErrUserWalletNotFound) {
 			statusCode = http.StatusNotFound
@@ -106,10 +118,16 @@ func (ctrl *WalletController) GetWalletTransactions(c *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.WalletSvc.GetTransactions(userID, pagination)
+	// Call the new GetTransactions method (which points to GetWalletTransactions in service)
+	transactions, totalCount, err := ctrl.WalletSvc.GetTransactions(userID, pagination) // Added totalCount
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, resp)
+
+	// You might want to return both transactions and totalCount in your response
+	c.JSON(http.StatusOK, gin.H{
+		"transactions": transactions,
+		"totalCount":   totalCount,
+	})
 }

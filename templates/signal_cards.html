@@ -1,79 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }} - Admin</title>
-    <!-- Include your CSS here (Bootstrap, custom styles, Font Awesome) -->
+    <title>{{ .Title }}</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Custom styles -->
+    <!-- Custom CSS -->
     <style>
-        /* General Body and Layout */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            /* Light background */
-            transition: background-color 0.3s ease, color 0.3s ease;
-            min-height: 100vh;
-            display: flex;
-            /* For sidebar layout */
+            font-family: 'Poppins', sans-serif;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
         }
 
-        /* Dark Mode Styles */
         body.dark-mode {
-            background-color: #343a40;
-            /* Darker background */
-            color: #f8f9fa;
-            /* Light text */
+            background: #343a40; /* Darker background */
+            color: #e2e6ea; /* Lighter text */
         }
-
         body.dark-mode .navbar,
+        body.dark-mode #sidebar {
+            background: #495057 !important;
+            color: #e2e6ea !important;
+        }
+        body.dark-mode .navbar-light .navbar-text,
+        body.dark-mode .navbar-light .navbar-nav .nav-link {
+            color: #e2e6ea;
+        }
+        body.dark-mode .bg-light {
+            background-color: #495057 !important;
+        }
         body.dark-mode .card,
         body.dark-mode .signal-card {
-            background-color: #454d55 !important;
-            /* Darker components */
-            color: #f8f9fa !important;
-            border-color: #6c757d !important;
+            background-color: #5a6268; /* Darker card background */
+            color: #e2e6ea;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2) !important;
         }
-
-        body.dark-mode .form-control,
-        body.dark-mode .form-select {
-            background-color: #5a6268;
-            color: #f8f9fa;
-            border-color: #6c757d;
+        body.dark-mode .signal-card-header-top h5 {
+            color: #ffffff; /* White text for header */
         }
-
-        body.dark-mode .form-control::placeholder {
-            color: #ced4da;
+        body.dark-mode .form-check-label {
+            color: #e2e6ea;
         }
-
-        body.dark-mode .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: #f8f9fa;
-        }
-
         body.dark-mode .loading-message p {
-            color: #f8f9fa;
+            color: #e2e6ea;
         }
 
-        /* Wrapper for Sidebar Layout */
+        /* Wrapper for sidebar and content */
         .wrapper {
             display: flex;
             width: 100%;
             align-items: stretch;
+            min-height: 100vh;
         }
 
-        /* Sidebar Styling */
+        /* Sidebar styles */
         #sidebar {
             min-width: 250px;
             max-width: 250px;
-            background: #343a40;
-            /* Dark background for sidebar */
+            background: #343a40; /* Dark background for sidebar */
             color: #fff;
             transition: all 0.3s;
+            position: sticky;
+            top: 0;
+            height: 100vh; /* Full height */
+            z-index: 1000; /* Ensure it's above other content */
         }
 
         #sidebar.active {
@@ -82,8 +75,7 @@
 
         #sidebar .sidebar-header {
             padding: 20px;
-            background: #212529;
-            /* Even darker header */
+            background: #212529; /* Even darker header */
             text-align: center;
         }
 
@@ -96,24 +88,23 @@
             padding: 10px;
             font-size: 1.1em;
             display: block;
-            color: #e9ecef;
+            color: #e2e6ea;
             text-decoration: none;
-            transition: all 0.3s;
         }
 
         #sidebar ul li a:hover {
             color: #212529;
-            background: #f8f9fa;
+            background: #6c757d; /* Lighter hover background */
+            border-radius: 5px;
         }
 
-        #sidebar ul li.active>a,
+        #sidebar ul li.active > a,
         a[aria-expanded="true"] {
             color: #fff;
-            background: #6d7fcc;
-            /* Highlight active */
+            background: #0d6efd; /* Bootstrap primary blue */
         }
 
-        /* Content Area */
+        /* Content styles */
         #content {
             width: 100%;
             padding: 20px;
@@ -122,180 +113,119 @@
         }
 
         #content.active {
-            width: calc(100% + 250px);
-            /* Adjust width when sidebar is collapsed */
+            width: calc(100% + 250px); /* Adjust content width when sidebar is collapsed */
+        }
+
+        .navbar {
+            padding: 15px 10px;
+            background: #fff;
+            border: none;
+            border-radius: 0;
+            margin-bottom: 40px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         /* Signal Card Specific Styles */
         .signal-card {
             background-color: #fff;
-            border: 1px solid #e0e0e0;
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            /* Ensure cards take full height of column */
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s ease-in-out;
         }
 
         .signal-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
         }
 
-        .signal-card-header {
+        body.dark-mode .signal-card {
+            border-color: #6c757d;
+        }
+
+        .signal-card-header-top {
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
         }
 
-        .signal-card-header h5 {
+        .signal-card-header-top h5 {
             margin: 0;
-            font-weight: 600;
-            color: #333;
-        }
-
-        body.dark-mode .signal-card-header h5 {
-            color: #f8f9fa;
-        }
-
-
-        .current-price-display {
-            font-size: 1.1em;
-            font-weight: 500;
-            color: #007bff;
-            white-space: nowrap;
-            /* Keep price and percentage on one line */
-        }
-
-        body.dark-mode .current-price-display {
-            color: #66b3ff;
-        }
-
-
-        .price-change {
-            font-size: 0.9em;
-            margin-left: 5px;
-        }
-
-        .price-change.positive {
-            color: #28a745;
-            /* Green */
-        }
-
-        .price-change.negative {
-            color: #dc3545;
-            /* Red */
+            font-size: 1.25rem;
+            color: #333; /* Dark text for light mode */
         }
 
         .status-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
             padding: 5px 10px;
             border-radius: 5px;
             font-size: 0.85em;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #fff;
-            z-index: 10;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .status-badge.pending {
-            background-color: #ffc107;
-            /* Yellow */
-            color: #343a40;
+        .status-badge.pending { background-color: #ffc107; color: #333; } /* Warning yellow */
+        .status-badge.active { background-color: #0d6efd; color: #fff; } /* Primary blue */
+        .status-badge.target-hit { background-color: #28a745; color: #fff; } /* Success green */
+        .status-badge.stop-loss { background-color: #dc3545; color: #fff; } /* Danger red */
+
+        .current-price-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        body.dark-mode .current-price-display {
+            color: #e2e6ea;
         }
 
-        .status-badge.active {
-            background-color: #007bff;
-            /* Blue */
+        .price-change {
+            font-size: 0.9em;
+            margin-left: 10px;
         }
-
-        .status-badge.target-hit {
-            background-color: #28a745;
-            /* Green */
-        }
-
-        .status-badge.stop-loss {
-            background-color: #dc3545;
-            /* Red */
-        }
-
-        /* Card border indicators for status */
-        .signal-card.target-hit-card {
-            border-left: 5px solid #28a745;
-            /* Green */
-        }
-
-        .signal-card.stop-loss-card {
-            border-left: 5px solid #dc3545;
-            /* Red */
-        }
-
-        /* Dark mode overrides for borders */
-        body.dark-mode .signal-card.target-hit-card {
-            border-left: 5px solid #28a745;
-            /* Green */
-        }
-
-        body.dark-mode .signal-card.stop-loss-card {
-            border-left: 5px solid #dc3545;
-            /* Red */
-        }
+        .price-change.positive { color: #28a745; }
+        .price-change.negative { color: #dc3545; }
+        body.dark-mode .price-change.positive { color: #28a745; } /* Keep green */
+        body.dark-mode .price-change.negative { color: #dc3545; } /* Keep red */
 
 
         .trade-details {
             display: flex;
             justify-content: space-around;
             margin-bottom: 20px;
-            background-color: #f2f2f2;
-            padding: 10px;
+            background-color: #f8f9fa; /* Light background for details */
             border-radius: 8px;
-            flex-wrap: wrap;
-            /* Allow wrapping on smaller screens */
+            padding: 10px 0;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-
         body.dark-mode .trade-details {
-            background-color: #495057;
+            background-color: #6c757d; /* Darker background for details */
         }
-
 
         .trade-box {
             text-align: center;
-            flex: 1;
-            /* Distribute space evenly */
-            min-width: 90px;
-            /* Minimum width before wrapping */
-            padding: 5px;
-            border-right: 1px solid #e0e0e0;
-            /* Separator */
+            flex-grow: 1;
+            padding: 5px 0;
+            border-right: 1px solid #eee;
         }
-
-        body.dark-mode .trade-box {
-            border-right: 1px solid #6c757d;
-        }
-
         .trade-box:last-child {
             border-right: none;
+        }
+        body.dark-mode .trade-box {
+            border-right-color: #5a6268;
         }
 
         .trade-box span {
             display: block;
-            font-size: 0.85em;
-            color: #666;
-            margin-bottom: 3px;
+            font-size: 0.8em;
+            color: #6c757d;
         }
-
         body.dark-mode .trade-box span {
-            color: #ced4da;
+            color: #e2e6ea;
         }
 
         .trade-box strong {
@@ -303,71 +233,46 @@
             font-size: 1.1em;
             color: #333;
         }
-
         body.dark-mode .trade-box strong {
-            color: #f8f9fa;
+            color: #fff;
         }
 
-        .trade-box.stop-loss strong {
-            color: #dc3545;
-        }
-
-        .trade-box.target-hit strong {
-            color: #28a745;
-        }
+        /* Specific colors for trade boxes based on type */
+        .trade-box.stop-loss strong { color: #dc3545; } /* Red for Stop Loss */
+        .trade-box.target-hit strong { color: #28a745; } /* Green for Target Hit */
 
         /* Progress Bar */
         .progress-bar-container {
+            position: relative;
             width: 100%;
-            height: 8px;
+            height: 10px;
             background-color: #e9ecef;
             border-radius: 5px;
-            margin-top: 10px;
-            margin-bottom: 5px;
-            position: relative;
-            overflow: hidden;
-            /* Ensure fill stays within bounds */
+            margin-bottom: 10px;
+            overflow: hidden; /* Ensure fill stays within bounds */
         }
-
         body.dark-mode .progress-bar-container {
             background-color: #6c757d;
         }
 
         .progress-bar-fill {
             height: 100%;
-            background-color: #007bff;
-            /* Blue for progress */
+            background-color: #0d6efd; /* Primary blue for progress */
+            width: 0%; /* Will be set by JS */
+            transition: width 0.5s ease-out;
             border-radius: 5px;
-            transition: width 0.5s ease-in-out;
-            position: absolute;
-            left: 0;
-            top: 0;
-        }
-
-        body.dark-mode .progress-bar-fill {
-            background-color: #66b3ff;
         }
 
         .progress-bar-indicator {
             position: absolute;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 12px;
-            height: 12px;
-            background-color: #007bff;
-            /* Indicator color */
-            border: 2px solid #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.5);
-            transition: left 0.5s ease-in-out;
-            z-index: 2;
-            /* Above the fill */
+            top: 0;
+            width: 2px; /* Indicator line width */
+            height: 100%;
+            background-color: #343a40; /* Dark indicator line */
+            transform: translateX(-50%); /* Center the indicator */
         }
-
         body.dark-mode .progress-bar-indicator {
-            background-color: #66b3ff;
-            border-color: #454d55;
-            box-shadow: 0 0 0 1px rgba(102, 179, 255, 0.5);
+            background-color: #e2e6ea;
         }
 
         .price-range-labels {
@@ -377,7 +282,6 @@
             color: #6c757d;
             margin-bottom: 20px;
         }
-
         body.dark-mode .price-range-labels {
             color: #ced4da;
         }
@@ -386,134 +290,112 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: auto;
-            /* Push to bottom */
+            margin-bottom: 20px;
             padding-top: 15px;
             border-top: 1px solid #eee;
         }
-
         body.dark-mode .signal-info-grid {
-            border-top: 1px solid #6c757d;
+            border-top-color: #6c757d;
         }
 
-
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+        }
         .info-item span:first-child {
-            font-weight: 600;
-            color: #555;
+            color: #6c757d;
         }
-
-        body.dark-mode .info-item span:first-child {
-            color: #f8f9fa;
-        }
-
         .info-item span:last-child {
-            color: #777;
+            font-weight: bold;
+            color: #333;
         }
-
-        body.dark-mode .info-item span:last-child {
+        body.dark-mode .info-item span:first-child {
             color: #ced4da;
+        }
+        body.dark-mode .info-item span:last-child {
+            color: #e2e6ea;
         }
 
         .signal-actions {
             display: flex;
+            justify-content: space-around;
             gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
         }
 
-        .btn-copy,
-        .btn-view {
-            flex: 1;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        .signal-actions .btn {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
         }
 
         .btn-copy {
-            background-color: #28a745;
+            background-color: #0d6efd;
             color: #fff;
-            border: 1px solid #28a745;
+            border: none;
         }
-
         .btn-copy:hover:not(:disabled) {
-            background-color: #218838;
-            border-color: #1e7e34;
+            background-color: #0b5ed7;
         }
-
         .btn-copy:disabled {
-            background-color: #e9ecef;
-            color: #6c757d;
-            border-color: #e9ecef;
+            background-color: #6c757d; /* Gray out when disabled */
             cursor: not-allowed;
+            opacity: 0.7;
         }
-
         body.dark-mode .btn-copy:disabled {
-            background-color: #6c757d;
-            color: #ced4da;
-            border-color: #6c757d;
+            background-color: #495057;
         }
 
 
         .btn-view {
-            background-color: #007bff;
+            background-color: #6c757d;
             color: #fff;
-            border: 1px solid #007bff;
+            border: none;
         }
-
         .btn-view:hover {
-            background-color: #0056b3;
-            border-color: #004085;
+            background-color: #5a6268;
+        }
+        body.dark-mode .btn-view {
+             background-color: #ced4da;
+             color: #343a40;
+        }
+        body.dark-mode .btn-view:hover {
+            background-color: #b0b6bc;
         }
 
-        /* Loading message */
+        /* Card specific styling for status */
+        .target-hit-card {
+            border-color: #28a745; /* Green border */
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3); /* Green glow */
+        }
+        body.dark-mode .target-hit-card {
+            border-color: #28a745;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+
+        .stop-loss-card {
+            border-color: #dc3545; /* Red border */
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.3); /* Red glow */
+        }
+        body.dark-mode .stop-loss-card {
+            border-color: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+        }
+
         .loading-message {
             text-align: center;
             padding: 50px;
-            font-size: 1.2em;
             color: #6c757d;
         }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            #sidebar {
-                margin-left: -250px;
-            }
-
-            #sidebar.active {
-                margin-left: 0;
-            }
-
-            #content {
-                width: 100%;
-            }
-
-            #content.active {
-                width: calc(100% - 250px);
-            }
-
-            .trade-details {
-                flex-direction: column;
-            }
-
-            .trade-box {
-                border-right: none;
-                border-bottom: 1px solid #e0e0e0;
-                padding: 10px 5px;
-            }
-
-            body.dark-mode .trade-box {
-                border-bottom: 1px solid #6c757d;
-            }
-
-            .trade-box:last-child {
-                border-bottom: none;
-            }
+        .loading-message p {
+            font-size: 1.2em;
+        }
+        .loading-message.text-danger p {
+            color: #dc3545 !important;
         }
     </style>
 </head>
-
 <body>
     <div class="wrapper">
         <!-- Sidebar -->
@@ -536,8 +418,8 @@
                         </a>
                     </div>
                     <!-- Dark Mode Toggle -->
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="darkModeSwitch">
+                    <div class="form-check form-switch d-flex align-items-center">
+                        <input class="form-check-input ms-2 me-1" type="checkbox" id="darkModeSwitch">
                         <label class="form-check-label" for="darkModeSwitch">Dark Mode</label>
                     </div>
                 </div>
@@ -583,6 +465,10 @@
                 $('body').addClass('dark-mode');
             }
 
+            // Helper function to safely get a numeric value, defaulting to 0 if null/undefined
+            function getSafeNumber(value) {
+                return (value !== undefined && value !== null) ? parseFloat(value) : 0;
+            }
 
             function fetchSignals() {
                 const container = $('#signal-cards-container');
@@ -592,12 +478,12 @@
                 $.ajax({
                     url: '/admin/api/signals', // Endpoint to fetch all signals
                     method: 'GET',
+                    dataType: 'json', // Explicitly expect JSON
                     success: function (signals) {
                         container.empty(); // Clear loading message
 
                         if (signals && signals.length > 0) {
                             signals.sort((a, b) => {
-                                // Sort active/pending signals first, then target-hit, then stop-loss
                                 const getStatusOrder = (status) => {
                                     if (status === 'Pending') return 1;
                                     if (status === 'Active') return 2;
@@ -614,29 +500,36 @@
                                 let priceChangeDisplay = '';
                                 let currentPricePercentage = 0; // Relative to SL and Target
 
-                                const stopLoss = signal.stopLoss;
-                                const entryPrice = signal.entryPrice;
-                                const targetPrice = signal.targetPrice;
-                                const currentPrice = signal.currentPrice;
+                                // Safely get all price-related numbers, defaulting to 0
+                                const stopLoss = getSafeNumber(signal.stop_loss); // Use signal.stop_loss as per your JSON
+                                const entryPrice = getSafeNumber(signal.entry_price); // Use signal.entry_price as per your JSON
+                                const targetPrice = getSafeNumber(signal.target_price); // Use signal.target_price as per your JSON
+                                let currentPrice = getSafeNumber(signal.current_price); // Use signal.current_price as per your JSON
 
                                 // Determine status and card styling
                                 if (signal.status === 'Target Hit') {
                                     statusBadge = `<div class="status-badge target-hit"><i class="fas fa-check-circle"></i>Target Hit!</div>`;
                                     cardClass = 'target-hit-card';
                                     currentPricePercentage = 100; // Visually indicate target hit
+                                    if (targetPrice !== 0) currentPrice = targetPrice; // Set current price to target for display
                                 } else if (signal.status === 'Stop Loss') {
                                     statusBadge = `<div class="status-badge stop-loss"><i class="fas fa-times-circle"></i>Stop Loss!</div>`;
                                     cardClass = 'stop-loss-card';
                                     currentPricePercentage = 0; // Visually indicate stop loss
+                                    if (stopLoss !== 0) currentPrice = stopLoss; // Set current price to stop loss for display
                                 } else if (signal.status === 'Pending') {
                                     statusBadge = `<div class="status-badge pending"><i class="fas fa-exclamation-circle"></i>Pending</div>`;
                                     cardClass = ''; // No special styling for pending
-                                    // For pending, you might want to show current price relative to entry/target/SL, but progress bar might not make sense yet.
-                                    // Let's make it reflect entry price position relative to SL/Target if EntryPrice is between them.
+
+                                    // For pending, show entry price's position if applicable
                                     if (stopLoss !== 0 && targetPrice !== 0 && entryPrice !== 0 && targetPrice > stopLoss) {
                                         currentPricePercentage = ((entryPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage)); // Clamp
+                                    } else if (entryPrice !==0 && stopLoss === 0 && targetPrice === 0) {
+                                        // If only entry is set, maybe show it at 50% as a neutral point for pending
+                                        currentPricePercentage = 50;
                                     }
+                                    if (entryPrice !== 0) currentPrice = entryPrice; // For pending, show entry as "current"
                                 } else { // Default to 'Active' or general ongoing
                                     statusBadge = `<div class="status-badge active"><i class="fas fa-chart-line"></i>Active</div>`;
                                     cardClass = '';
@@ -647,11 +540,18 @@
                                         if (fullRange > 0) {
                                             currentPricePercentage = ((currentPrice - stopLoss) / fullRange) * 100;
                                             currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage)); // Clamp between 0 and 100
-                                        } else if (currentPrice >= targetPrice) { // Handle cases where target is hit/exceeded (e.g., SL=Target)
-                                            currentPricePercentage = 100;
-                                        } else if (currentPrice <= stopLoss) { // Handle cases where stop loss is hit/exceeded
-                                            currentPricePercentage = 0;
+                                        } else if (fullRange === 0) { // Edge case: SL == Target
+                                            currentPricePercentage = (currentPrice >= targetPrice) ? 100 : 0;
                                         }
+                                    } else if (currentPrice !== 0 && entryPrice !== 0) {
+                                        // If SL/Target are missing, but current/entry are there, just show relative to entry
+                                        currentPricePercentage = 50 + ((currentPrice - entryPrice) / entryPrice) * 50; // Simple approximation
+                                        currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
+                                    }
+                                    // If currentPrice is 0, it means it hasn't been updated yet or is invalid.
+                                    // We might default it to entryPrice for display if active, but currentPrice is preferred.
+                                    if (currentPrice === 0 && entryPrice !== 0) {
+                                        currentPrice = entryPrice;
                                     }
                                 }
 
@@ -662,44 +562,54 @@
                                     const changeClass = percentageChange >= 0 ? 'positive' : 'negative';
                                     priceChangeDisplay = `<span class="price-change ${changeClass}"> (${percentageChange.toFixed(2)}%)</span>`;
                                 } else {
-                                    priceChangeDisplay = ''; // No change to display if prices are zero
+                                    priceChangeDisplay = ''; // No change to display if prices are zero or entry price is zero
                                 }
 
                                 // Format dates
                                 const formatSignalDate = (dateString) => {
-                                    if (!dateString) return 'N/A';
+                                    if (!dateString || dateString === "0001-01-01T00:00:00Z") return 'N/A'; // Handle zero time
                                     const date = new Date(dateString);
                                     if (isNaN(date.getTime())) return 'N/A';
                                     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                                 };
 
-                                const tradeStartDate = formatSignalDate(signal.startDate);
-                                const tradeEndDate = formatSignalDate(signal.endDate);
+                                // Use `signal.tradeStartDate` and `signal.tradeEndDate` as per your Go model definition (json tags)
+                                const tradeStartDate = formatSignalDate(signal.tradeStartDate);
+                                const tradeEndDate = formatSignalDate(signal.tradeEndDate);
+
+                                // Ensure prices are formatted even if they are 0
+                                const displayStopLoss = stopLoss.toFixed(4);
+                                const displayEntryPrice = entryPrice.toFixed(4);
+                                const displayTargetPrice = targetPrice.toFixed(4);
+                                const displayCurrentPrice = currentPrice.toFixed(4);
 
 
                                 const card = `
-                                    <div class="col-md-6 col-lg-4 mb-1">
+                                    <div class="col-md-6 col-lg-4 mb-4"> <!-- Added mb-4 for better spacing -->
                                         <div class="signal-card ${cardClass}">
-                                                <div class="col-md-12 mb-2" > <h5>${signal.traderName} - ${signal.symbol}</h5>${statusBadge}</div>
+                                            <div class="signal-card-header-top d-flex justify-content-between align-items-center mb-2">
+                                                <h5>${signal.traderName || 'N/A'} - ${signal.symbol || 'N/A'}</h5>
+                                                ${statusBadge}
+                                            </div>
 
                                             <div class="signal-card-header">
                                                 <div class="current-price-display">
-                                                    Current Price: <strong class="ms-1">$${signal.currentPrice.toFixed(4)}</strong>
+                                                    Current Price: <strong class="ms-1">$${displayCurrentPrice}</strong>
                                                     ${priceChangeDisplay}
                                                 </div>
                                             </div>
                                             <div class="trade-details">
                                                 <div class="trade-box stop-loss">
                                                     <span>Stop Loss</span>
-                                                    <strong>$${signal.stopLoss.toFixed(2)}</strong>
+                                                    <strong>$${displayStopLoss}</strong>
                                                 </div>
                                                 <div class="trade-box">
                                                     <span>Entry</span>
-                                                    <strong>$${signal.entryPrice.toFixed(2)}</strong>
+                                                    <strong>$${displayEntryPrice}</strong>
                                                 </div>
                                                 <div class="trade-box target-hit">
                                                     <span>Target</span>
-                                                    <strong>$${signal.targetPrice.toFixed(2)}</strong>
+                                                    <strong>$${displayTargetPrice}</strong>
                                                 </div>
                                             </div>
 
@@ -708,9 +618,9 @@
                                                 <div class="progress-bar-indicator" style="left: ${currentPricePercentage}%;"></div>
                                             </div>
                                             <div class="price-range-labels">
-                                                <span>SL: ${signal.stopLoss.toFixed(2)}</span>
-                                                <span>Entry: ${signal.entryPrice.toFixed(2)}</span>
-                                                <span>Target: ${signal.targetPrice.toFixed(2)}</span>
+                                                <span>SL: ${displayStopLoss}</span>
+                                                <span>Entry: ${displayEntryPrice}</span>
+                                                <span>Target: ${displayTargetPrice}</span>
                                             </div>
 
                                             <div class="signal-info-grid">
@@ -721,7 +631,7 @@
                                             </div>
 
                                             <div class="signal-actions">
-                                                <button class="btn btn-copy" ${cardClass ? 'disabled' : ''}>Copy Trades</button>
+                                                <button class="btn btn-copy" ${cardClass.includes('target-hit') || cardClass.includes('stop-loss') ? 'disabled' : ''}>Copy Trades</button>
                                                 <button class="btn btn-view">View Profile</button>
                                             </div>
                                         </div>
@@ -747,5 +657,4 @@
         });
     </script>
 </body>
-
 </html>

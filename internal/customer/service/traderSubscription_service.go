@@ -1,280 +1,222 @@
+// internal/customer/service/trader_subscription.go - **NEW FILE**
 package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"log"
 	"time"
 
-	adminrepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
-	walletrepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
 )
 
-var (
-	ErrTraderNotFound           = errors.New("trader not found")
-	ErrSubscriptionPlanNotFound = errors.New("subscription plan not found")
-	ErrCustomerWalletNotFound   = errors.New("customer wallet not found")
-	ErrAlreadySubscribed        = errors.New("customer already has an active subscription to this trader")
-	ErrNotAuthorized            = errors.New("not authorized to access this subscription")
-	ErrSubscriptionNotFound     = errors.New("trader subscription not found")
-	ErrTraderWalletNotFound     = errors.New("trader wallet not found")
-)
-
-type ITraderSubscriptionService interface {
-	// SubscribeCustomerToTrader(ctx context.Context, req models.TraderSubscriptionRequest) (*models.TraderSubscriptionResponse, error)
-	SubscribeCustomer(req models.TraderSubscriptionRequest) (*models.TraderSubscriptionResponse, error)
-	DeactivateExpiredTraderSubscriptions(ctx context.Context) error
-	GetCustomerTraderSubscriptions(ctx context.Context, customerID uint) ([]models.TraderSubscription, error)
-	GetCustomerTraderSubscriptionByID(ctx context.Context, customerID, subscriptionID uint) (*models.TraderSubscription, error)
+type ICustomerTraderSubscriptionService interface {
+	GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error)
+	SubscribeToTrader(ctx context.Context, customerID uint, input models.SubscribeToTraderInput) error
+	GetSubscribedTradersSignals(ctx context.Context, customerID uint) ([]models.Signal, error)
+	GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error)
+	IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error)
 }
 
-type traderSubscriptionService struct {
-	db                   *gorm.DB
-	customerWalletRepo   walletrepo.WalletRepository
-	adminWalletRepo      adminrepo.IAdminWalletRepository
-	traderSubRepo        customerrepo.ITraderSubscriptionRepository
-	userRepo             customerrepo.IUserRepository
-	subscriptionPlanRepo customerrepo.ISubscriptionPlanRepository
+type CustomerTraderSubscriptionService struct {
+	repo customerrepo.ICustomerTraderSubscriptionRepository
+	db   *gorm.DB // Pass the DB instance for transactions
 }
 
-func NewTraderSubscriptionService(
-	db *gorm.DB,
-	customerWalletRepo walletrepo.WalletRepository,
-	adminWalletRepo adminrepo.IAdminWalletRepository,
-	traderSubRepo customerrepo.ITraderSubscriptionRepository,
-	userRepo customerrepo.IUserRepository,
-	subscriptionPlanRepo customerrepo.ISubscriptionPlanRepository,
-) ITraderSubscriptionService {
-	return &traderSubscriptionService{
-		db:                   db,
-		customerWalletRepo:   customerWalletRepo,
-		adminWalletRepo:      adminWalletRepo,
-		traderSubRepo:        traderSubRepo,
-		userRepo:             userRepo,
-		subscriptionPlanRepo: subscriptionPlanRepo,
-	}
+func NewCustomerTraderSubscriptionService(repo customerrepo.ICustomerTraderSubscriptionRepository, db *gorm.DB) ICustomerTraderSubscriptionService {
+	return &CustomerTraderSubscriptionService{repo: repo, db: db}
 }
 
-func (s *traderSubscriptionService) SubscribeCustomer(req models.TraderSubscriptionRequest) (*models.TraderSubscriptionResponse, error) {
-	plan, err := s.traderSubRepo.GetPlanByID(req.TraderSubscriptionPlanID)
+func (s *CustomerTraderSubscriptionService) GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error) {
+	return s.repo.GetTradersWithPlans(ctx)
+}
+
+func (s *CustomerTraderSubscriptionService) SubscribeToTrader(ctx context.Context, customerID uint, input models.SubscribeToTraderInput) error {
+	plan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, input.TraderSubscriptionPlanID)
 	if err != nil {
-		return nil, ErrSubscriptionPlanNotFound
+		return fmt.Errorf("invalid trader subscription plan: %w", err)
+	}
+	if !plan.IsActive {
+		return fmt.Errorf("trader subscription plan is not active")
 	}
 
-	// 2️⃣ Check existing active subscription
-	existing, _ := s.traderSubRepo.CheckExistingSubscription(req.CustomerID, req.TraderID)
-	if existing != nil {
-		return nil, ErrAlreadySubscribed
+	// Check if customer is already subscribed to this plan
+	isSubscribed, err := s.repo.IsCustomerSubscribedToPlan(ctx, customerID, plan.ID)
+	if err != nil {
+		return fmt.Errorf("failed to check existing subscription: %w", err)
+	}
+	if isSubscribed {
+		return fmt.Errorf("you are already subscribed to this plan")
 	}
 
+	// Start a database transaction
+	tx := s.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 1. Deduct money from customer's wallet
+	customerWallet, err := s.repo.GetTraderWallet(ctx, customerID) // Assuming GetTraderWallet can get any user's wallet
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get customer wallet: %w", err)
+	}
+
+	if customerWallet.Balance < plan.Price {
+		tx.Rollback()
+		return fmt.Errorf("insufficient funds in wallet. current balance: %.2f, required: %.2f", customerWallet.Balance, plan.Price)
+	}
+
+	if err := s.repo.UpdateWalletBalance(ctx, customerID, -plan.Price, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to deduct funds from customer wallet: %w", err)
+	}
+	customerBalanceAfter := customerWallet.Balance - plan.Price
+
+	// 2. Distribute funds: Admin commission + Trader revenue
+	adminCommissionAmount := plan.Price * (plan.AdminCommissionPercentage / 100.0)
+	traderRevenueAmount := plan.Price - adminCommissionAmount
+	// Get Admin wallet and update balance
+	adminWallet, err := s.repo.GetAdminWallet(ctx)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get admin wallet: %w", err)
+	}
+	if err := s.repo.UpdateWalletBalance(ctx, adminWallet.UserID, adminCommissionAmount, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to credit admin commission: %w", err)
+	}
+	adminBalanceAfter := adminWallet.Balance + adminCommissionAmount
+
+	// Get Trader wallet and update balance
+	traderWallet, err := s.repo.GetTraderWallet(ctx, plan.TraderID)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get trader wallet: %w", err)
+	}
+	if err := s.repo.UpdateWalletBalance(ctx, plan.TraderID, traderRevenueAmount, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to credit trader revenue: %w", err)
+	}
+	traderBalanceAfter := traderWallet.Balance + traderRevenueAmount
+
+	// 3. Create wallet transactions
+	// Customer transaction (debit)
+	customerTx := models.WalletTransaction{
+		WalletID:        customerWallet.ID,
+		UserID:          customerID,
+		Type:            models.TxTypeSubscription,
+		TransactionType: models.TxTypeDebit,
+		Name:            "Debit for Trader Subscription",
+		Amount:          plan.Price,
+		Currency:        plan.Currency,
+		Status:          models.TxStatusSuccess,
+		Description:     fmt.Sprintf("Subscription to trader %d's plan '%s'", plan.TraderID, plan.Name),
+		BalanceBefore:   customerWallet.Balance,
+		BalanceAfter:    customerBalanceAfter,
+		ReferenceID:     fmt.Sprintf("TRADER_SUB_%d_PLAN_%d", customerID, plan.ID),
+		TransactionID:   fmt.Sprintf("TRADER_SUB_%d_%d_%d", customerID, plan.TraderID, time.Now().UnixNano()), // Unique ID for this transaction
+	}
+	if err := s.repo.CreateWalletTransaction(ctx, &customerTx, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to record customer transaction: %w", err)
+	}
+
+	// Admin transaction (credit)
+	adminTx := models.WalletTransaction{
+		WalletID:        adminWallet.ID,
+		UserID:          adminWallet.UserID,
+		Type:            models.TxTypeAdminCommission,
+		TransactionType: models.TxTypeCredit,
+		Name:            "Credit from Trader Subscription Commission",
+		Amount:          adminCommissionAmount,
+		Currency:        plan.Currency,
+		Status:          models.TxStatusSuccess,
+		Description:     fmt.Sprintf("Commission from customer %d subscribing to trader %d's plan '%s'", customerID, plan.TraderID, plan.Name),
+		BalanceBefore:   adminWallet.Balance,
+		BalanceAfter:    adminBalanceAfter,
+		ReferenceID:     fmt.Sprintf("TRADER_SUB_COMMISSION_%d_PLAN_%d", customerID, plan.ID),
+		TransactionID:   fmt.Sprintf("ADMIN_COMM_%d_%d_%d", customerID, plan.TraderID, time.Now().UnixNano()),
+	}
+	if err := s.repo.CreateWalletTransaction(ctx, &adminTx, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to record admin transaction: %w", err)
+	}
+
+	// Trader transaction (credit)
+	traderTx := models.WalletTransaction{
+		WalletID:        traderWallet.ID,
+		UserID:          plan.TraderID,
+		Type:            models.TxTypeTraderRevenue,
+		TransactionType: models.TxTypeCredit,
+		Name:            "Credit from Customer Subscription",
+		Amount:          traderRevenueAmount,
+		Currency:        plan.Currency,
+		Status:          models.TxStatusSuccess,
+		Description:     fmt.Sprintf("Revenue from customer %d subscribing to plan '%s'", customerID, plan.Name),
+		BalanceBefore:   traderWallet.Balance,
+		BalanceAfter:    traderBalanceAfter,
+		ReferenceID:     fmt.Sprintf("TRADER_REVENUE_%d_PLAN_%d", customerID, plan.ID),
+		TransactionID:   fmt.Sprintf("TRADER_REV_%d_%d_%d", customerID, plan.TraderID, time.Now().UnixNano()),
+	}
+	if err := s.repo.CreateWalletTransaction(ctx, &traderTx, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to record trader transaction: %w", err)
+	}
+
+	// 4. Create CustomerTraderSubscription record
 	startDate := time.Now()
-	endDate := startDate.Add(plan.Duration)
-	adminCommission := plan.Price * plan.CommissionRate
-	traderShare := plan.Price - adminCommission
-	transactionID := fmt.Sprintf("TXN-%d-%d-%d", req.CustomerID, req.TraderID, time.Now().Unix())
+	endDate := startDate.Add(time.Duration(plan.DurationDays) * 24 * time.Hour)
 
-	// 3️⃣ Perform transaction: debit customer, credit admin & trader, create subscription
-	err = s.db.Transaction(func(tx *gorm.DB) error {
-		// Customer wallet
-		customerWallet, err := s.customerWalletRepo.GetUserWallet(req.CustomerID)
-		if err != nil {
-			return fmt.Errorf("customer wallet not found: %w", err)
-		}
-		if customerWallet.Balance < plan.Price {
-			return errors.New("insufficient customer wallet balance")
-		}
-		customerWallet.Balance -= plan.Price
-		if err := s.customerWalletRepo.UpdateWallet(customerWallet); err != nil {
-			return err
-		}
+	newSubscription := &models.CustomerTraderSubscription{
+		CustomerID:               customerID,
+		TraderID:                 plan.TraderID,
+		TraderSubscriptionPlanID: plan.ID,
+		StartDate:                startDate,
+		EndDate:                  endDate,
+		IsActive:                 true,
+		WalletTransactionID:      &customerTx.ID, // Link to the customer's payment transaction
+	}
 
-		// Admin wallet
-		adminWallet, err := s.adminWalletRepo.GetAdminWallet()
-		if err != nil {
-			return fmt.Errorf("admin wallet not found: %w", err)
-		}
-		adminWallet.Balance += adminCommission
-		if err := s.adminWalletRepo.UpdateWalletBalance(tx, adminWallet); err != nil {
-			return err
-		}
+	if _, err := s.repo.CreateCustomerTraderSubscription(ctx, newSubscription); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to create customer-trader subscription record: %w", err)
+	}
 
-		// Trader wallet
-		traderWallet, err := s.customerWalletRepo.GetUserWallet(req.TraderID)
-		if err != nil {
-			return fmt.Errorf("trader wallet not found: %w", err)
-		}
-		traderWallet.Balance += traderShare
-		if err := s.customerWalletRepo.UpdateWallet(traderWallet); err != nil {
-			return err
-		}
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 
-		// Create subscription
-		sub := &models.TraderSubscription{
-			UserID:                   req.CustomerID,
-			TraderID:                 req.TraderID,
-			TraderSubscriptionPlanID: plan.ID,
-			StartDate:                startDate,
-			EndDate:                  endDate,
-			IsActive:                 true,
-			PaymentStatus:            "Paid",
-			AmountPaid:               plan.Price,
-			TraderShare:              traderShare,
-			AdminCommission:          adminCommission,
-			TransactionID:            transactionID,
-		}
-		if err := s.traderSubRepo.CreateSubscription(sub); err != nil {
-			return err
-		}
-		return nil
-	})
+	log.Printf("Customer %d successfully subscribed to trader %d's plan %d. Admin got %.2f, Trader got %.2f",
+		customerID, plan.TraderID, plan.ID, adminCommissionAmount, traderRevenueAmount)
+
+	return nil
+}
+
+func (s *CustomerTraderSubscriptionService) GetSubscribedTradersSignals(ctx context.Context, customerID uint) ([]models.Signal, error) {
+	signals, err := s.repo.GetAllSignalsFromSubscribedTraders(ctx, customerID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve signals from subscribed traders: %w", err)
 	}
-
-	// 4️⃣ Return response
-	resp := &models.TraderSubscriptionResponse{
-		TraderName:      fmt.Sprintf("Trader %d", req.TraderID),
-		PlanName:        plan.Name,
-		AmountPaid:      plan.Price,
-		TraderShare:     traderShare,
-		AdminCommission: adminCommission,
-		PaymentStatus:   "Paid",
-		TransactionID:   transactionID,
-		StartDate:       startDate.Format("2006-01-02"),
-		EndDate:         endDate.Format("2006-01-02"),
-		IsActive:        true,
-	}
-	return resp, nil
+	return signals, nil
 }
 
-// func (s *traderSubscriptionService) SubscribeCustomerToTrader(ctx context.Context, req models.TraderSubscriptionRequest) (*models.TraderSubscriptionResponse, error) {
-// 	// 1. Validate customer and trader
-// 	customer, err := s.userRepo.GetUserByID(ctx, req.CustomerID)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("invalid customer: %w", err)
-// 	}
-
-// 	trader, err := s.userRepo.GetUserByID(ctx, req.TraderID)
-// 	if err != nil {
-// 		return nil, ErrTraderNotFound
-// 	}
-
-// 	// 2. Validate Subscription Plan
-// 	subPlan, err := s.subscriptionPlanRepo.GetSubscriptionPlanByID(ctx, req.TraderSubscriptionPlanID)
-// 	if err != nil {
-// 		return nil, ErrSubscriptionPlanNotFound
-// 	}
-
-// 	if subPlan.UserID == nil || *subPlan.UserID != req.TraderID {
-// 		return nil, errors.New("subscription plan does not belong to this trader")
-// 	}
-
-// 	if !subPlan.IsActive {
-// 		return nil, errors.New("subscription plan is not active")
-// 	}
-
-// 	// 3. Check for existing subscription
-// 	existingSub, err := s.traderSubRepo.GetActiveTraderSubscriptionForCustomer(ctx, req.CustomerID, req.TraderID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if existingSub != nil {
-// 		return nil, ErrAlreadySubscribed
-// 	}
-
-// 	// 4. Wallet validation
-// 	customerWallet, err := s.customerWalletRepo.GetUserWallet(req.CustomerID)
-// 	if err != nil {
-// 		return nil, ErrCustomerWalletNotFound
-// 	}
-// 	if customerWallet.Balance < subPlan.Price {
-// 		return nil, ErrInsufficientFunds
-// 	}
-
-// 	adminWallet, err := s.adminWalletRepo.GetAdminWallet()
-// 	if err != nil {
-// 		return nil, ErrAdminWalletNotFound
-// 	}
-
-// 	traderWallet, err := s.customerWalletRepo.GetUserWallet(req.TraderID)
-// 	if err != nil {
-// 		return nil, ErrTraderWalletNotFound
-// 	}
-
-// 	const adminCommissionRate = 0.10
-// 	adminCommission := subPlan.Price * adminCommissionRate
-// 	traderAmount := subPlan.Price - adminCommission
-
-// 	var newSubscription models.TraderSubscription
-
-// 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-// 		// Debit Customer
-// 		if err := s.customerWalletRepo.DebitWallet(tx, customerWallet.ID, subPlan.Price,
-// 			models.TxTypeSubscription,
-// 			fmt.Sprintf("SUB_%d_%d", req.TraderID, req.CustomerID),
-// 			fmt.Sprintf("Subscription to trader %s", trader.Name),
-// 		); err != nil {
-// 			return err
-// 		}
-
-// 		// Credit Admin
-// 		adminWallet.Balance += adminCommission
-// 		if err := s.adminWalletRepo.UpdateWalletBalance(tx, adminWallet); err != nil {
-// 			return err
-// 		}
-
-// 		// Credit Trader
-// 		if err := s.customerWalletRepo.CreditWallet(tx, traderWallet.ID, traderAmount,
-// 			models.TxTypeSubscription,
-// 			fmt.Sprintf("REV_%d_%d", req.TraderID, req.CustomerID),
-// 			fmt.Sprintf("Trader revenue from customer %s", customer.Name),
-// 		); err != nil {
-// 			return err
-// 		}
-
-// 		// Create Subscription
-// 		newSubscription = models.TraderSubscription{
-// 			UserID:                   req.CustomerID,
-// 			TraderID:                 req.TraderID,
-// 			TraderSubscriptionPlanID: req.TraderSubscriptionPlanID,
-// 			StartDate:                time.Now(),
-// 			EndDate:                  time.Now().Add(subPlan.Duration),
-// 			IsActive:                 true,
-// 			PaymentStatus:            string(models.TxStatusSuccess),
-// 			AmountPaid:               subPlan.Price,
-// 		}
-// 		return s.traderSubRepo.CreateTraderSubscription(ctx, &newSubscription)
-// 	})
-
-// 	if err != nil {
-// 		return nil, fmt.Errorf("transaction failed: %w", err)
-// 	}
-
-// 	return &models.TraderSubscriptionResponse{
-// 		TraderSubscriptionID: newSubscription.ID,
-// 		Message:              "Successfully subscribed to trader",
-// 		Status:               string(models.TxStatusSuccess),
-// 	}, nil
-// }
-
-func (s *traderSubscriptionService) DeactivateExpiredTraderSubscriptions(ctx context.Context) error {
-	return s.traderSubRepo.DeactivateExpiredTraderSubscriptions(ctx)
-}
-
-func (s *traderSubscriptionService) GetCustomerTraderSubscriptions(ctx context.Context, customerID uint) ([]models.TraderSubscription, error) {
-	return s.traderSubRepo.GetCustomerTraderSubscriptions(ctx, customerID)
-}
-
-func (s *traderSubscriptionService) GetCustomerTraderSubscriptionByID(ctx context.Context, customerID, subscriptionID uint) (*models.TraderSubscription, error) {
-	sub, err := s.traderSubRepo.GetTraderSubscriptionByID(ctx, subscriptionID)
+func (s *CustomerTraderSubscriptionService) GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error) {
+	subscriptions, err := s.repo.GetActiveTraderSubscriptionsForCustomer(ctx, customerID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get active subscriptions: %w", err)
 	}
-	if sub.UserID != customerID {
-		return nil, ErrNotAuthorized
-	}
-	return sub, nil
+	return subscriptions, nil
+}
+
+func (s *CustomerTraderSubscriptionService) IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error) {
+	return s.repo.IsCustomerSubscribedToTrader(ctx, customerID, traderID)
 }
