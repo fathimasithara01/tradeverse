@@ -1,4 +1,3 @@
-// internal/trader/repository/trader_subscription.go
 package repository
 
 import (
@@ -17,15 +16,12 @@ type ITraderSubscriptionRepository interface {
 	UpdateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSubscriptionPlan) error
 	DeleteTraderSubscriptionPlan(ctx context.Context, planID, traderID uint) error
 
-	// For checking if a user is an active trader (based on upgrade subscription)
 	CheckIfUserIsActiveTrader(ctx context.Context, userID uint) (bool, error)
 	GetUserActiveUpgradeSubscription(ctx context.Context, userID uint, planID uint) (*models.UserSubscription, error) // Specific check
 
-	// Customer subscription to Trader's plan
 	CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSubscription) error
 	CheckIfCustomerIsSubscribedToTraderPlan(ctx context.Context, customerID uint, traderPlanID uint) (bool, error)
 
-	// Admin-defined Subscription Plan (for upgrading to trader)
 	SetUserRole(ctx context.Context, userID uint, role models.UserRole, tx *gorm.DB) error // Update user role during transaction
 	GetAllTraderUpgradePlans(ctx context.Context) ([]models.SubscriptionPlan, error)
 	GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error)
@@ -36,6 +32,7 @@ type ITraderSubscriptionRepository interface {
 	UpdateWalletBalance(ctx context.Context, userID uint, amount float64, tx *gorm.DB) error
 	CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error
 	GetAdminWallet(ctx context.Context) (*models.Wallet, error)
+	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
 }
 
 type TraderSubscriptionRepository struct {
@@ -44,6 +41,16 @@ type TraderSubscriptionRepository struct {
 
 func NewTraderSubscriptionRepository(db *gorm.DB) ITraderSubscriptionRepository {
 	return &TraderSubscriptionRepository{db: db}
+}
+func (r *TraderSubscriptionRepository) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
+	var user models.User
+	if err := r.db.WithContext(ctx).First(&user, userID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+	return &user, nil
 }
 
 func (r *TraderSubscriptionRepository) CreateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSubscriptionPlan) (*models.TraderSubscriptionPlan, error) {

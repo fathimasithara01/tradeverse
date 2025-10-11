@@ -41,7 +41,6 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		// Trader/Customer Specific Models (Crucial ordering here)
 		&models.TraderSubscriptionPlan{},     // A trader's plan. Depends on User (for TraderID).
 		&models.CustomerTraderSubscription{}, // A customer's subscription to a plan. Depends on User (for CustomerID) and TraderSubscriptionPlan.
-
 		// Generic Subscriptions (if different from CustomerTraderSubscription)
 		&models.SubscriptionPlan{}, // Generic plan
 		// &models.Subscription{},     // Generic subscription to a plan. Depends on User and SubscriptionPlan.

@@ -28,18 +28,6 @@ func getUserID(c *gin.Context) (uint, error) {
 	return userID.(uint), nil
 }
 
-// @Summary Create a new subscription plan for the current trader
-// @Description Allows an authenticated trader to create a new subscription plan for their signals.
-// @Tags Trader Subscriptions
-// @Accept json
-// @Produce json
-// @Param planInput body models.CreateTraderSubscriptionPlanInput true "Trader Subscription Plan details"
-// @Success 201 {object} models.TraderSubscriptionPlan "Successfully created plan"
-// @Failure 400 {object} gin.H "Bad request"
-// @Failure 401 {object} gin.H "Unauthorized"
-// @Failure 403 {object} gin.H "Forbidden (user is not an active trader)"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /trader/plans [post]
 func (ctrl *TraderSubscriptionController) CreateTraderSubscriptionPlan(c *gin.Context) {
 	traderID, err := getUserID(c) // Use general getUserID
 	if err != nil {
@@ -66,14 +54,6 @@ func (ctrl *TraderSubscriptionController) CreateTraderSubscriptionPlan(c *gin.Co
 	c.JSON(http.StatusCreated, plan)
 }
 
-// @Summary Get all subscription plans created by the current trader
-// @Description Retrieve a list of all subscription plans created by the authenticated trader.
-// @Tags Trader Subscriptions
-// @Produce json
-// @Success 200 {array} models.TraderSubscriptionPlan "List of trader's plans"
-// @Failure 401 {object} gin.H "Unauthorized"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /trader/plans [get]
 func (ctrl *TraderSubscriptionController) GetMyTraderSubscriptionPlans(c *gin.Context) {
 	traderID, err := getUserID(c) // Use general getUserID
 	if err != nil {
@@ -90,16 +70,6 @@ func (ctrl *TraderSubscriptionController) GetMyTraderSubscriptionPlans(c *gin.Co
 	c.JSON(http.StatusOK, plans)
 }
 
-// @Summary Get a specific trader subscription plan by ID
-// @Description Retrieve details of a specific subscription plan by its ID.
-// @Tags Trader Subscriptions
-// @Produce json
-// @Param planId path int true "Plan ID"
-// @Success 200 {object} models.TraderSubscriptionPlan "Trader subscription plan details"
-// @Failure 400 {object} gin.H "Invalid plan ID"
-// @Failure 404 {object} gin.H "Plan not found"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /trader/plans/:planId [get]
 func (ctrl *TraderSubscriptionController) GetTraderSubscriptionPlanByID(c *gin.Context) {
 	planIDParam := c.Param("planId")
 	planID, err := strconv.ParseUint(planIDParam, 10, 32)
@@ -120,20 +90,6 @@ func (ctrl *TraderSubscriptionController) GetTraderSubscriptionPlanByID(c *gin.C
 	c.JSON(http.StatusOK, plan)
 }
 
-// @Summary Update a trader subscription plan
-// @Description Allows an authenticated trader to update their existing subscription plan.
-// @Tags Trader Subscriptions
-// @Accept json
-// @Produce json
-// @Param planId path int true "Plan ID"
-// @Param planInput body models.CreateTraderSubscriptionPlanInput true "Updated Trader Subscription Plan details"
-// @Success 200 {object} models.TraderSubscriptionPlan "Successfully updated plan"
-// @Failure 400 {object} gin.H "Bad request or invalid plan ID"
-// @Failure 401 {object} gin.H "Unauthorized"
-// @Failure 403 {object} gin.H "Forbidden (if plan does not belong to trader)"
-// @Failure 404 {object} gin.H "Plan not found"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /trader/plans/:planId [put]
 func (ctrl *TraderSubscriptionController) UpdateTraderSubscriptionPlan(c *gin.Context) {
 	traderID, err := getUserID(c) // Use general getUserID
 	if err != nil {
@@ -170,18 +126,6 @@ func (ctrl *TraderSubscriptionController) UpdateTraderSubscriptionPlan(c *gin.Co
 	c.JSON(http.StatusOK, plan)
 }
 
-// @Summary Delete a trader subscription plan
-// @Description Allows an authenticated trader to delete one of their subscription plans.
-// @Tags Trader Subscriptions
-// @Produce json
-// @Param planId path int true "Plan ID"
-// @Success 200 {object} gin.H "Successfully deleted plan"
-// @Failure 400 {object} gin.H "Invalid plan ID"
-// @Failure 401 {object} gin.H "Unauthorized"
-// @Failure 403 {object} gin.H "Forbidden (if plan does not belong to trader)"
-// @Failure 404 {object} gin.H "Plan not found"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /trader/plans/:planId [delete]
 func (ctrl *TraderSubscriptionController) DeleteTraderSubscriptionPlan(c *gin.Context) {
 	traderID, err := getUserID(c) // Use general getUserID
 	if err != nil {
@@ -208,21 +152,6 @@ func (ctrl *TraderSubscriptionController) DeleteTraderSubscriptionPlan(c *gin.Co
 	c.JSON(http.StatusOK, gin.H{"message": "trader subscription plan deleted successfully"})
 }
 
-// --- Customer-facing routes to subscribe to a Trader's Plan ---
-
-// @Summary Subscribe to a specific trader's subscription plan
-// @Description Allows an authenticated customer to subscribe to a specific trader's plan.
-// @Tags Customer Subscriptions
-// @Accept json
-// @Produce json
-// @Param traderId path int true "ID of the Trader whose plan is being subscribed to"
-// @Param planId path int true "ID of the Trader Subscription Plan"
-// @Success 200 {object} gin.H "Subscription successful"
-// @Failure 400 {object} gin.H "Bad request (invalid ID, insufficient funds, plan inactive, already subscribed)"
-// @Failure 401 {object} gin.H "Unauthorized (user not logged in)"
-// @Failure 404 {object} gin.H "Plan or Trader not found"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /customer/subscribe/trader/:traderId/plan/:planId [post]
 func (ctrl *TraderSubscriptionController) SubscribeToTraderPlan(c *gin.Context) {
 	customerID, err := getUserID(c)
 	if err != nil {
@@ -262,17 +191,6 @@ func (ctrl *TraderSubscriptionController) SubscribeToTraderPlan(c *gin.Context) 
 	c.JSON(http.StatusOK, gin.H{"message": "successfully subscribed to trader's plan!"})
 }
 
-// --- Admin Subscription Routes (for a user to become a trader) ---
-// These routes would typically be in an Admin or a shared user controller,
-// but placed here for context as it affects a user becoming a trader.
-
-// @Summary Get all admin-defined subscription plans (customer to trader upgrade)
-// @Description Allows users to see plans to become a trader.
-// @Tags Trader Upgrade Subscriptions
-// @Produce json
-// @Success 200 {array} models.SubscriptionPlan "List of admin subscription plans for upgrading to trader"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /upgrade/plans [get]
 func (ctrl *TraderSubscriptionController) GetAllTraderUpgradePlans(c *gin.Context) {
 	plans, err := ctrl.subsService.GetAllTraderUpgradePlans(c)
 	if err != nil {
@@ -282,17 +200,6 @@ func (ctrl *TraderSubscriptionController) GetAllTraderUpgradePlans(c *gin.Contex
 	c.JSON(http.StatusOK, plans)
 }
 
-// @Summary Subscribe to an admin plan to become a trader
-// @Description Allows a user to subscribe to an admin-defined plan to gain trader privileges.
-// @Tags Trader Upgrade Subscriptions
-// @Accept json
-// @Produce json
-// @Param planId path int true "Admin Subscription Plan ID"
-// @Success 200 {object} gin.H "Subscription successful, user is now a trader"
-// @Failure 400 {object} gin.H "Bad request or insufficient funds"
-// @Failure 401 {object} gin.H "Unauthorized"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /upgrade/subscribe/:planId [post]
 func (ctrl *TraderSubscriptionController) SubscribeToTraderUpgradePlan(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {

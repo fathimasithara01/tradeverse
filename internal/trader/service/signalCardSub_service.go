@@ -1,4 +1,3 @@
-// internal/trader/service/trader_subscription.go
 package service
 
 import (
@@ -36,29 +35,38 @@ func NewTraderSubscriptionService(repo repository.ITraderSubscriptionRepository,
 }
 
 func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Context, traderID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSubscriptionPlan, error) {
-	// Check if the user is truly an 'active trader' by having an active admin subscription
-	isTrader, err := s.repo.CheckIfUserIsActiveTrader(ctx, traderID)
+
+	user, err := s.repo.GetUserByID(ctx, traderID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to verify trader status: %w", err)
+		return nil, fmt.Errorf("failed to fetch user %d: %w", traderID, err)
 	}
-	if !isTrader {
-		return nil, fmt.Errorf("user is not an active trader and cannot create subscription plans")
+	if user.Role != models.RoleTrader {
+		return nil, fmt.Errorf("user is not a trader and cannot create subscription plans")
+	}
+
+	// Calculate trader_share based on price and commission
+	// TraderShare = Price - (Price * AdminCommissionPercentage / 100)
+	traderShareAmount := input.Price * (1 - (input.AdminCommissionPercentage / 100.0))
+	if traderShareAmount < 0 {
+		traderShareAmount = 0 // Ensure it doesn't go negative
 	}
 
 	plan := &models.TraderSubscriptionPlan{
-		TraderID:                  traderID,
-		Name:                      input.Name,
-		Description:               input.Description,
-		Price:                     input.Price,
-		Currency:                  input.Currency,
-		DurationDays:              input.DurationDays,
-		IsActive:                  true, // Default to active upon creation
-		AdminCommissionPercentage: input.AdminCommissionPercentage,
+		TraderID:        traderID,
+		Name:            input.Name,
+		Description:     input.Description,
+		Price:           input.Price,
+		Currency:        input.Currency,
+		DurationDays:    input.DurationDays,
+		IsActive:        true, // Default to active upon creation
+		AdminCommission: input.AdminCommissionPercentage,
+		// --- SET THE NEW FIELD ---
+		TraderShare: traderShareAmount,
+		// --- END SET ---
 	}
 
 	return s.repo.CreateTraderSubscriptionPlan(ctx, plan)
 }
-
 func (s *TraderSubscriptionService) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
 	return s.repo.GetTraderSubscriptionPlanByID(ctx, planID)
 }
@@ -82,7 +90,7 @@ func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Con
 	existingPlan.Price = input.Price
 	existingPlan.Currency = input.Currency
 	existingPlan.DurationDays = input.DurationDays
-	existingPlan.AdminCommissionPercentage = input.AdminCommissionPercentage
+	existingPlan.AdminCommission = input.AdminCommissionPercentage
 	// Optionally update IsActive, but generally controlled by a separate endpoint
 
 	if err := s.repo.UpdateTraderSubscriptionPlan(ctx, existingPlan); err != nil {
@@ -151,7 +159,7 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 	customerBalanceAfter := customerWallet.Balance - plan.Price
 
 	// Calculate commission and actual amount for trader
-	adminCommissionAmount := plan.Price * (plan.AdminCommissionPercentage / 100.0)
+	adminCommissionAmount := plan.Price * (plan.AdminCommission / 100.0)
 	traderReceiveAmount := plan.Price - adminCommissionAmount
 
 	// 5. Credit commission to Admin wallet
@@ -251,7 +259,7 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		StartDate:                startDate,
 		EndDate:                  endDate,
 		IsActive:                 true,
-		TransactionID:            customerTx.ID, 
+		TransactionID:            customerTx.ID,
 	}
 
 	if err := s.repo.CreateCustomerTraderSubscription(ctx, customerTraderSubscription); err != nil {
@@ -299,11 +307,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 		if existingUpgradeSub != nil && existingUpgradeSub.IsActive && existingUpgradeSub.EndDate.After(time.Now()) {
 			return fmt.Errorf("user is already an active trader with this upgrade plan")
 		}
-		// If they are a trader but not with THIS plan, they might be upgrading from another plan or extending.
-		// For simplicity, let's allow extending an *existing* upgrade subscription, or replacing it.
-		// For now, if already a trader, just refuse if it's the *same* plan. If they want to upgrade with a different plan,
-		// they should potentially cancel the old one or there should be logic to handle multiple/overlapping subscriptions.
-		// For this implementation, we assume a user only needs one active 'trader upgrade' subscription at a time.
 	}
 
 	// Start a database transaction
