@@ -44,12 +44,6 @@ func SetupRouter(
 		protected.PUT("/profile", profileController.UpdateProfile)
 		protected.DELETE("/account", profileController.DeleteAccount)
 
-		// protected.POST("/traders/:trader_id/subscribe", customerTraderSubCtrl.SubscribeTrader)
-		// protected.GET("/trader-subscriptions", customerTraderSubCtrl.GetCustomerTraderSubscriptions)
-		// protected.GET("/trader-subscriptions/:subscription_id", customerTraderSubCtrl.GetCustomerTraderSubscriptionByID)
-		// protected.GET("/traders/:trader_id/signals", customerSignalCtrl.GetTraderSignalsForCustomer)
-		// protected.GET("/traders/:trader_id/signals/:signal_id", customerSignalCtrl.GetSignalCardForCustomer)
-
 		protected.GET("/traders/plans", custmerTraderSignlsController.GetAvailableTradersWithPlans)
 		protected.POST("/subscribe", custmerTraderSignlsController.SubscribeToTrader)
 		protected.GET("/signals", custmerTraderSignlsController.GetSignalsFromSubscribedTraders) // Access signals
