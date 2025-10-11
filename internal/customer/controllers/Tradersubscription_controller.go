@@ -18,14 +18,6 @@ type CustomerTraderSubscriptionController struct {
 func NewCustomerTraderSubscriptionController(subsService service.ICustomerTraderSubscriptionService) *CustomerTraderSubscriptionController {
 	return &CustomerTraderSubscriptionController{subsService: subsService}
 }
-
-// @Summary Get available traders with their subscription plans
-// @Description Retrieve a list of traders who offer subscription plans for their signals.
-// @Tags Customer Subscriptions
-// @Produce json
-// @Success 200 {array} models.User "List of traders with plans"
-// @Failure 500 {object} gin.H "Error fetching traders"
-// @Router /customer/traders [get]
 func (ctrl *CustomerTraderSubscriptionController) GetAvailableTradersWithPlans(c *gin.Context) {
 	traders, err := ctrl.subsService.GetAvailableTradersWithPlans(c)
 	if err != nil {
@@ -79,14 +71,6 @@ func (ctrl *CustomerTraderSubscriptionController) GetSignalsFromSubscribedTrader
 	c.JSON(http.StatusOK, signals)
 }
 
-// @Summary Get a customer's active trader subscriptions
-// @Description Retrieves all active subscriptions a customer has to various traders.
-// @Tags Customer Subscriptions
-// @Produce json
-// @Success 200 {array} models.CustomerTraderSubscription "List of active trader subscriptions"
-// @Failure 401 {object} gin.H "Unauthorized"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /customer/my-trader-subscriptions [get]
 func (ctrl *CustomerTraderSubscriptionController) GetMyActiveTraderSubscriptions(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -104,16 +88,6 @@ func (ctrl *CustomerTraderSubscriptionController) GetMyActiveTraderSubscriptions
 	c.JSON(http.StatusOK, subscriptions)
 }
 
-// @Summary Check if customer is subscribed to a specific trader
-// @Description Checks if the current customer has an active subscription to a given trader.
-// @Tags Customer Subscriptions
-// @Param traderId path int true "Trader ID"
-// @Produce json
-// @Success 200 {object} gin.H "Subscription status"
-// @Failure 400 {object} gin.H "Invalid trader ID"
-// @Failure 401 {object} gin.H "Unauthorized"
-// @Failure 500 {object} gin.H "Internal server error"
-// @Router /customer/subscribed-to-trader/:traderId [get]
 func (ctrl *CustomerTraderSubscriptionController) IsSubscribedToTrader(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {

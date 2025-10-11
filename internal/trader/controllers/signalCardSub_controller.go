@@ -3,6 +3,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -55,21 +56,23 @@ func (ctrl *TraderSubscriptionController) CreateTraderSubscriptionPlan(c *gin.Co
 }
 
 func (ctrl *TraderSubscriptionController) GetMyTraderSubscriptionPlans(c *gin.Context) {
-	traderID, err := getUserID(c) // Use general getUserID
+	traderID, err := getUserID(c)
 	if err != nil {
+		log.Printf("ERROR: GetMyTraderSubscriptionPlans - Unauthorized: %v", err) // <--- ADD THIS
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
+	log.Printf("INFO: GetMyTraderSubscriptionPlans - Fetching plans for trader ID: %d", traderID) // <--- ADD THIS
 
 	plans, err := ctrl.subsService.GetMyTraderSubscriptionPlans(c, traderID)
 	if err != nil {
+		log.Printf("ERROR: GetMyTraderSubscriptionPlans - Service error: %v", err) // <--- ADD THIS
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to fetch trader's plans: %v", err)})
 		return
 	}
-
+	log.Printf("INFO: GetMyTraderSubscriptionPlans - Found %d plans for trader ID %d", len(plans), traderID) // <--- ADD THIS
 	c.JSON(http.StatusOK, plans)
 }
-
 func (ctrl *TraderSubscriptionController) GetTraderSubscriptionPlanByID(c *gin.Context) {
 	planIDParam := c.Param("planId")
 	planID, err := strconv.ParseUint(planIDParam, 10, 32)

@@ -72,9 +72,14 @@ func (s *TraderSubscriptionService) GetTraderSubscriptionPlanByID(ctx context.Co
 }
 
 func (s *TraderSubscriptionService) GetMyTraderSubscriptionPlans(ctx context.Context, traderID uint) ([]models.TraderSubscriptionPlan, error) {
-	return s.repo.GetTraderSubscriptionPlansByTraderID(ctx, traderID)
+	// This method needs to query the repository for plans belonging to this traderID
+	// For example:
+	plans, err := s.repo.GetTraderSubscriptionPlansByTraderID(ctx, traderID) // <--- This repository method is key
+	if err != nil {
+		return nil, fmt.Errorf("failed to get trader subscription plans for trader %d: %w", traderID, err)
+	}
+	return plans, nil
 }
-
 func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Context, traderID uint, planID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSubscriptionPlan, error) {
 	existingPlan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, planID)
 	if err != nil {

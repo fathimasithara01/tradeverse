@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -61,24 +62,43 @@ func (r *TraderSubscriptionRepository) CreateTraderSubscriptionPlan(ctx context.
 	return plan, nil
 }
 
+// func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
+// 	var plan models.TraderSubscriptionPlan
+// 	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {
+// 		if err == gorm.ErrRecordNotFound {
+// 			return nil, fmt.Errorf("trader subscription plan not found")
+// 		}
+// 		return nil, fmt.Errorf("failed to get trader subscription plan: %w", err)
+// 	}
+// 	return &plan, nil
+// }
+
 func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
 	var plan models.TraderSubscriptionPlan
 	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("trader subscription plan not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("trader subscription plan not found") // Or define a specific repo error, like customerrepo.ErrPlanNotFound
 		}
-		return nil, fmt.Errorf("failed to get trader subscription plan: %w", err)
+		return nil, fmt.Errorf("failed to get trader subscription plan by ID %d: %w", planID, err)
 	}
 	return &plan, nil
 }
-
 func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlansByTraderID(ctx context.Context, traderID uint) ([]models.TraderSubscriptionPlan, error) {
 	var plans []models.TraderSubscriptionPlan
-	if err := r.db.WithContext(ctx).Where("trader_id = ?", traderID).Find(&plans).Error; err != nil {
-		return nil, fmt.Errorf("failed to get trader subscription plans for trader %d: %w", traderID, err)
+	err := r.db.WithContext(ctx).Where("trader_id = ?", traderID).Find(&plans).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to find trader subscription plans for trader ID %d: %w", traderID, err)
 	}
 	return plans, nil
 }
+
+// func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlansByTraderID(ctx context.Context, traderID uint) ([]models.TraderSubscriptionPlan, error) {
+// 	var plans []models.TraderSubscriptionPlan
+// 	if err := r.db.WithContext(ctx).Where("trader_id = ?", traderID).Find(&plans).Error; err != nil {
+// 		return nil, fmt.Errorf("failed to get trader subscription plans for trader %d: %w", traderID, err)
+// 	}
+// 	return plans, nil
+// }
 
 func (r *TraderSubscriptionRepository) UpdateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSubscriptionPlan) error {
 	if err := r.db.WithContext(ctx).Save(plan).Error; err != nil {

@@ -5,9 +5,6 @@ import (
 
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository" // Use adminRepo alias consistently
 	adminSvc "github.com/fathimasithara01/tradeverse/internal/admin/service"
-	traderControllers "github.com/fathimasithara01/tradeverse/internal/trader/controllers"
-	"github.com/fathimasithara01/tradeverse/internal/trader/repository"
-	traderSvc "github.com/fathimasithara01/tradeverse/internal/trader/service"
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
@@ -48,7 +45,6 @@ func InitializeApp() (*App, error) {
 	// customerUserRepo := customerrepo.NewUserRepository(db) // Renamed for clarity vs admin userRepo
 	// subscriptionPlanRepo := customerrepo.NewSubscriptionPlanRepository(db)
 	customerTraderSubsRepo := customerrepo.NewCustomerTraderSubscriptionRepository(db)
-	traderSubsRepo := repository.NewTraderSubscriptionRepository(db)
 
 	// --- Services ---
 	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
@@ -58,7 +54,6 @@ func InitializeApp() (*App, error) {
 	traderService := service.NewTraderService(traderRepo, db)
 	adminSubService := service.NewAdminSubscriptionService(adminSubRepo, walletService, customerWalletRepo, db) // Assuming this is the correct constructor
 	customerTraderSubsService := service.NewCustomerTraderSubscriptionService(customerTraderSubsRepo, db)
-	traderSubsService := traderSvc.NewTraderSubscriptionService(traderSubsRepo, db) // Pass db for transactions
 
 	customerTraderSubsController := controllers.NewCustomerTraderSubscriptionController(customerTraderSubsService)
 	// customerSubscriptionController := controllers.NewCustomerSubscriptionController(traderSubscriptionService, customerSignalService)
@@ -69,7 +64,6 @@ func InitializeApp() (*App, error) {
 	walletController := controllers.NewWalletController(walletService)
 	adminSubController := controllers.NewAdminSubscriptionController(adminSubService)
 	traderController := controllers.NewTraderController(traderService)
-	traderSubsController := traderControllers.NewTraderSubscriptionController(traderSubsService)
 
 	// Unused controllers (commented out in your original)
 	// customerTraderSubCtrl := controllers.NewTraderSubscriptionController(customerTraderSubSvc) // Requires customerTraderSubSvc if exists
@@ -86,7 +80,6 @@ func InitializeApp() (*App, error) {
 		adminSubController,
 		traderController,
 		customerTraderSubsController,
-		traderSubsController,
 	)
 
 	return &App{

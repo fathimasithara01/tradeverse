@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -34,10 +35,18 @@ func (s *CustomerTraderSubscriptionService) GetAvailableTradersWithPlans(ctx con
 }
 
 func (s *CustomerTraderSubscriptionService) SubscribeToTrader(ctx context.Context, customerID uint, input models.SubscribeToTraderInput) error {
+	log.Printf("Attempting to subscribe customer %d to plan ID %d", customerID, input.TraderSubscriptionPlanID)
+
 	plan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, input.TraderSubscriptionPlanID)
 	if err != nil {
-		return fmt.Errorf("invalid trader subscription plan: %w", err)
+		log.Printf("Error getting trader subscription plan ID %d: %v", input.TraderSubscriptionPlanID, err)
+		if errors.Is(err, errors.New("trader subscription plan not found")) { // Match the error string from repo
+			return errors.New("invalid trader subscription plan: trader subscription plan not found")
+		}
+		return fmt.Errorf("failed to get trader subscription plan: %w", err)
 	}
+	log.Printf("Found plan: %+v", plan)
+
 	if !plan.IsActive {
 		return fmt.Errorf("trader subscription plan is not active")
 	}
@@ -81,7 +90,7 @@ func (s *CustomerTraderSubscriptionService) SubscribeToTrader(ctx context.Contex
 	customerBalanceAfter := customerWallet.Balance - plan.Price
 
 	// 2. Distribute funds: Admin commission + Trader revenue
-	adminCommissionAmount := plan.Price * (plan.AdminCommissionPercentage / 100.0)
+	adminCommissionAmount := plan.Price * (plan.AdminCommission / 100.0)
 	traderRevenueAmount := plan.Price - adminCommissionAmount
 	// Get Admin wallet and update balance
 	adminWallet, err := s.repo.GetAdminWallet(ctx)
