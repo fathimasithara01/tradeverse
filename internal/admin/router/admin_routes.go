@@ -31,6 +31,11 @@ func WireAdminRoutes(
 
 	admin := r.Group("/admin")
 	{
+		admin.GET("/login", authCtrl.ShowLoginPage)
+		admin.POST("/login", authCtrl.LoginUser)
+	}
+
+	{
 		{
 			admin.Use(middleware.DBMiddleware(db))
 
