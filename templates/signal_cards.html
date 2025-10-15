@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Custom CSS -->
     <style>
+        /* All your original CSS styles are restored here */
         body {
             font-family: 'Poppins', sans-serif;
             background: #f8f9fa;
@@ -475,11 +476,15 @@
                 container.empty(); // Clear existing cards
                 container.append('<div class="col-12 loading-message"><p><i class="fas fa-spinner fa-spin me-2"></i>Loading live trading signals...</p></div>');
 
+                console.log("Fetching signals from /admin/api/signals..."); // Debug: Start fetch
+
                 $.ajax({
                     url: '/admin/api/signals', // Endpoint to fetch all signals
                     method: 'GET',
                     dataType: 'json', // Explicitly expect JSON
                     success: function (signals) {
+                        console.log("Signals received:", signals); // Debug: Log all received signals
+
                         container.empty(); // Clear loading message
 
                         if (signals && signals.length > 0) {
@@ -494,7 +499,11 @@
                                 return getStatusOrder(a.status) - getStatusOrder(b.status);
                             });
 
-                            signals.forEach(function (signal) {
+                            console.log("Signals after sorting:", signals); // Debug: Log signals after sorting
+
+                            signals.forEach(function (signal, index) {
+                                console.log(`Processing signal #${index + 1}:`, signal); // Debug: Log each signal being processed
+
                                 let statusBadge = '';
                                 let cardClass = '';
                                 let priceChangeDisplay = '';
@@ -505,6 +514,8 @@
                                 const entryPrice = getSafeNumber(signal.entry_price); // Use signal.entry_price as per your JSON
                                 const targetPrice = getSafeNumber(signal.target_price); // Use signal.target_price as per your JSON
                                 let currentPrice = getSafeNumber(signal.current_price); // Use signal.current_price as per your JSON
+
+                                console.log(`   Prices - SL: ${stopLoss}, Entry: ${entryPrice}, Target: ${targetPrice}, Current: ${currentPrice}, Status: ${signal.status}`); // Debug: Log extracted prices and status
 
                                 // Determine status and card styling
                                 if (signal.status === 'Target Hit') {
@@ -554,6 +565,7 @@
                                         currentPrice = entryPrice;
                                     }
                                 }
+                                console.log(`   Calculated currentPricePercentage: ${currentPricePercentage}%`); // Debug: Log progress bar percentage
 
                                 // Calculate price change from entry (for display in header)
                                 if (currentPrice !== 0 && entryPrice !== 0) {
@@ -561,27 +573,35 @@
                                     const percentageChange = (change / entryPrice) * 100;
                                     const changeClass = percentageChange >= 0 ? 'positive' : 'negative';
                                     priceChangeDisplay = `<span class="price-change ${changeClass}"> (${percentageChange.toFixed(2)}%)</span>`;
+                                    console.log(`   Price Change from Entry: $${change.toFixed(4)} (${percentageChange.toFixed(2)}%)`); // Debug: Log price change
                                 } else {
                                     priceChangeDisplay = ''; // No change to display if prices are zero or entry price is zero
+                                    console.log('   Cannot calculate price change (missing current or entry price).'); // Debug
                                 }
 
                                 // Format dates
                                 const formatSignalDate = (dateString) => {
                                     if (!dateString || dateString === "0001-01-01T00:00:00Z") return 'N/A'; // Handle zero time
                                     const date = new Date(dateString);
-                                    if (isNaN(date.getTime())) return 'N/A';
+                                    if (isNaN(date.getTime())) {
+                                        console.warn(`Invalid date string encountered: ${dateString}`); // Debug invalid date
+                                        return 'N/A';
+                                    }
                                     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                                 };
 
                                 // Use `signal.tradeStartDate` and `signal.tradeEndDate` as per your Go model definition (json tags)
                                 const tradeStartDate = formatSignalDate(signal.tradeStartDate);
                                 const tradeEndDate = formatSignalDate(signal.tradeEndDate);
+                                console.log(`   Trade Dates - Start: ${tradeStartDate}, End: ${tradeEndDate}`); // Debug: Log formatted dates
 
                                 // Ensure prices are formatted even if they are 0
                                 const displayStopLoss = stopLoss.toFixed(4);
                                 const displayEntryPrice = entryPrice.toFixed(4);
                                 const displayTargetPrice = targetPrice.toFixed(4);
                                 const displayCurrentPrice = currentPrice.toFixed(4);
+
+                                console.log(`   Formatted Prices - SL: ${displayStopLoss}, Entry: ${displayEntryPrice}, Target: ${displayTargetPrice}, Current: ${displayCurrentPrice}`); // Debug: Log formatted prices
 
 
                                 const card = `
@@ -638,13 +658,15 @@
                                     </div>
                                 `;
                                 container.append(card);
+                                console.log(`   Appended card for ${signal.symbol || 'N/A'}`); // Debug: Confirm card appended
                             });
                         } else {
                             container.append('<div class="col-12 loading-message"><p>No signals available.</p></div>');
+                            console.log("No signals available."); // Debug: No signals case
                         }
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
-                        console.error("Error fetching signals:", textStatus, errorThrown, jqXHR.responseText);
+                        console.error("Error fetching signals:", textStatus, errorThrown, jqXHR.responseText); // Debug: Log full error
                         container.empty();
                         container.append('<div class="col-12 loading-message text-danger"><p><i class="fas fa-exclamation-triangle me-2"></i>Failed to load signals. Please try again later.</p></div>');
                     }
@@ -653,7 +675,34 @@
 
             // Initial fetch and then refresh every minute
             fetchSignals();
-            setInterval(fetchSignals, 60000); // Refresh every minute (60,000 milliseconds)
+            let refreshIntervalId = setInterval(fetchSignals, 60000); // Store interval ID
+
+            // --- Start of NEW CODE for instant refresh ---
+            let lastFetched = Date.now();
+            const refreshThreshold = 5000; // Refresh if it's been more than 5 seconds since last fetch
+
+            // Listen for when the tab becomes active or gains focus
+            $(window).on('focus', function() {
+                const now = Date.now();
+                if (now - lastFetched > refreshThreshold) {
+                    console.log("Window focused: Re-fetching signals.");
+                    fetchSignals();
+                    lastFetched = now; // Update last fetched time
+                }
+            });
+
+            // Listen for when the document becomes visible (e.g., switching tabs)
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') {
+                    const now = Date.now();
+                    if (now - lastFetched > refreshThreshold) {
+                        console.log("Tab became visible: Re-fetching signals.");
+                        fetchSignals();
+                        lastFetched = now; // Update last fetched time
+                    }
+                }
+            });
+            // --- End of NEW CODE for instant refresh ---
         });
     </script>
 </body>
