@@ -73,8 +73,11 @@ func FetchAndSaveMarketData(db *gorm.DB) {
 		} else {
 			log.Printf("Saved/Updated market data for %s (Current Price: %.4f)", coin.Symbol, coin.CurrentPrice)
 		}
+		log.Printf(" current data for %s", coin.CurrentPrice)
+
 	}
 	log.Println("Market data fetch complete.")
+
 }
 
 func StartCronJobs(

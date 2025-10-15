@@ -29,6 +29,7 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create signal"})
 		return
 	}
+	
 
 	c.JSON(http.StatusCreated, signal)
 }

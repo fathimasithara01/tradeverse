@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -68,30 +69,86 @@ func (ctrl *SignalController) ShowCreateSignalCardPage(c *gin.Context) {
 }
 
 func (ctrl *SignalController) CreateSignal(c *gin.Context) {
-	var req models.Signal
+	var req struct {
+		TraderName    string  `json:"traderName"`
+		Symbol        string  `json:"symbol"`
+		StopLoss      float64 `json:"stopLoss"`
+		EntryPrice    float64 `json:"entryPrice"`
+		TargetPrice   float64 `json:"targetPrice"`
+		CurrentPrice  float64 `json:"currentPrice"`
+		Risk          string  `json:"risk"`
+		Strategy      string  `json:"strategy"`
+		Status        string  `json:"status"`
+		StartDate     string  `json:"startDate"`
+		EndDate       string  `json:"endDate"`
+		TotalDuration string  `json:"totalDuration"`
+	}
+
+	// ✅ Bind JSON body to request struct once
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// ✅ Debug: Print the entire request data
+	reqJSON, _ := json.MarshalIndent(req, "", "  ")
+	log.Printf("📥 Received Signal Request:\n%s", string(reqJSON))
+
+	// ✅ Normalize symbol name
 	if !strings.HasSuffix(strings.ToUpper(req.Symbol), "USDT") {
 		req.Symbol = strings.ToUpper(req.Symbol) + "USDT"
 	} else {
 		req.Symbol = strings.ToUpper(req.Symbol)
 	}
 
-	if req.TradeStartDate.IsZero() {
-		req.TradeStartDate = time.Now()
-	}
-
-	createdSignal, err := ctrl.liveSignalService.CreateSignal(c, &req)
+	// ✅ Parse start and end dates
+	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create signal"})
-		log.Printf("Error creating signal: %v", err)
+		log.Printf("❌ Invalid startDate: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid startDate format. Must be RFC3339 (e.g., 2025-10-15T00:00:00Z)"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdSignal)
+	endDate, err := time.Parse(time.RFC3339, req.EndDate)
+	if err != nil {
+		log.Printf("❌ Invalid endDate: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid endDate format. Must be RFC3339 (e.g., 2025-10-16T00:00:00Z)"})
+		return
+	}
+
+	// ✅ Map to Signal model
+	signal := models.Signal{
+		TraderName:     req.TraderName,
+		Symbol:         req.Symbol,
+		StopLoss:       req.StopLoss,
+		EntryPrice:     req.EntryPrice,
+		TargetPrice:    req.TargetPrice,
+		CurrentPrice:   req.CurrentPrice,
+		Risk:           req.Risk,
+		Strategy:       req.Strategy,
+		Status:         req.Status,
+		TotalDuration:  req.TotalDuration,
+		TradeStartDate: startDate,
+		TradeEndDate:   endDate,
+		PublishedAt:    time.Now(),
+	}
+
+	// ✅ Debug log specific fields
+	log.Printf("✅ Parsed Signal Data: %+v", signal)
+
+	// ✅ Save to DB through your service
+	createdSignal, err := ctrl.liveSignalService.CreateSignal(c, &signal)
+	if err != nil {
+		log.Printf("❌ Error creating signal: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create signal"})
+		return
+	}
+
+	// ✅ Success response
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Signal created successfully",
+		"data":    createdSignal,
+	})
 }
 
 func GetMarketDataAPI(c *gin.Context) {
