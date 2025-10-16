@@ -13,11 +13,9 @@ func SetupRouter(
 	profileController *controllers.ProfileController,
 	kycController *controllers.KYCController,
 	walletCtrl *controllers.WalletController,
-	adminSubCntrl *controllers.AdminSubscriptionController,
 	traderController *controllers.TraderController,
-	custmerTraderSignlsController *controllers.CustomerTraderSubscriptionController,
-	// subsController *controllers.TraderSubscriptionController,
-	// subsController *controllers.TraderSubscriptionController,
+	custmerTraderSignlsController *controllers.CustomerTraderSignalSubscriptionController,
+
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -35,10 +33,10 @@ func SetupRouter(
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
 
-		protected.GET("/subscription-plans", adminSubCntrl.ListTraderSubscriptionPlans)
-		protected.POST("/subscription-plans/:plan_id/subscribe", adminSubCntrl.SubscribeToTraderPlan)
-		protected.GET("/trader-subscription", adminSubCntrl.GetCustomerTraderSubscription)
-		protected.DELETE("/trader-subscription/:subscription_id", adminSubCntrl.CancelCustomerTraderSubscription)
+		// protected.GET("/subscription-plans", adminSubCntrl.ListTraderSubscriptionPlans)
+		// protected.POST("/subscription-plans/:plan_id/subscribe", adminSubCntrl.SubscribeToTraderPlan)
+		// protected.GET("/trader-subscription", adminSubCntrl.GetCustomerTraderSubscription)
+		// protected.DELETE("/trader-subscription/:subscription_id", adminSubCntrl.CancelCustomerTraderSubscription)
 
 		protected.GET("/profile", profileController.GetProfile)
 		protected.PUT("/profile", profileController.UpdateProfile)

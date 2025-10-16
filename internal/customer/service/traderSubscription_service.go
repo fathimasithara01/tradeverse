@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type ICustomerTraderSubscriptionService interface {
+type ICustomerTraderSignalSubscriptionService interface {
 	GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error)
 	SubscribeToTrader(ctx context.Context, customerID uint, input models.SubscribeToTraderInput) error
 	GetSubscribedTradersSignals(ctx context.Context, customerID uint) ([]models.Signal, error)
@@ -21,20 +21,20 @@ type ICustomerTraderSubscriptionService interface {
 	IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error)
 }
 
-type CustomerTraderSubscriptionService struct {
-	repo customerrepo.ICustomerTraderSubscriptionRepository
+type CustomerTraderSignalSubscriptionService struct {
+	repo customerrepo.ICustomerTraderSignalSubscriptionRepository
 	db   *gorm.DB // Pass the DB instance for transactions
 }
 
-func NewCustomerTraderSubscriptionService(repo customerrepo.ICustomerTraderSubscriptionRepository, db *gorm.DB) ICustomerTraderSubscriptionService {
-	return &CustomerTraderSubscriptionService{repo: repo, db: db}
+func NewCustomerTraderSignalSubscriptionService(repo customerrepo.ICustomerTraderSignalSubscriptionRepository, db *gorm.DB) ICustomerTraderSignalSubscriptionService {
+	return &CustomerTraderSignalSubscriptionService{repo: repo, db: db}
 }
 
-func (s *CustomerTraderSubscriptionService) GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error) {
+func (s *CustomerTraderSignalSubscriptionService) GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error) {
 	return s.repo.GetTradersWithPlans(ctx)
 }
 
-func (s *CustomerTraderSubscriptionService) SubscribeToTrader(ctx context.Context, customerID uint, input models.SubscribeToTraderInput) error {
+func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.Context, customerID uint, input models.SubscribeToTraderInput) error {
 	log.Printf("Attempting to subscribe customer %d to plan ID %d", customerID, input.TraderSubscriptionPlanID)
 
 	plan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, input.TraderSubscriptionPlanID)
@@ -210,7 +210,7 @@ func (s *CustomerTraderSubscriptionService) SubscribeToTrader(ctx context.Contex
 	return nil
 }
 
-func (s *CustomerTraderSubscriptionService) GetSubscribedTradersSignals(ctx context.Context, customerID uint) ([]models.Signal, error) {
+func (s *CustomerTraderSignalSubscriptionService) GetSubscribedTradersSignals(ctx context.Context, customerID uint) ([]models.Signal, error) {
 	signals, err := s.repo.GetAllSignalsFromSubscribedTraders(ctx, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve signals from subscribed traders: %w", err)
@@ -218,7 +218,7 @@ func (s *CustomerTraderSubscriptionService) GetSubscribedTradersSignals(ctx cont
 	return signals, nil
 }
 
-func (s *CustomerTraderSubscriptionService) GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error) {
+func (s *CustomerTraderSignalSubscriptionService) GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error) {
 	subscriptions, err := s.repo.GetActiveTraderSubscriptionsForCustomer(ctx, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active subscriptions: %w", err)
@@ -226,6 +226,6 @@ func (s *CustomerTraderSubscriptionService) GetActiveSubscriptions(ctx context.C
 	return subscriptions, nil
 }
 
-func (s *CustomerTraderSubscriptionService) IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error) {
+func (s *CustomerTraderSignalSubscriptionService) IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error) {
 	return s.repo.IsCustomerSubscribedToTrader(ctx, customerID, traderID)
 }

@@ -9,13 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type ICustomerTraderSubscriptionRepository interface {
+type ICustomerTraderSignalSubscriptionRepository interface {
 	GetTradersWithPlans(ctx context.Context) ([]models.User, error)
 	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error)
 	CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSignalSubscription) (*models.CustomerTraderSignalSubscription, error)
 	IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error)
 	GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error)
-	GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) 
+	GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error)
 	GetTraderByID(ctx context.Context, traderID uint) (*models.User, error)
 	UpdateWalletBalance(ctx context.Context, userID uint, amount float64, tx *gorm.DB) error
 	CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error
@@ -24,15 +24,15 @@ type ICustomerTraderSubscriptionRepository interface {
 	IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error) // New
 }
 
-type CustomerTraderSubscriptionRepository struct {
+type CustomerTraderSignalSubscriptionRepository struct {
 	db *gorm.DB
 }
 
-func NewCustomerTraderSubscriptionRepository(db *gorm.DB) ICustomerTraderSubscriptionRepository {
-	return &CustomerTraderSubscriptionRepository{db: db}
+func NewCustomerTraderSignalSubscriptionRepository(db *gorm.DB) ICustomerTraderSignalSubscriptionRepository {
+	return &CustomerTraderSignalSubscriptionRepository{db: db}
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetTraderByID(ctx context.Context, traderID uint) (*models.User, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) GetTraderByID(ctx context.Context, traderID uint) (*models.User, error) {
 	var trader models.User
 	// --- FIX HERE ---
 	// Changed "is_trader = ?" to "role = ?" and true to models.RoleTrader
@@ -45,7 +45,7 @@ func (r *CustomerTraderSubscriptionRepository) GetTraderByID(ctx context.Context
 	return &trader, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetTradersWithPlans(ctx context.Context) ([]models.User, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) GetTradersWithPlans(ctx context.Context) ([]models.User, error) {
 	var traders []models.User
 	// Fetch users who are marked as traders and have at least one active TraderSubscriptionPlan
 	err := r.db.WithContext(ctx).
@@ -71,7 +71,7 @@ func (r *CustomerTraderSubscriptionRepository) GetTradersWithPlans(ctx context.C
 	return activeTraders, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error) {
 	var plan models.TraderSignalSubscriptionPlan
 	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -82,14 +82,14 @@ func (r *CustomerTraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx
 	return &plan, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSignalSubscription) (*models.CustomerTraderSignalSubscription, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSignalSubscription) (*models.CustomerTraderSignalSubscription, error) {
 	if err := r.db.WithContext(ctx).Create(sub).Error; err != nil {
 		return nil, fmt.Errorf("failed to create customer-trader subscription: %w", err)
 	}
 	return sub, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
 		Model(&models.CustomerTraderSignalSubscription{}).
@@ -101,7 +101,7 @@ func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToTrader(ctx 
 	return count > 0, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error) {
 	var subscriptions []models.CustomerTraderSignalSubscription
 	err := r.db.WithContext(ctx).
 		Preload("Trader").Preload("Plan").
@@ -113,7 +113,7 @@ func (r *CustomerTraderSubscriptionRepository) GetActiveTraderSubscriptionsForCu
 	return subscriptions, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) {
 	var signals []models.Signal
 
 	// First, get all trader IDs the customer is subscribed to
@@ -142,16 +142,16 @@ func (r *CustomerTraderSubscriptionRepository) GetAllSignalsFromSubscribedTrader
 	return signals, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) UpdateWalletBalance(ctx context.Context, userID uint, amount float64, tx *gorm.DB) error {
+func (r *CustomerTraderSignalSubscriptionRepository) UpdateWalletBalance(ctx context.Context, userID uint, amount float64, tx *gorm.DB) error {
 	return tx.WithContext(ctx).Model(&models.Wallet{}).Where("user_id = ?", userID).
 		Update("balance", gorm.Expr("balance + ?", amount)).Error
 }
 
-func (r *CustomerTraderSubscriptionRepository) CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error {
+func (r *CustomerTraderSignalSubscriptionRepository) CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error {
 	return tx.WithContext(ctx).Create(transaction).Error
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetAdminWallet(ctx context.Context) (*models.Wallet, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) GetAdminWallet(ctx context.Context) (*models.Wallet, error) {
 	var adminUser models.User
 	// Assuming there's an admin user with RoleAdmin
 	// --- FIX HERE ---
@@ -166,7 +166,7 @@ func (r *CustomerTraderSubscriptionRepository) GetAdminWallet(ctx context.Contex
 	return &adminWallet, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetTraderWallet(ctx context.Context, traderID uint) (*models.Wallet, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) GetTraderWallet(ctx context.Context, traderID uint) (*models.Wallet, error) {
 	var traderWallet models.Wallet
 	if err := r.db.WithContext(ctx).Where("user_id = ?", traderID).First(&traderWallet).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -177,7 +177,7 @@ func (r *CustomerTraderSubscriptionRepository) GetTraderWallet(ctx context.Conte
 	return &traderWallet, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error) {
+func (r *CustomerTraderSignalSubscriptionRepository) IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
 		Model(&models.CustomerTraderSignalSubscription{}).

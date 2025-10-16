@@ -80,12 +80,12 @@ func InitializeApp() (*App, error) {
 
 	customerAdminSubscriptionRepository := customerRepo.NewIAdminSubscriptionRepository(DB)
 	customerWalletConcreteRepo := walletRepo.NewWalletRepository(DB)
-	customerSubscriptionPlanRepo := customerRepo.NewCustomerTraderSubscriptionRepository(DB)
+	customerSubscriptionPlanRepo := customerRepo.NewCustomerTraderSignalSubscriptionRepository(DB)
 
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 
 	customerWalletService := customerService.NewWalletService(DB, customerWalletConcreteRepo, paymentClient)
-	_ = customerService.NewCustomerTraderSubscriptionService(
+	_ = customerService.NewCustomerTraderSignalSubscriptionService(
 		customerSubscriptionPlanRepo,
 		DB,
 	)

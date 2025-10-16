@@ -11,14 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CustomerTraderSubscriptionController struct {
-	subsService service.ICustomerTraderSubscriptionService
+type CustomerTraderSignalSubscriptionController struct {
+	subsService service.ICustomerTraderSignalSubscriptionService
 }
 
-func NewCustomerTraderSubscriptionController(subsService service.ICustomerTraderSubscriptionService) *CustomerTraderSubscriptionController {
-	return &CustomerTraderSubscriptionController{subsService: subsService}
+func NewCustomerTraderSignalSubscriptionController(subsService service.ICustomerTraderSignalSubscriptionService) *CustomerTraderSignalSubscriptionController {
+	return &CustomerTraderSignalSubscriptionController{subsService: subsService}
 }
-func (ctrl *CustomerTraderSubscriptionController) GetAvailableTradersWithPlans(c *gin.Context) {
+func (ctrl *CustomerTraderSignalSubscriptionController) GetAvailableTradersWithPlans(c *gin.Context) {
 	traders, err := ctrl.subsService.GetAvailableTradersWithPlans(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to fetch available traders: %v", err)})
@@ -27,7 +27,7 @@ func (ctrl *CustomerTraderSubscriptionController) GetAvailableTradersWithPlans(c
 	c.JSON(http.StatusOK, traders)
 }
 
-func (ctrl *CustomerTraderSubscriptionController) SubscribeToTrader(c *gin.Context) {
+func (ctrl *CustomerTraderSignalSubscriptionController) SubscribeToTrader(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
@@ -54,7 +54,7 @@ func (ctrl *CustomerTraderSubscriptionController) SubscribeToTrader(c *gin.Conte
 	c.JSON(http.StatusOK, gin.H{"message": "successfully subscribed to trader's plan"})
 }
 
-func (ctrl *CustomerTraderSubscriptionController) GetSignalsFromSubscribedTraders(c *gin.Context) {
+func (ctrl *CustomerTraderSignalSubscriptionController) GetSignalsFromSubscribedTraders(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
@@ -71,7 +71,7 @@ func (ctrl *CustomerTraderSubscriptionController) GetSignalsFromSubscribedTrader
 	c.JSON(http.StatusOK, signals)
 }
 
-func (ctrl *CustomerTraderSubscriptionController) GetMyActiveTraderSubscriptions(c *gin.Context) {
+func (ctrl *CustomerTraderSignalSubscriptionController) GetMyActiveTraderSubscriptions(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
@@ -88,7 +88,7 @@ func (ctrl *CustomerTraderSubscriptionController) GetMyActiveTraderSubscriptions
 	c.JSON(http.StatusOK, subscriptions)
 }
 
-func (ctrl *CustomerTraderSubscriptionController) IsSubscribedToTrader(c *gin.Context) {
+func (ctrl *CustomerTraderSignalSubscriptionController) IsSubscribedToTrader(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user ID not found in context"})
