@@ -11,21 +11,21 @@ import (
 )
 
 type ITraderSubscriptionRepository interface {
-	CreateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSubscriptionPlan) (*models.TraderSubscriptionPlan, error)
-	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error)
-	GetTraderSubscriptionPlansByTraderID(ctx context.Context, traderID uint) ([]models.TraderSubscriptionPlan, error)
-	UpdateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSubscriptionPlan) error
+	CreateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSignalSubscriptionPlan) (*models.TraderSignalSubscriptionPlan, error)
+	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error)
+	GetTraderSubscriptionPlansByTraderID(ctx context.Context, traderID uint) ([]models.TraderSignalSubscriptionPlan, error)
+	UpdateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSignalSubscriptionPlan) error
 	DeleteTraderSubscriptionPlan(ctx context.Context, planID, traderID uint) error
 
 	CheckIfUserIsActiveTrader(ctx context.Context, userID uint) (bool, error)
 	GetUserActiveUpgradeSubscription(ctx context.Context, userID uint, planID uint) (*models.UserSubscription, error) // Specific check
 
-	CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSubscription) error
+	CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSignalSubscription) error
 	CheckIfCustomerIsSubscribedToTraderPlan(ctx context.Context, customerID uint, traderPlanID uint) (bool, error)
 
 	SetUserRole(ctx context.Context, userID uint, role models.UserRole, tx *gorm.DB) error // Update user role during transaction
-	GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error)
-	GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.AdminSubscriptionPlan, error)
+	GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminTraderSubscriptionPlan, error)
+	GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.AdminTraderSubscriptionPlan, error)
 	CreateUserSubscription(ctx context.Context, sub *models.UserSubscription) error
 
 	// Wallet and Transaction Management (shared)
@@ -54,7 +54,7 @@ func (r *TraderSubscriptionRepository) GetUserByID(ctx context.Context, userID u
 	return &user, nil
 }
 
-func (r *TraderSubscriptionRepository) CreateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSubscriptionPlan) (*models.TraderSubscriptionPlan, error) {
+func (r *TraderSubscriptionRepository) CreateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSignalSubscriptionPlan) (*models.TraderSignalSubscriptionPlan, error) {
 
 	if err := r.db.WithContext(ctx).Create(plan).Error; err != nil {
 		return nil, fmt.Errorf("failed to create trader subscription plan: %w", err)
@@ -73,8 +73,8 @@ func (r *TraderSubscriptionRepository) CreateTraderSubscriptionPlan(ctx context.
 // 	return &plan, nil
 // }
 
-func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
-	var plan models.TraderSubscriptionPlan
+func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error) {
+	var plan models.TraderSignalSubscriptionPlan
 	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("trader subscription plan not found") // Or define a specific repo error, like customerrepo.ErrPlanNotFound
@@ -83,8 +83,8 @@ func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context
 	}
 	return &plan, nil
 }
-func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlansByTraderID(ctx context.Context, traderID uint) ([]models.TraderSubscriptionPlan, error) {
-	var plans []models.TraderSubscriptionPlan
+func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlansByTraderID(ctx context.Context, traderID uint) ([]models.TraderSignalSubscriptionPlan, error) {
+	var plans []models.TraderSignalSubscriptionPlan
 	err := r.db.WithContext(ctx).Where("trader_id = ?", traderID).Find(&plans).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to find trader subscription plans for trader ID %d: %w", traderID, err)
@@ -100,7 +100,7 @@ func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlansByTraderID(ctx 
 // 	return plans, nil
 // }
 
-func (r *TraderSubscriptionRepository) UpdateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSubscriptionPlan) error {
+func (r *TraderSubscriptionRepository) UpdateTraderSubscriptionPlan(ctx context.Context, plan *models.TraderSignalSubscriptionPlan) error {
 	if err := r.db.WithContext(ctx).Save(plan).Error; err != nil {
 		return fmt.Errorf("failed to update trader subscription plan: %w", err)
 	}
@@ -109,7 +109,7 @@ func (r *TraderSubscriptionRepository) UpdateTraderSubscriptionPlan(ctx context.
 
 func (r *TraderSubscriptionRepository) DeleteTraderSubscriptionPlan(ctx context.Context, planID, traderID uint) error {
 	// Ensure only the owner trader can delete their plan
-	result := r.db.WithContext(ctx).Where("id = ? AND trader_id = ?", planID, traderID).Delete(&models.TraderSubscriptionPlan{})
+	result := r.db.WithContext(ctx).Where("id = ? AND trader_id = ?", planID, traderID).Delete(&models.TraderSignalSubscriptionPlan{})
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete trader subscription plan: %w", result.Error)
 	}
@@ -149,7 +149,7 @@ func (r *TraderSubscriptionRepository) SetUserRole(ctx context.Context, userID u
 }
 
 // --- Customer Subscription to Trader's plan ---
-func (r *TraderSubscriptionRepository) CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSubscription) error {
+func (r *TraderSubscriptionRepository) CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSignalSubscription) error {
 	if err := r.db.WithContext(ctx).Create(sub).Error; err != nil {
 		return fmt.Errorf("failed to create customer trader subscription: %w", err)
 	}
@@ -159,7 +159,7 @@ func (r *TraderSubscriptionRepository) CreateCustomerTraderSubscription(ctx cont
 func (r *TraderSubscriptionRepository) CheckIfCustomerIsSubscribedToTraderPlan(ctx context.Context, customerID uint, traderPlanID uint) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Model(&models.CustomerTraderSubscription{}).
+		Model(&models.CustomerTraderSignalSubscription{}).
 		Where("customer_id = ? AND trader_subscription_plan_id = ? AND is_active = ? AND end_date > ?",
 			customerID, traderPlanID, true, time.Now()).
 		Count(&count).Error
@@ -171,8 +171,8 @@ func (r *TraderSubscriptionRepository) CheckIfCustomerIsSubscribedToTraderPlan(c
 
 // --- Admin-defined Subscription Plan (for upgrading to trader) ---
 
-func (r *TraderSubscriptionRepository) GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error) {
-	var plans []models.AdminSubscriptionPlan
+func (r *TraderSubscriptionRepository) GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminTraderSubscriptionPlan, error) {
+	var plans []models.AdminTraderSubscriptionPlan
 	// Only fetch plans that are specifically for upgrading to a trader role
 	if err := r.db.WithContext(ctx).Where("is_upgrade_to_trader = ?", true).Find(&plans).Error; err != nil {
 		return nil, fmt.Errorf("failed to get admin subscription plans for trader upgrade: %w", err)
@@ -180,8 +180,8 @@ func (r *TraderSubscriptionRepository) GetAllTraderUpgradePlans(ctx context.Cont
 	return plans, nil
 }
 
-func (r *TraderSubscriptionRepository) GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.AdminSubscriptionPlan, error) {
-	var plan models.AdminSubscriptionPlan
+func (r *TraderSubscriptionRepository) GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.AdminTraderSubscriptionPlan, error) {
+	var plan models.AdminTraderSubscriptionPlan
 	// Ensure it's an upgrade plan
 	if err := r.db.WithContext(ctx).Where("id = ? AND is_upgrade_to_trader = ?", planID, true).First(&plan).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {

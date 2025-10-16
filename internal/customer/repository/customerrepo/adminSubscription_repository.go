@@ -20,15 +20,15 @@ type IAdminSubscriptionRepository interface {
 	UpdateUserRole(userID uint, role models.UserRole) error
 	CreateTraderProfile(profile *models.TraderProfile) error
 
-	GetTraderSubscriptionPlans() ([]models.AdminSubscriptionPlan, error) // Returns SubscriptionPlans that are IsUpgradeToTrader
-	GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error)
+	GetTraderSubscriptionPlans() ([]models.AdminTraderSubscriptionPlan, error) // Returns SubscriptionPlans that are IsUpgradeToTrader
+	GetSubscriptionPlanByID(id uint) (*models.AdminTraderSubscriptionPlan, error)
 
-	CreateSubscription(sub *models.Subscription) error
-	UpdateSubscription(sub *models.Subscription) error
-	GetUserActiveTraderSubscription(userID uint) (*models.Subscription, error)
-	GetUserActiveTraderSubscriptions(userID uint) ([]models.Subscription, error)
-	GetSubscriptionByIDAndUserID(subscriptionID, userID uint) (*models.Subscription, error)
-	GetExpiredActiveUpgradeToTraderSubscriptions() ([]models.Subscription, error)
+	CreateSubscription(sub *models.CustomerToTraderSub) error
+	UpdateSubscription(sub *models.CustomerToTraderSub) error
+	GetUserActiveTraderSubscription(userID uint) (*models.CustomerToTraderSub, error)
+	GetUserActiveTraderSubscriptions(userID uint) ([]models.CustomerToTraderSub, error)
+	GetSubscriptionByIDAndUserID(subscriptionID, userID uint) (*models.CustomerToTraderSub, error)
+	GetExpiredActiveUpgradeToTraderSubscriptions() ([]models.CustomerToTraderSub, error)
 }
 
 type adminSubscriptionRepository struct {
@@ -58,8 +58,8 @@ func (r *adminSubscriptionRepository) CreateTraderProfile(profile *models.Trader
 	return r.db.Create(profile).Error
 }
 
-func (r *adminSubscriptionRepository) GetTraderSubscriptionPlans() ([]models.AdminSubscriptionPlan, error) {
-	var plans []models.AdminSubscriptionPlan
+func (r *adminSubscriptionRepository) GetTraderSubscriptionPlans() ([]models.AdminTraderSubscriptionPlan, error) {
+	var plans []models.AdminTraderSubscriptionPlan
 	if err := r.db.Where("is_upgrade_to_trader = ? AND is_active = ?", true, true).
 		Order("price ASC").
 		Find(&plans).Error; err != nil {
@@ -68,24 +68,24 @@ func (r *adminSubscriptionRepository) GetTraderSubscriptionPlans() ([]models.Adm
 	return plans, nil
 }
 
-func (r *adminSubscriptionRepository) GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error) {
-	var plan models.AdminSubscriptionPlan
+func (r *adminSubscriptionRepository) GetSubscriptionPlanByID(id uint) (*models.AdminTraderSubscriptionPlan, error) {
+	var plan models.AdminTraderSubscriptionPlan
 	if err := r.db.First(&plan, id).Error; err != nil {
 		return nil, err
 	}
 	return &plan, nil
 }
 
-func (r *adminSubscriptionRepository) CreateSubscription(sub *models.Subscription) error {
+func (r *adminSubscriptionRepository) CreateSubscription(sub *models.CustomerToTraderSub) error {
 	return r.db.Create(sub).Error
 }
 
-func (r *adminSubscriptionRepository) UpdateSubscription(sub *models.Subscription) error {
+func (r *adminSubscriptionRepository) UpdateSubscription(sub *models.CustomerToTraderSub) error {
 	return r.db.Save(sub).Error
 }
 
-func (r *adminSubscriptionRepository) GetUserActiveTraderSubscription(userID uint) (*models.Subscription, error) {
-	var subscription models.Subscription
+func (r *adminSubscriptionRepository) GetUserActiveTraderSubscription(userID uint) (*models.CustomerToTraderSub, error) {
+	var subscription models.CustomerToTraderSub
 	err := r.db.Preload("SubscriptionPlan").
 		Joins("JOIN subscription_plans ON subscriptions.subscription_plan_id = subscription_plans.id").
 		Where("subscriptions.user_id = ? AND subscriptions.is_active = ? AND subscription_plans.is_upgrade_to_trader = ? AND subscriptions.end_date > ?",
@@ -100,8 +100,8 @@ func (r *adminSubscriptionRepository) GetUserActiveTraderSubscription(userID uin
 	return &subscription, nil
 }
 
-func (r *adminSubscriptionRepository) GetUserActiveTraderSubscriptions(userID uint) ([]models.Subscription, error) {
-	var subscriptions []models.Subscription
+func (r *adminSubscriptionRepository) GetUserActiveTraderSubscriptions(userID uint) ([]models.CustomerToTraderSub, error) {
+	var subscriptions []models.CustomerToTraderSub
 	err := r.db.Preload("SubscriptionPlan").
 		Joins("JOIN subscription_plans ON subscriptions.subscription_plan_id = subscription_plans.id").
 		Where("subscriptions.user_id = ? AND subscriptions.is_active = ? AND subscription_plans.is_upgrade_to_trader = ? AND subscriptions.end_date > ?",
@@ -113,8 +113,8 @@ func (r *adminSubscriptionRepository) GetUserActiveTraderSubscriptions(userID ui
 	return subscriptions, nil
 }
 
-func (r *adminSubscriptionRepository) GetSubscriptionByIDAndUserID(subscriptionID, userID uint) (*models.Subscription, error) {
-	var subscription models.Subscription
+func (r *adminSubscriptionRepository) GetSubscriptionByIDAndUserID(subscriptionID, userID uint) (*models.CustomerToTraderSub, error) {
+	var subscription models.CustomerToTraderSub
 	err := r.db.Preload("SubscriptionPlan").
 		Where("id = ? AND user_id = ?", subscriptionID, userID).
 		First(&subscription).Error
@@ -127,8 +127,8 @@ func (r *adminSubscriptionRepository) GetSubscriptionByIDAndUserID(subscriptionI
 	return &subscription, nil
 }
 
-func (r *adminSubscriptionRepository) GetExpiredActiveUpgradeToTraderSubscriptions() ([]models.Subscription, error) {
-	var subscriptions []models.Subscription
+func (r *adminSubscriptionRepository) GetExpiredActiveUpgradeToTraderSubscriptions() ([]models.CustomerToTraderSub, error) {
+	var subscriptions []models.CustomerToTraderSub
 	err := r.db.Preload("SubscriptionPlan").
 		Joins("JOIN subscription_plans ON subscriptions.subscription_plan_id = subscription_plans.id").
 		Where("subscriptions.is_active = ? AND subscriptions.end_date < ? AND subscription_plans.is_upgrade_to_trader = ?",

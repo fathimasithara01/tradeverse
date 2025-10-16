@@ -8,33 +8,17 @@ import (
 
 type UserSubscription struct {
 	gorm.Model
-	UserID             uint                  `gorm:"index;not null" json:"user_id"`
-	User               User                  `gorm:"foreignKey:UserID"`
-	SubscriptionPlanID uint                  `gorm:"index;not null" json:"subscription_plan_id"`
-	Plan               AdminSubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID"`
-	StartDate          time.Time             `gorm:"not null" json:"start_date"`
-	EndDate            time.Time             `gorm:"not null" json:"end_date"`
-	IsActive           bool                  `gorm:"default:true" json:"is_active"`
-	TransactionID      uint                  `gorm:"index" json:"transaction_id"`
+	UserID             uint                        `gorm:"index;not null" json:"user_id"`
+	User               User                        `gorm:"foreignKey:UserID"`
+	SubscriptionPlanID uint                        `gorm:"index;not null" json:"subscription_plan_id"`
+	Plan               AdminTraderSubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID"`
+	StartDate          time.Time                   `gorm:"not null" json:"start_date"`
+	EndDate            time.Time                   `gorm:"not null" json:"end_date"`
+	IsActive           bool                        `gorm:"default:true" json:"is_active"`
+	TransactionID      uint                        `gorm:"index" json:"transaction_id"`
 }
 
-type TraderSubscriptionPlan struct {
-	gorm.Model
-
-	TraderID        uint    `gorm:"index;not null" json:"trader_id"`
-	Name            string  `gorm:"not null" json:"name"`
-	Description     string  `gorm:"type:text" json:"description"`
-	Price           float64 `gorm:"type:numeric(18,4);not null" json:"price"`
-	Currency        string  `gorm:"size:10;not null;default:'USD'" json:"currency"`
-	DurationDays    uint    `json:"duration_days"`
-	IsActive        bool    `gorm:"default:true" json:"is_active"`
-	AdminCommission float64 `gorm:"column:admin_commission;type:numeric(5,2);default:0.00" json:"admin_commission_percentage"`
-	TraderShare     float64 `gorm:"type:numeric(18,4);not null;default:0.00" json:"trader_share"`
-
-	Trader User `gorm:"foreignKey:TraderID"`
-}
-
-type CustomerTraderSubscription struct {
+type CustomerTraderSignalSubscription struct {
 	gorm.Model
 	CustomerID uint `gorm:"index;not null" json:"customer_id"`
 	Customer   User `gorm:"foreignKey:CustomerID"`
@@ -42,8 +26,8 @@ type CustomerTraderSubscription struct {
 	TraderID uint `gorm:"index;not null" json:"trader_id"`
 	Trader   User `gorm:"foreignKey:TraderID"`
 
-	TraderSubscriptionPlanID uint                   `gorm:"index;not null" json:"trader_subscription_plan_id"`
-	Plan                     TraderSubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID"`
+	TraderSubscriptionPlanID uint                         `gorm:"index;not null" json:"trader_subscription_plan_id"`
+	Plan                     TraderSignalSubscriptionPlan `gorm:"foreignKey:TraderSubscriptionPlanID"`
 
 	StartDate           time.Time `gorm:"not null" json:"start_date"`
 	EndDate             time.Time `gorm:"not null" json:"end_date"`
@@ -57,6 +41,8 @@ type CustomerTraderSubscription struct {
 	AdminCommission        float64 `gorm:"type:numeric(18,4);not null" json:"admin_commission"`
 	TransactionReferenceID string  `gorm:"size:255;not null" json:"transaction_reference_id"`
 }
+
+// Request
 
 type TraderSubscriptionResponse struct {
 	TraderSubscriptionID uint    `json:"trader_subscription_id"`
@@ -74,7 +60,6 @@ type TraderSubscriptionResponse struct {
 	Status               string  `json:"status"`
 }
 
-// Request
 type TraderSubscriptionRequest struct {
 	CustomerID               uint `json:"customer_id" binding:"required"`
 	TraderID                 uint `json:"trader_id" binding:"required"`

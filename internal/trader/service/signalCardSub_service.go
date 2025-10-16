@@ -11,17 +11,15 @@ import (
 )
 
 type ITraderSubscriptionService interface {
-	CreateTraderSubscriptionPlan(ctx context.Context, traderID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSubscriptionPlan, error)
-	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error)
-	GetMyTraderSubscriptionPlans(ctx context.Context, traderID uint) ([]models.TraderSubscriptionPlan, error)
-	UpdateTraderSubscriptionPlan(ctx context.Context, traderID uint, planID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSubscriptionPlan, error)
+	CreateTraderSubscriptionPlan(ctx context.Context, traderID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSignalSubscriptionPlan, error)
+	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error)
+	GetMyTraderSubscriptionPlans(ctx context.Context, traderID uint) ([]models.TraderSignalSubscriptionPlan, error)
+	UpdateTraderSubscriptionPlan(ctx context.Context, traderID uint, planID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSignalSubscriptionPlan, error)
 	DeleteTraderSubscriptionPlan(ctx context.Context, traderID uint, planID uint) error
 
-	// Customer subscription to a specific Trader's plan
 	SubscribeToTraderPlan(ctx context.Context, customerID uint, traderID uint, planID uint) error
 
-	// Trader Upgrade Subscription related (for users to take a plan to become a trader)
-	GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error)
+	GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminTraderSubscriptionPlan, error)
 	SubscribeToTraderUpgradePlan(ctx context.Context, userID uint, planID uint) error
 }
 
@@ -34,7 +32,7 @@ func NewTraderSubscriptionService(repo repository.ITraderSubscriptionRepository,
 	return &TraderSubscriptionService{repo: repo, db: db}
 }
 
-func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Context, traderID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSubscriptionPlan, error) {
+func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Context, traderID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSignalSubscriptionPlan, error) {
 
 	user, err := s.repo.GetUserByID(ctx, traderID)
 	if err != nil {
@@ -51,7 +49,7 @@ func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Con
 		traderShareAmount = 0 // Ensure it doesn't go negative
 	}
 
-	plan := &models.TraderSubscriptionPlan{
+	plan := &models.TraderSignalSubscriptionPlan{
 		TraderID:        traderID,
 		Name:            input.Name,
 		Description:     input.Description,
@@ -67,11 +65,11 @@ func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Con
 
 	return s.repo.CreateTraderSubscriptionPlan(ctx, plan)
 }
-func (s *TraderSubscriptionService) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
+func (s *TraderSubscriptionService) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error) {
 	return s.repo.GetTraderSubscriptionPlanByID(ctx, planID)
 }
 
-func (s *TraderSubscriptionService) GetMyTraderSubscriptionPlans(ctx context.Context, traderID uint) ([]models.TraderSubscriptionPlan, error) {
+func (s *TraderSubscriptionService) GetMyTraderSubscriptionPlans(ctx context.Context, traderID uint) ([]models.TraderSignalSubscriptionPlan, error) {
 	// This method needs to query the repository for plans belonging to this traderID
 	// For example:
 	plans, err := s.repo.GetTraderSubscriptionPlansByTraderID(ctx, traderID) // <--- This repository method is key
@@ -80,7 +78,7 @@ func (s *TraderSubscriptionService) GetMyTraderSubscriptionPlans(ctx context.Con
 	}
 	return plans, nil
 }
-func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Context, traderID uint, planID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSubscriptionPlan, error) {
+func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Context, traderID uint, planID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSignalSubscriptionPlan, error) {
 	existingPlan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, planID)
 	if err != nil {
 		return nil, err
@@ -257,7 +255,7 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 	startDate := time.Now()
 	endDate := startDate.Add(time.Duration(plan.DurationDays) * 24 * time.Hour)
 
-	customerTraderSubscription := &models.CustomerTraderSubscription{
+	customerTraderSubscription := &models.CustomerTraderSignalSubscription{
 		CustomerID:               customerID,
 		TraderID:                 traderID,
 		TraderSubscriptionPlanID: plan.ID,
@@ -282,7 +280,7 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 
 // --- Trader Upgrade Subscription related (for users to take a plan to become trader) ---
 
-func (s *TraderSubscriptionService) GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error) {
+func (s *TraderSubscriptionService) GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminTraderSubscriptionPlan, error) {
 	return s.repo.GetAllTraderUpgradePlans(ctx)
 }
 

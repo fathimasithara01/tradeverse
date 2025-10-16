@@ -10,13 +10,13 @@ import (
 )
 
 type ISubscriptionRepository interface {
-	CreateSubscription(subscription *models.Subscription) error
-	GetAllSubscriptions() ([]models.Subscription, error)
-	GetSubscriptionByID(id uint) (*models.Subscription, error)
-	GetSubscriptionsByUserID(userID uint) ([]models.Subscription, error)
-	UpdateSubscription(subscription *models.Subscription) error
+	CreateSubscription(subscription *models.CustomerToTraderSub) error
+	GetAllSubscriptions() ([]models.CustomerToTraderSub, error)
+	GetSubscriptionByID(id uint) (*models.CustomerToTraderSub, error)
+	GetSubscriptionsByUserID(userID uint) ([]models.CustomerToTraderSub, error)
+	UpdateSubscription(subscription *models.CustomerToTraderSub) error
 	DeleteSubscription(id uint) error
-	GetExpiredActiveSubscriptions() ([]models.Subscription, error)
+	GetExpiredActiveSubscriptions() ([]models.CustomerToTraderSub, error)
 }
 
 type SubscriptionRepository struct {
@@ -27,8 +27,8 @@ func NewSubscriptionRepository(db *gorm.DB) *SubscriptionRepository {
 	return &SubscriptionRepository{DB: db}
 }
 
-func (r *SubscriptionRepository) GetExpiredActiveSubscriptions() ([]models.Subscription, error) {
-	var subscriptions []models.Subscription
+func (r *SubscriptionRepository) GetExpiredActiveSubscriptions() ([]models.CustomerToTraderSub, error) {
+	var subscriptions []models.CustomerToTraderSub
 	err := r.DB.
 		Where("is_active = ? AND end_date < ?", true, time.Now()).
 		Preload("User").
@@ -36,13 +36,13 @@ func (r *SubscriptionRepository) GetExpiredActiveSubscriptions() ([]models.Subsc
 	return subscriptions, err
 }
 
-func (r *SubscriptionRepository) CreateSubscription(subscription *models.Subscription) error {
+func (r *SubscriptionRepository) CreateSubscription(subscription *models.CustomerToTraderSub) error {
 	return r.DB.Create(subscription).Error
 }
 
-func (r *SubscriptionRepository) GetAllSubscriptions() ([]models.Subscription, error) {
+func (r *SubscriptionRepository) GetAllSubscriptions() ([]models.CustomerToTraderSub, error) {
 	log.Println("DEBUG: SubscriptionRepository.GetAllSubscriptions was called.")
-	var subscriptions []models.Subscription
+	var subscriptions []models.CustomerToTraderSub
 	err := r.DB.
 		Preload("User").
 		Preload("User.TraderProfile").
@@ -57,22 +57,22 @@ func (r *SubscriptionRepository) GetAllSubscriptions() ([]models.Subscription, e
 	return subscriptions, nil
 }
 
-func (r *SubscriptionRepository) GetSubscriptionByID(id uint) (*models.Subscription, error) {
-	var subscription models.Subscription
+func (r *SubscriptionRepository) GetSubscriptionByID(id uint) (*models.CustomerToTraderSub, error) {
+	var subscription models.CustomerToTraderSub
 	err := r.DB.Preload("User").Preload("SubscriptionPlan").First(&subscription, id).Error
 	return &subscription, err
 }
 
-func (r *SubscriptionRepository) GetSubscriptionsByUserID(userID uint) ([]models.Subscription, error) {
-	var subscriptions []models.Subscription
+func (r *SubscriptionRepository) GetSubscriptionsByUserID(userID uint) ([]models.CustomerToTraderSub, error) {
+	var subscriptions []models.CustomerToTraderSub
 	err := r.DB.Where("user_id = ?", userID).Preload("SubscriptionPlan").Find(&subscriptions).Error
 	return subscriptions, err
 }
 
-func (r *SubscriptionRepository) UpdateSubscription(subscription *models.Subscription) error {
+func (r *SubscriptionRepository) UpdateSubscription(subscription *models.CustomerToTraderSub) error {
 	return r.DB.Save(subscription).Error
 }
 
 func (r *SubscriptionRepository) DeleteSubscription(id uint) error {
-	return r.DB.Unscoped().Delete(&models.Subscription{}, id).Error
+	return r.DB.Unscoped().Delete(&models.CustomerToTraderSub{}, id).Error
 }

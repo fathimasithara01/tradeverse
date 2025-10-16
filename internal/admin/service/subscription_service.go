@@ -12,13 +12,13 @@ import (
 )
 
 type ISubscriptionService interface {
-	CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.Subscription, error)
-	GetAllSubscriptions() ([]models.Subscription, error)
-	GetSubscriptionByID(id uint) (*models.Subscription, error)
-	GetSubscriptionsByUserID(userID uint) ([]models.Subscription, error)
-	UpdateSubscription(subscription *models.Subscription) error
+	CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.CustomerToTraderSub, error)
+	GetAllSubscriptions() ([]models.CustomerToTraderSub, error)
+	GetSubscriptionByID(id uint) (*models.CustomerToTraderSub, error)
+	GetSubscriptionsByUserID(userID uint) ([]models.CustomerToTraderSub, error)
+	UpdateSubscription(subscription *models.CustomerToTraderSub) error
 	DeleteSubscription(id uint) error
-	GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error)
+	GetSubscriptionPlanByID(id uint) (*models.AdminTraderSubscriptionPlan, error)
 	UpgradeUserToTrader(userID uint) error
 
 	DeactivateExpiredSubscriptions() error
@@ -151,8 +151,8 @@ func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {
 	return s.userRepo.UpdateUser(user)
 }
 
-func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.Subscription, error) {
-	var subscription *models.Subscription
+func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.CustomerToTraderSub, error) {
+	var subscription *models.CustomerToTraderSub
 	err := s.DB.Transaction(func(tx *gorm.DB) error {
 		plan, err := s.planRepo.GetSubscriptionPlanByID(planID)
 		if err != nil {
@@ -173,7 +173,7 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 			endDate = startDate.AddDate(0, 1, 0)
 		}
 
-		newSubscription := &models.Subscription{
+		newSubscription := &models.CustomerToTraderSub{
 			UserID:             userID,
 			SubscriptionPlanID: planID,
 			StartDate:          startDate,
@@ -204,7 +204,7 @@ func (s *SubscriptionService) CreateSubscription(userID, planID uint, amount flo
 	return subscription, nil
 }
 
-func (s *SubscriptionService) GetAllSubscriptions() ([]models.Subscription, error) {
+func (s *SubscriptionService) GetAllSubscriptions() ([]models.CustomerToTraderSub, error) {
 	log.Println("DEBUG: SubscriptionService.GetAllSubscriptions was called.")
 	subs, err := s.subscriptionRepo.GetAllSubscriptions()
 	if err != nil {
@@ -215,15 +215,15 @@ func (s *SubscriptionService) GetAllSubscriptions() ([]models.Subscription, erro
 	return subs, nil
 }
 
-func (s *SubscriptionService) GetSubscriptionByID(id uint) (*models.Subscription, error) {
+func (s *SubscriptionService) GetSubscriptionByID(id uint) (*models.CustomerToTraderSub, error) {
 	return s.subscriptionRepo.GetSubscriptionByID(id)
 }
 
-func (s *SubscriptionService) GetSubscriptionsByUserID(userID uint) ([]models.Subscription, error) {
+func (s *SubscriptionService) GetSubscriptionsByUserID(userID uint) ([]models.CustomerToTraderSub, error) {
 	return s.subscriptionRepo.GetSubscriptionsByUserID(userID)
 }
 
-func (s *SubscriptionService) UpdateSubscription(subscription *models.Subscription) error {
+func (s *SubscriptionService) UpdateSubscription(subscription *models.CustomerToTraderSub) error {
 	return s.subscriptionRepo.UpdateSubscription(subscription)
 }
 
@@ -231,6 +231,6 @@ func (s *SubscriptionService) DeleteSubscription(id uint) error {
 	return s.subscriptionRepo.DeleteSubscription(id)
 }
 
-func (s *SubscriptionService) GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error) {
+func (s *SubscriptionService) GetSubscriptionPlanByID(id uint) (*models.AdminTraderSubscriptionPlan, error) {
 	return s.planRepo.GetSubscriptionPlanByID(id)
 }

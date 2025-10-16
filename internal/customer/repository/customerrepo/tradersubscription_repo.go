@@ -11,11 +11,11 @@ import (
 
 type ICustomerTraderSubscriptionRepository interface {
 	GetTradersWithPlans(ctx context.Context) ([]models.User, error)
-	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error)
-	CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSubscription) (*models.CustomerTraderSubscription, error)
+	GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error)
+	CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSignalSubscription) (*models.CustomerTraderSignalSubscription, error)
 	IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error)
-	GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error)
-	GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) // New method
+	GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error)
+	GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) 
 	GetTraderByID(ctx context.Context, traderID uint) (*models.User, error)
 	UpdateWalletBalance(ctx context.Context, userID uint, amount float64, tx *gorm.DB) error
 	CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error
@@ -71,8 +71,8 @@ func (r *CustomerTraderSubscriptionRepository) GetTradersWithPlans(ctx context.C
 	return activeTraders, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
-	var plan models.TraderSubscriptionPlan
+func (r *CustomerTraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error) {
+	var plan models.TraderSignalSubscriptionPlan
 	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("trader subscription plan not found")
@@ -82,7 +82,7 @@ func (r *CustomerTraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx
 	return &plan, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSubscription) (*models.CustomerTraderSubscription, error) {
+func (r *CustomerTraderSubscriptionRepository) CreateCustomerTraderSubscription(ctx context.Context, sub *models.CustomerTraderSignalSubscription) (*models.CustomerTraderSignalSubscription, error) {
 	if err := r.db.WithContext(ctx).Create(sub).Error; err != nil {
 		return nil, fmt.Errorf("failed to create customer-trader subscription: %w", err)
 	}
@@ -92,7 +92,7 @@ func (r *CustomerTraderSubscriptionRepository) CreateCustomerTraderSubscription(
 func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Model(&models.CustomerTraderSubscription{}).
+		Model(&models.CustomerTraderSignalSubscription{}).
 		Where("customer_id = ? AND trader_id = ? AND end_date > ? AND is_active = ?", customerID, traderID, time.Now(), true).
 		Count(&count).Error
 	if err != nil {
@@ -101,8 +101,8 @@ func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToTrader(ctx 
 	return count > 0, nil
 }
 
-func (r *CustomerTraderSubscriptionRepository) GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error) {
-	var subscriptions []models.CustomerTraderSubscription
+func (r *CustomerTraderSubscriptionRepository) GetActiveTraderSubscriptionsForCustomer(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error) {
+	var subscriptions []models.CustomerTraderSignalSubscription
 	err := r.db.WithContext(ctx).
 		Preload("Trader").Preload("Plan").
 		Where("customer_id = ? AND end_date > ? AND is_active = ?", customerID, time.Now(), true).
@@ -119,7 +119,7 @@ func (r *CustomerTraderSubscriptionRepository) GetAllSignalsFromSubscribedTrader
 	// First, get all trader IDs the customer is subscribed to
 	var subscribedTraderIDs []uint
 	err := r.db.WithContext(ctx).
-		Model(&models.CustomerTraderSubscription{}).
+		Model(&models.CustomerTraderSignalSubscription{}).
 		Select("DISTINCT trader_id").
 		Where("customer_id = ? AND end_date > ? AND is_active = ?", customerID, time.Now(), true).
 		Pluck("trader_id", &subscribedTraderIDs).Error
@@ -180,7 +180,7 @@ func (r *CustomerTraderSubscriptionRepository) GetTraderWallet(ctx context.Conte
 func (r *CustomerTraderSubscriptionRepository) IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Model(&models.CustomerTraderSubscription{}).
+		Model(&models.CustomerTraderSignalSubscription{}).
 		Where("customer_id = ? AND trader_subscription_plan_id = ? AND end_date > ? AND is_active = ?", customerID, planID, time.Now(), true).
 		Count(&count).Error
 	if err != nil {

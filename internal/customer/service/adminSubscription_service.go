@@ -79,8 +79,7 @@ func NewAdminSubscriptionService(repo customerrepo.IAdminSubscriptionRepository,
 }
 
 func (s *adminSubscriptionService) ListTraderSubscriptionPlans() ([]TraderSubscriptionPlanResponse, error) {
-	// Fetch all subscription plans, then filter for IsUpgradeToTrader=true if needed
-	// Or, modify repository to fetch only IsUpgradeToTrader plans
+
 	plans, err := s.repo.GetTraderSubscriptionPlans() // Assuming this method now returns SubscriptionPlan models
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch trader subscription plans: %w", err)
@@ -191,7 +190,7 @@ func (s *adminSubscriptionService) SubscribeToTraderPlan(customerID, planID uint
 		endDate := calculateEndDate(now, plan.Interval, int(plan.Duration/time.Hour)) // Duration in hours, calculateEndDate will handle interval logic
 
 		// Create a new models.Subscription record
-		subscription := models.Subscription{
+		subscription := models.CustomerToTraderSub{
 			UserID:             customerID,
 			SubscriptionPlanID: plan.ID,
 			TraderID:           &customerID, // Set TraderID to customerID as they are becoming a trader
@@ -321,7 +320,7 @@ func (s *adminSubscriptionService) CancelCustomerTraderSubscription(ctx context.
 
 		// Check if the user has any other active 'IsUpgradeToTrader' subscriptions
 		var count int64
-		err := tx.Model(&models.Subscription{}).
+		err := tx.Model(&models.CustomerToTraderSub{}).
 			Joins("JOIN subscription_plans ON subscriptions.subscription_plan_id = subscription_plans.id").
 			Where("subscriptions.user_id = ? AND subscriptions.is_active = ? AND subscription_plans.is_upgrade_to_trader = ?", userID, true, true).
 			Count(&count).Error
@@ -390,7 +389,7 @@ func (s *adminSubscriptionService) DeactivateExpiredTraderSubscriptions() error 
 
 			// Check if this user has any other *active* 'IsUpgradeToTrader' subscriptions
 			var activeTraderSubsCount int64
-			err := tx.Model(&models.Subscription{}).
+			err := tx.Model(&models.CustomerToTraderSub{}).
 				Joins("JOIN subscription_plans ON subscriptions.subscription_plan_id = subscription_plans.id").
 				Where("subscriptions.user_id = ? AND subscriptions.is_active = ? AND subscription_plans.is_upgrade_to_trader = ?", sub.UserID, true, true).
 				Count(&activeTraderSubsCount).Error

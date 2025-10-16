@@ -6,10 +6,10 @@ import (
 )
 
 type ISubscriptionPlanService interface {
-	CreateSubscriptionPlan(plan *models.AdminSubscriptionPlan) error
-	GetAllSubscriptionPlans() ([]models.AdminSubscriptionPlan, error)
-	GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error)
-	UpdateSubscriptionPlan(plan *models.AdminSubscriptionPlan) error
+	CreateSubscriptionPlan(plan *models.AdminTraderSubscriptionPlan) error
+	GetAllSubscriptionPlans() ([]models.AdminTraderSubscriptionPlan, error)
+	GetSubscriptionPlanByID(id uint) (*models.AdminTraderSubscriptionPlan, error)
+	UpdateSubscriptionPlan(plan *models.AdminTraderSubscriptionPlan) error
 	DeleteSubscriptionPlan(id uint) error
 }
 
@@ -21,19 +21,19 @@ func NewSubscriptionPlanService(repo repository.ISubscriptionPlanRepository) *Su
 	return &SubscriptionPlanService{repo: repo}
 }
 
-func (s *SubscriptionPlanService) CreateSubscriptionPlan(plan *models.AdminSubscriptionPlan) error {
+func (s *SubscriptionPlanService) CreateSubscriptionPlan(plan *models.AdminTraderSubscriptionPlan) error {
 	return s.repo.CreateSubscriptionPlan(plan)
 }
 
-func (s *SubscriptionPlanService) GetAllSubscriptionPlans() ([]models.AdminSubscriptionPlan, error) {
+func (s *SubscriptionPlanService) GetAllSubscriptionPlans() ([]models.AdminTraderSubscriptionPlan, error) {
 	return s.repo.GetAllSubscriptionPlans()
 }
 
-func (s *SubscriptionPlanService) GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error) {
+func (s *SubscriptionPlanService) GetSubscriptionPlanByID(id uint) (*models.AdminTraderSubscriptionPlan, error) {
 	return s.repo.GetSubscriptionPlanByID(id)
 }
 
-func (s *SubscriptionPlanService) UpdateSubscriptionPlan(plan *models.AdminSubscriptionPlan) error {
+func (s *SubscriptionPlanService) UpdateSubscriptionPlan(plan *models.AdminTraderSubscriptionPlan) error {
 	return s.repo.UpdateSubscriptionPlan(plan)
 }
 

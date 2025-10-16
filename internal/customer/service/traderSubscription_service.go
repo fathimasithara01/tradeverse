@@ -17,7 +17,7 @@ type ICustomerTraderSubscriptionService interface {
 	GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error)
 	SubscribeToTrader(ctx context.Context, customerID uint, input models.SubscribeToTraderInput) error
 	GetSubscribedTradersSignals(ctx context.Context, customerID uint) ([]models.Signal, error)
-	GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error)
+	GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error)
 	IsCustomerSubscribedToTrader(ctx context.Context, customerID, traderID uint) (bool, error)
 }
 
@@ -184,7 +184,7 @@ func (s *CustomerTraderSubscriptionService) SubscribeToTrader(ctx context.Contex
 	startDate := time.Now()
 	endDate := startDate.Add(time.Duration(plan.DurationDays) * 24 * time.Hour)
 
-	newSubscription := &models.CustomerTraderSubscription{
+	newSubscription := &models.CustomerTraderSignalSubscription{
 		CustomerID:               customerID,
 		TraderID:                 plan.TraderID,
 		TraderSubscriptionPlanID: plan.ID,
@@ -218,7 +218,7 @@ func (s *CustomerTraderSubscriptionService) GetSubscribedTradersSignals(ctx cont
 	return signals, nil
 }
 
-func (s *CustomerTraderSubscriptionService) GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSubscription, error) {
+func (s *CustomerTraderSubscriptionService) GetActiveSubscriptions(ctx context.Context, customerID uint) ([]models.CustomerTraderSignalSubscription, error) {
 	subscriptions, err := s.repo.GetActiveTraderSubscriptionsForCustomer(ctx, customerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active subscriptions: %w", err)

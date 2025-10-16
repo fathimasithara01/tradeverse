@@ -37,9 +37,9 @@ type User struct {
 
 	Subscriptions []UserSubscription `gorm:"foreignKey:UserID" json:"subscriptions,omitempty"`
 
-	TraderSubscriptionPlans []TraderSubscriptionPlan `gorm:"foreignKey:TraderID;constraint:OnDelete:CASCADE;" json:"trader_subscription_plans,omitempty"` // Renamed json tag for clarity
+	TraderSubscriptionPlans []TraderSignalSubscriptionPlan `gorm:"foreignKey:TraderID;constraint:OnDelete:CASCADE;" json:"trader_subscription_plans,omitempty"` // Renamed json tag for clarity
 
-	CustomerTraderSubscriptions []CustomerTraderSubscription `gorm:"foreignKey:CustomerID;constraint:OnDelete:CASCADE;" json:"customer_trader_subscriptions,omitempty"`
+	CustomerTraderSubscriptions []CustomerTraderSignalSubscription `gorm:"foreignKey:CustomerID;constraint:OnDelete:CASCADE;" json:"customer_trader_subscriptions,omitempty"`
 
 	Wallet Wallet `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"wallet,omitempty"`
 

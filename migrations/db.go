@@ -35,10 +35,10 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		&models.DepositRequest{},
 		&models.WithdrawRequest{},
 
-		&models.TraderSubscriptionPlan{},
-		&models.CustomerTraderSubscription{},
-		&models.AdminSubscriptionPlan{},
-		&models.Subscription{},
+		&models.TraderSignalSubscriptionPlan{},
+		&models.CustomerTraderSignalSubscription{},
+		&models.AdminTraderSubscriptionPlan{},
+		&models.CustomerToTraderSub{},
 		&models.UserSubscription{},
 
 		&models.MarketData{},
