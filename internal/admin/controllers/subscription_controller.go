@@ -228,7 +228,7 @@ func (ctrl *SubscriptionController) CreateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 
-	newPlan := models.SubscriptionPlan{
+	newPlan := models.AdminSubscriptionPlan{
 		Name:            req.Name,
 		Description:     req.Description,
 		Price:           req.Price,

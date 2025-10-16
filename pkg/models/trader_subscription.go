@@ -8,14 +8,14 @@ import (
 
 type UserSubscription struct {
 	gorm.Model
-	UserID             uint             `gorm:"index;not null" json:"user_id"`
-	User               User             `gorm:"foreignKey:UserID"`
-	SubscriptionPlanID uint             `gorm:"index;not null" json:"subscription_plan_id"`
-	Plan               SubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID"`
-	StartDate          time.Time        `gorm:"not null" json:"start_date"`
-	EndDate            time.Time        `gorm:"not null" json:"end_date"`
-	IsActive           bool             `gorm:"default:true" json:"is_active"`
-	TransactionID      uint             `gorm:"index" json:"transaction_id"`
+	UserID             uint                  `gorm:"index;not null" json:"user_id"`
+	User               User                  `gorm:"foreignKey:UserID"`
+	SubscriptionPlanID uint                  `gorm:"index;not null" json:"subscription_plan_id"`
+	Plan               AdminSubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID"`
+	StartDate          time.Time             `gorm:"not null" json:"start_date"`
+	EndDate            time.Time             `gorm:"not null" json:"end_date"`
+	IsActive           bool                  `gorm:"default:true" json:"is_active"`
+	TransactionID      uint                  `gorm:"index" json:"transaction_id"`
 }
 
 type TraderSubscriptionPlan struct {

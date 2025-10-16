@@ -18,7 +18,7 @@ type ISubscriptionService interface {
 	GetSubscriptionsByUserID(userID uint) ([]models.Subscription, error)
 	UpdateSubscription(subscription *models.Subscription) error
 	DeleteSubscription(id uint) error
-	GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error)
+	GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error)
 	UpgradeUserToTrader(userID uint) error
 
 	DeactivateExpiredSubscriptions() error
@@ -231,6 +231,6 @@ func (s *SubscriptionService) DeleteSubscription(id uint) error {
 	return s.subscriptionRepo.DeleteSubscription(id)
 }
 
-func (s *SubscriptionService) GetSubscriptionPlanByID(id uint) (*models.SubscriptionPlan, error) {
+func (s *SubscriptionService) GetSubscriptionPlanByID(id uint) (*models.AdminSubscriptionPlan, error) {
 	return s.planRepo.GetSubscriptionPlanByID(id)
 }

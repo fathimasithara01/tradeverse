@@ -21,7 +21,7 @@ type ITraderSubscriptionService interface {
 	SubscribeToTraderPlan(ctx context.Context, customerID uint, traderID uint, planID uint) error
 
 	// Trader Upgrade Subscription related (for users to take a plan to become a trader)
-	GetAllTraderUpgradePlans(ctx context.Context) ([]models.SubscriptionPlan, error)
+	GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error)
 	SubscribeToTraderUpgradePlan(ctx context.Context, userID uint, planID uint) error
 }
 
@@ -282,7 +282,7 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 
 // --- Trader Upgrade Subscription related (for users to take a plan to become trader) ---
 
-func (s *TraderSubscriptionService) GetAllTraderUpgradePlans(ctx context.Context) ([]models.SubscriptionPlan, error) {
+func (s *TraderSubscriptionService) GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error) {
 	return s.repo.GetAllTraderUpgradePlans(ctx)
 }
 

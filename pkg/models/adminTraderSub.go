@@ -11,7 +11,7 @@ type Subscription struct {
 	UserID             uint             `gorm:"not null;index" json:"user_id"`
 	User               User             `gorm:"foreignKey:UserID" json:"user"`
 	SubscriptionPlanID uint             `gorm:"not null;index" json:"subscription_plan_id"`
-	SubscriptionPlan   SubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID" json:"subscription_plan"`
+	SubscriptionPlan   AdminSubscriptionPlan `gorm:"foreignKey:SubscriptionPlanID" json:"subscription_plan"`
 
 	TraderID *uint `gorm:"index" json:"trader_id,omitempty"`
 

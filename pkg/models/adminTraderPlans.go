@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type SubscriptionPlan struct {
+type AdminSubscriptionPlan struct {
 	gorm.Model
 	Name        string        `gorm:"size:100;not null;unique" json:"name"`
 	Description string        `gorm:"type:text" json:"description"`

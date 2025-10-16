@@ -24,8 +24,8 @@ type ITraderSubscriptionRepository interface {
 	CheckIfCustomerIsSubscribedToTraderPlan(ctx context.Context, customerID uint, traderPlanID uint) (bool, error)
 
 	SetUserRole(ctx context.Context, userID uint, role models.UserRole, tx *gorm.DB) error // Update user role during transaction
-	GetAllTraderUpgradePlans(ctx context.Context) ([]models.SubscriptionPlan, error)
-	GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error)
+	GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error)
+	GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.AdminSubscriptionPlan, error)
 	CreateUserSubscription(ctx context.Context, sub *models.UserSubscription) error
 
 	// Wallet and Transaction Management (shared)
@@ -171,8 +171,8 @@ func (r *TraderSubscriptionRepository) CheckIfCustomerIsSubscribedToTraderPlan(c
 
 // --- Admin-defined Subscription Plan (for upgrading to trader) ---
 
-func (r *TraderSubscriptionRepository) GetAllTraderUpgradePlans(ctx context.Context) ([]models.SubscriptionPlan, error) {
-	var plans []models.SubscriptionPlan
+func (r *TraderSubscriptionRepository) GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminSubscriptionPlan, error) {
+	var plans []models.AdminSubscriptionPlan
 	// Only fetch plans that are specifically for upgrading to a trader role
 	if err := r.db.WithContext(ctx).Where("is_upgrade_to_trader = ?", true).Find(&plans).Error; err != nil {
 		return nil, fmt.Errorf("failed to get admin subscription plans for trader upgrade: %w", err)
@@ -180,8 +180,8 @@ func (r *TraderSubscriptionRepository) GetAllTraderUpgradePlans(ctx context.Cont
 	return plans, nil
 }
 
-func (r *TraderSubscriptionRepository) GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.SubscriptionPlan, error) {
-	var plan models.SubscriptionPlan
+func (r *TraderSubscriptionRepository) GetTraderUpgradePlanByID(ctx context.Context, planID uint) (*models.AdminSubscriptionPlan, error) {
+	var plan models.AdminSubscriptionPlan
 	// Ensure it's an upgrade plan
 	if err := r.db.WithContext(ctx).Where("id = ? AND is_upgrade_to_trader = ?", planID, true).First(&plan).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {

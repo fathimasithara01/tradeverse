@@ -23,43 +23,35 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 	}
 
 	err = db.AutoMigrate(
-		// Core Identity and Permissions
-		&models.User{},       // Users must exist first
-		&models.Role{},       // If Role is a separate table, it usually defines roles for users
-		&models.Permission{}, // If permissions are separate from roles
+		&models.User{},
+		&models.Role{},
+		&models.Permission{},
 
-		// User-related profiles and wallets
-		&models.CustomerProfile{}, // Depends on User
-		&models.TraderProfile{},   // Depends on User
-		&models.Wallet{},          // Depends on User
+		&models.CustomerProfile{},
+		&models.TraderProfile{},
+		&models.Wallet{},
 
-		// Financial Transactions (depend on User/Wallet)
 		&models.WalletTransaction{},
-		&models.DepositRequest{},  // Might depend on Wallet/User
-		&models.WithdrawRequest{}, // Might depend on Wallet/User
+		&models.DepositRequest{},
+		&models.WithdrawRequest{},
 
-		// Trader/Customer Specific Models (Crucial ordering here)
-		&models.TraderSubscriptionPlan{},     // A trader's plan. Depends on User (for TraderID).
-		&models.CustomerTraderSubscription{}, // A customer's subscription to a plan. Depends on User (for CustomerID) and TraderSubscriptionPlan.
-		// Generic Subscriptions (if different from CustomerTraderSubscription)
-		&models.SubscriptionPlan{}, // Generic plan
-		// &models.Subscription{},     // Generic subscription to a plan. Depends on User and SubscriptionPlan.
-		&models.UserSubscription{}, // *Clarify: Is this distinct from Subscription? Could be redundant.*
+		&models.TraderSubscriptionPlan{},
+		&models.CustomerTraderSubscription{},
+		&models.AdminSubscriptionPlan{},
+		&models.Subscription{},
+		&models.UserSubscription{},
 
-		// Trading Related
 		&models.MarketData{},
 		&models.MarketDataAPIResponse{},
-		&models.Signal{},      // Depends on User (TraderID)
-		&models.Trade{},       // Depends on User (TraderID, potentially CustomerID)
-		&models.LiveTrade{},   // Depends on Trade
-		&models.TradeLog{},    // Depends on Trade
-		&models.CopySession{}, // Depends on User (TraderID, CustomerID)
+		&models.Signal{},
+		&models.Trade{},
+		&models.LiveTrade{},
+		&models.TradeLog{},
+		&models.CopySession{},
 
-		// KYC
-		&models.KYCDocument{},   // Depends on User
-		&models.UserKYCStatus{}, // Depends on User
+		&models.KYCDocument{},
+		&models.UserKYCStatus{},
 
-		// Performance, Notifications, Referrals, Admin Actions
 		&models.TraderPerformance{}, // Depends on User (TraderID)
 		&models.Notification{},      // Depends on User
 		&models.Referral{},          // Depends on User (ReferrerID, RefereeID)
