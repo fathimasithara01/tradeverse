@@ -52,46 +52,108 @@ func NewWalletService(db *gorm.DB, repo walletrepo.WalletRepository, pgClient pa
 	}
 }
 func (s *walletService) DebitUserWallet(userID uint, amount float64, currency, description, transactionID string) error {
-	if amount <= 0 {
-		return errors.New("debit amount must be positive")
+	var wallet models.Wallet
+
+	// ✅ Find wallet
+	err := s.db.Where("user_id = ?", userID).First(&wallet).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// ✅ Create wallet automatically if missing
+		wallet = models.Wallet{
+			UserID:   userID,
+			Balance:  0,
+			Currency: currency,
+		}
+		if err := s.db.Create(&wallet).Error; err != nil {
+			return fmt.Errorf("failed to create wallet: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to fetch wallet: %w", err)
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		wallet, err := s.walletRepo.GetUserWallet(userID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrUserWalletNotFound
-			}
-			return fmt.Errorf("failed to retrieve wallet for user %d: %w", userID, err)
+	// ✅ Check balance
+	if wallet.Balance < amount {
+		return fmt.Errorf("insufficient balance")
+	}
+
+	// ✅ Calculate balances
+	balanceBefore := wallet.Balance
+	balanceAfter := wallet.Balance - amount
+
+	// ✅ Create transaction record
+	tx := models.WalletTransaction{
+		WalletID:      wallet.ID,
+		UserID:        userID,
+		Type:          models.TxTypeDebit,
+		Amount:        amount,
+		Currency:      currency,
+		Status:        models.TxStatusSuccess,
+		Description:   description,
+		TransactionID: transactionID,
+		BalanceBefore: balanceBefore,
+		BalanceAfter:  balanceAfter,
+	}
+
+	// ✅ Update wallet & save transaction
+	err = s.db.Transaction(func(txn *gorm.DB) error {
+		if err := txn.Create(&tx).Error; err != nil {
+			return fmt.Errorf("failed to record transaction: %w", err)
 		}
 
-		if wallet.Balance < amount {
-			return ErrWalletServiceInsufficientFunds
-		}
-
-		wallet.Balance -= amount
-		if err := s.walletRepo.UpdateWallet(wallet); err != nil { // Use UpdateWalletInTx
-			return fmt.Errorf("failed to update wallet balance in transaction: %w", err)
-		}
-
-		// Record the debit transaction
-		transaction := &models.WalletTransaction{
-			UserID:          userID,
-			TransactionType: models.TxTypeDebit, // Or a specific SubscriptionType
-			Amount:          amount,
-			Currency:        currency,
-			Status:          models.TxStatusSuccess,
-			Description:     description,
-			// GatewayTxID:     transactionID, // Use the provided transactionID for uniqueness
-		}
-
-		if err := s.walletRepo.CreateWalletTransaction(tx, transaction); err != nil { // Use CreateTransactionInTx
-			return fmt.Errorf("failed to record debit transaction in transaction: %w", err)
+		if err := txn.Model(&wallet).Update("balance", balanceAfter).Error; err != nil {
+			return fmt.Errorf("failed to update wallet balance: %w", err)
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		return fmt.Errorf("failed to record debit transaction in transaction: %w", err)
+	}
+
+	return nil
 }
+
+// func (s *walletService) DebitUserWallet(userID uint, amount float64, currency, description, transactionID string) error {
+// 	if amount <= 0 {
+// 		return errors.New("debit amount must be positive")
+// 	}
+
+// 	return s.db.Transaction(func(tx *gorm.DB) error {
+// 		wallet, err := s.walletRepo.GetUserWallet(userID)
+// 		if err != nil {
+// 			if errors.Is(err, gorm.ErrRecordNotFound) {
+// 				return ErrUserWalletNotFound
+// 			}
+// 			return fmt.Errorf("failed to retrieve wallet for user %d: %w", userID, err)
+// 		}
+
+// 		if wallet.Balance < amount {
+// 			return ErrWalletServiceInsufficientFunds
+// 		}
+
+// 		wallet.Balance -= amount
+// 		if err := s.walletRepo.UpdateWallet(wallet); err != nil { // Use UpdateWalletInTx
+// 			return fmt.Errorf("failed to update wallet balance in transaction: %w", err)
+// 		}
+
+// 		// Record the debit transaction
+// 		transaction := &models.WalletTransaction{
+// 			UserID:          userID,
+// 			TransactionType: models.TxTypeDebit, // Or a specific SubscriptionType
+// 			Amount:          amount,
+// 			Currency:        currency,
+// 			Status:          models.TxStatusSuccess,
+// 			Description:     description,
+// 			// GatewayTxID:     transactionID, // Use the provided transactionID for uniqueness
+// 		}
+
+// 		if err := s.walletRepo.CreateWalletTransaction(tx, transaction); err != nil { // Use CreateTransactionInTx
+// 			return fmt.Errorf("failed to record debit transaction in transaction: %w", err)
+// 		}
+
+//			return nil
+//		})
+//	}
 func (s *walletService) GetUserWallet(ctx context.Context, userID uint) (*models.Wallet, error) {
 	wallet, err := s.walletRepo.GetUserWallet(userID)
 	if err != nil {
