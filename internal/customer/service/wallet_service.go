@@ -241,38 +241,39 @@ func (s *walletService) VerifyDeposit(depositID uint, input models.DepositVerify
 		Message:       "Deposit verified and funds added.",
 	}, nil
 }
-
 func (s *walletService) RequestWithdrawal(userID uint, input models.WithdrawalRequestInput) (*models.WithdrawalResponse, error) {
-	log.Printf("Requesting withdrawal for user %d, amount %.2f, bank account %s", userID, input.Amount, input.BankAccountNumber)
-
 	if input.Amount <= 0 {
 		return nil, errors.New("withdrawal amount must be positive")
 	}
 
 	var withdrawalRequest *models.WithdrawalRequest
+
 	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// Step 1: Get user wallet
 		wallet, err := s.walletRepo.GetUserWallet(userID)
 		if err != nil {
-			return fmt.Errorf("%w for user %d: %v", ErrWalletServiceNotFound, userID, err)
+			return fmt.Errorf("%w for user %d: %v", ErrUserWalletNotFound, userID, err)
 		}
+
+		// Step 2: Check balance
 		if wallet.Balance < input.Amount {
 			return ErrWalletServiceInsufficientFunds
 		}
 
-		// --- Initiate with Payment Gateway FIRST ---
+		// Step 3: Process withdrawal via Payment Gateway
 		pgTxID, pgErr := s.paymentGateway.ProcessWithdrawal(input.Amount, input.Currency, input.BankAccountNumber)
 		if pgErr != nil {
 			return fmt.Errorf("payment gateway withdrawal failed: %w", pgErr)
 		}
 
-		// Debit wallet ONLY AFTER PG confirms initiation/processing
-		debitRefID := fmt.Sprintf("WITHDRAW_REQ_%s", time.Now().Format("20060102150405"))
-		err = s.walletRepo.DebitWallet(tx, wallet.ID, input.Amount, models.TxTypeWithdrawal,
-			debitRefID, "Withdrawal request debit (pending processing by PG)")
+		// Step 4: Debit wallet
+		refID := fmt.Sprintf("WITHDRAW_REQ_%s", time.Now().Format("20060102150405"))
+		err = s.walletRepo.DebitWallet(tx, wallet.ID, input.Amount, models.TxTypeWithdrawal, refID, "Withdrawal request debit")
 		if err != nil {
-			return fmt.Errorf("failed to debit wallet for withdrawal request: %w", err)
+			return fmt.Errorf("failed to debit wallet: %w", err)
 		}
 
+		// Step 5: Create withdrawal request record
 		withdrawalRequest = &models.WithdrawalRequest{
 			UserID:             userID,
 			Amount:             input.Amount,
@@ -280,7 +281,7 @@ func (s *walletService) RequestWithdrawal(userID uint, input models.WithdrawalRe
 			BankAccountNumber:  input.BankAccountNumber,
 			BankAccountHolder:  input.BankAccountHolder,
 			IFSCCode:           input.IFSCCode,
-			Status:             models.TxStatusSuccess, // Assume success if PG processed and debit succeeded
+			Status:             models.TxStatusSuccess,
 			RequestTime:        time.Now(),
 			PaymentGatewayTxID: pgTxID,
 		}
@@ -295,14 +296,77 @@ func (s *walletService) RequestWithdrawal(userID uint, input models.WithdrawalRe
 		return nil, fmt.Errorf("%w: %v", ErrWalletServiceTransactionFailed, err)
 	}
 
+	// Step 6: Prepare response
 	return &models.WithdrawalResponse{
 		WithdrawalID: withdrawalRequest.ID,
 		Amount:       withdrawalRequest.Amount,
 		Currency:     withdrawalRequest.Currency,
-		Status:       models.TxStatusSuccess,
-		Message:      "Withdrawal request submitted and processed.",
+		Status:       withdrawalRequest.Status,
+		Message:      "Withdrawal request submitted successfully.",
 	}, nil
 }
+
+// func (s *walletService) RequestWithdrawal(userID uint, input models.WithdrawalRequestInput) (*models.WithdrawalResponse, error) {
+// 	log.Printf("Requesting withdrawal for user %d, amount %.2f, bank account %s", userID, input.Amount, input.BankAccountNumber)
+
+// 	if input.Amount <= 0 {
+// 		return nil, errors.New("withdrawal amount must be positive")
+// 	}
+
+// 	var withdrawalRequest *models.WithdrawalRequest
+// 	err := s.db.Transaction(func(tx *gorm.DB) error {
+// 		wallet, err := s.walletRepo.GetUserWallet(userID)
+// 		if err != nil {
+// 			return fmt.Errorf("%w for user %d: %v", ErrWalletServiceNotFound, userID, err)
+// 		}
+// 		if wallet.Balance < input.Amount {
+// 			return ErrWalletServiceInsufficientFunds
+// 		}
+
+// 		// --- Initiate with Payment Gateway FIRST ---
+// 		pgTxID, pgErr := s.paymentGateway.ProcessWithdrawal(input.Amount, input.Currency, input.BankAccountNumber)
+// 		if pgErr != nil {
+// 			return fmt.Errorf("payment gateway withdrawal failed: %w", pgErr)
+// 		}
+
+// 		// Debit wallet ONLY AFTER PG confirms initiation/processing
+// 		debitRefID := fmt.Sprintf("WITHDRAW_REQ_%s", time.Now().Format("20060102150405"))
+// 		err = s.walletRepo.DebitWallet(tx, wallet.ID, input.Amount, models.TxTypeWithdrawal,
+// 			debitRefID, "Withdrawal request debit (pending processing by PG)")
+// 		if err != nil {
+// 			return fmt.Errorf("failed to debit wallet for withdrawal request: %w", err)
+// 		}
+
+// 		withdrawalRequest = &models.WithdrawalRequest{
+// 			UserID:             userID,
+// 			Amount:             input.Amount,
+// 			Currency:           input.Currency,
+// 			BankAccountNumber:  input.BankAccountNumber,
+// 			BankAccountHolder:  input.BankAccountHolder,
+// 			IFSCCode:           input.IFSCCode,
+// 			Status:             models.TxStatusSuccess, // Assume success if PG processed and debit succeeded
+// 			RequestTime:        time.Now(),
+// 			PaymentGatewayTxID: pgTxID,
+// 		}
+// 		if err := s.walletRepo.CreateWithdrawalRequest(withdrawalRequest); err != nil {
+// 			return fmt.Errorf("failed to create withdrawal request: %w", err)
+// 		}
+
+// 		return nil
+// 	})
+
+// 	if err != nil {
+// 		return nil, fmt.Errorf("%w: %v", ErrWalletServiceTransactionFailed, err)
+// 	}
+
+// 	return &models.WithdrawalResponse{
+// 		WithdrawalID: withdrawalRequest.ID,
+// 		Amount:       withdrawalRequest.Amount,
+// 		Currency:     withdrawalRequest.Currency,
+// 		Status:       models.TxStatusSuccess,
+// 		Message:      "Withdrawal request submitted and processed.",
+// 	}, nil
+// }
 
 func (s *walletService) GetTransactions(userID uint, pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
 	return s.GetWalletTransactions(context.Background(), userID, pagination)

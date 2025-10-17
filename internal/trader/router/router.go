@@ -37,12 +37,6 @@ func SetupRouter(
 		protected.PUT("/trader/profile", profileController.UpdateTraderProfile)
 		protected.DELETE("/trader/profile", profileController.DeleteTraderProfile)
 
-		// protected.GET("/trades", tradeController.GetTraderTrades)
-		// protected.POST("/trade", tradeController.CreateTrade)
-		// protected.GET("/trades/:id", tradeController.GetTradeByID)
-		// protected.PUT("/trade/:id", tradeController.UpdateTradeStatus)
-		// protected.DELETE("/trade/:id", tradeController.RemoveTrade)
-
 		protected.GET("/wallet", walletCntrl.GetBalance)
 		protected.POST("/wallet/deposit", walletCntrl.Deposit)
 		protected.POST("/wallet/withdraw", walletCntrl.Withdraw)
@@ -50,9 +44,6 @@ func SetupRouter(
 
 		protected.GET("/trader/subscribers", subscriberController.ListSubscribers)
 		protected.GET("/trader/subscribers/:id", subscriberController.GetSubscriber)
-
-		// protected.GET("/trader/subscribers", subscriberController.ListTraderSubscribers)
-		// protected.GET("/trader/subscribers/:id", subscriberController.GetTraderSubscriberDetails)
 
 		protected.POST("/trader/live", liveCtrl.PublishLiveTrade)
 		protected.GET("/trader/live", liveCtrl.GetActiveTrades)
@@ -68,9 +59,6 @@ func SetupRouter(
 		protected.GET("/plans/:planId", subsController.GetTraderSubscriptionPlanByID)
 		protected.PUT("/plans/:planId", subsController.UpdateTraderSubscriptionPlan)
 		protected.DELETE("/plans/:planId", subsController.DeleteTraderSubscriptionPlan)
-
-		// protected.GET("/admin-plans", subsController.GetAllAdminSubscriptionPlans)
-		// protected.POST("/subscribe-to-admin-plan/:planId", traderSubsController.SubscribeToAdminPlan)
 
 	}
 

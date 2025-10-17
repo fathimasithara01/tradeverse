@@ -15,7 +15,7 @@ const (
 	TxStatusCancelled  TransactionStatus = "CANCELLED"
 	TxStatusReversed   TransactionStatus = "REVERSED"
 	TxStatusRejected   TransactionStatus = "REJECTED"
-	TxStatusProcessing TransactionStatus = "PROCESSING" // Added for clarity, especially for withdrawals
+	TxStatusProcessing TransactionStatus = "PROCESSING"
 )
 
 type TransactionType string
@@ -59,30 +59,27 @@ type DepositRequest struct {
 	Currency string            `gorm:"size:3;not null"`
 	Status   TransactionStatus `gorm:"type:varchar(20);default:'PENDING'"` // Changed to TransactionStatus
 
-	PaymentGateway      string `gorm:"size:50"`
-	PaymentGatewayTxID  string `gorm:"size:100"`
-	RedirectURL         string `gorm:"size:255"`
-	WalletTransactionID *uint  `gorm:"index"`
-	AdminNotes          string `gorm:"type:text" json:"admin_notes,omitempty"`
-	// PaymentMethod       string `gorm:"type:varchar(50);not null"` // e.g., "razorpay", "bank_transfer"
-	RequestTime time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"` // Or default:now()
+	PaymentGateway      string    `gorm:"size:50"`
+	PaymentGatewayTxID  string    `gorm:"size:100"`
+	RedirectURL         string    `gorm:"size:255"`
+	WalletTransactionID *uint     `gorm:"index"`
+	AdminNotes          string    `gorm:"type:text" json:"admin_notes,omitempty"`
+	RequestTime         time.Time `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"` // Or default:now()
 
-	// RequestTime    time.Time `gorm:"not null"`
 	CompletionTime *time.Time
-	PaymentMethod  string `gorm:"type:varchar(50);not null;default:'unknown'"` // Add this line or modify existing
-
+	PaymentMethod  string `gorm:"type:varchar(50);not null;default:'unknown'"`
 }
 
 type DepositRequestInput struct {
 	Amount        float64 `json:"amount" binding:"required,gt=0"`
 	PaymentMethod string  `json:"payment_method" binding:"required"`
-	Currency      string  `json:"currency" binding:"required,oneof=INR USD"` // Assuming INR and USD
+	Currency      string  `json:"currency" binding:"required,oneof=INR USD"`
 }
 
 type DepositResponse struct {
 	DepositID          uint              `json:"deposit_id"`
 	Message            string            `json:"message"`
-	RedirectURL        string            `json:"redirect_url,omitempty"` // URL to payment gateway
+	RedirectURL        string            `json:"redirect_url,omitempty"`
 	Amount             float64           `json:"amount"`
 	Currency           string            `json:"currency"`
 	Status             TransactionStatus `json:"status"`
@@ -96,32 +93,33 @@ type DepositVerifyInput struct {
 	Amount             float64 `json:"amount"`
 	Status             string  `json:"status"`
 	WebhookSignature   string  `json:"webhook_signature,omitempty"`
-} // DepositVerifyResponse is the response structure after verifying a deposit.
+}
 type DepositVerifyResponse struct {
 	DepositID     uint              `json:"deposit_id"`
 	Status        TransactionStatus `json:"status"`
-	TransactionID string            `json:"transaction_id,omitempty"` // Internal WalletTransaction ID
+	TransactionID string            `json:"transaction_id,omitempty"`
 	Message       string            `json:"message"`
 }
 
-// WithdrawalRequest represents a user's request to withdraw funds.
 type WithdrawalRequest struct {
-	gorm.Model
-	UserID             uint              `gorm:"not null"`
-	Amount             float64           `gorm:"type:decimal(10,2);not null"`
-	Currency           string            `gorm:"size:3;not null"` // <--- ADDED THIS FIELD
-	BankAccountNumber  string            `gorm:"type:varchar(50);not null"`
-	BankAccountHolder  string            `gorm:"type:varchar(100);not null"`
-	IFSCCode           string            `gorm:"type:varchar(20);not null"`
-	Status             TransactionStatus `gorm:"type:varchar(20);default:'PENDING'"` // Changed to TransactionStatus
-	RequestTime        time.Time         `gorm:"not null"`
-	ProcessingTime     *time.Time
-	CompletionTime     *time.Time
-	AdminNotes         string `gorm:"type:text"`
-	PaymentGatewayTxID string `json:"payment_gateway_tx_id"` // <--- ADD THIS LINE
+	ID                 uint              `gorm:"primaryKey" json:"id"`
+	UserID             uint              `gorm:"not null;index;comment:ID of the user requesting withdrawal" json:"user_id"`
+	User               User              `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user,omitempty"`
+	Amount             float64           `gorm:"type:decimal(18,4);not null" json:"amount"`
+	Currency           string            `gorm:"size:3;not null;default:'USD'" json:"currency"`
+	BankAccountNumber  string            `gorm:"size:50;not null" json:"bank_account_number"`
+	BankAccountHolder  string            `gorm:"size:100;not null" json:"bank_account_holder"`
+	IFSCCode           string            `gorm:"size:20;not null" json:"ifsc_code"`
+	Status             TransactionStatus `gorm:"type:varchar(20);default:'PENDING';index" json:"status"`
+	RequestTime        time.Time         `gorm:"not null;index" json:"request_time"`
+	ProcessingTime     *time.Time        `json:"processing_time,omitempty"`
+	CompletionTime     *time.Time        `json:"completion_time,omitempty"`
+	AdminNotes         string            `gorm:"type:text" json:"admin_notes,omitempty"`
+	PaymentGatewayTxID string            `gorm:"size:100" json:"payment_gateway_tx_id,omitempty"`
+	CreatedAt          time.Time         `json:"created_at"`
+	UpdatedAt          time.Time         `json:"updated_at"`
 }
 
-// WithdrawalRequestInput is the input structure for creating a withdrawal request.
 type WithdrawalRequestInput struct {
 	Amount             float64 `json:"amount" binding:"required,gt=0"`
 	BankAccountNumber  string  `json:"bank_account_number" binding:"required"`
@@ -131,7 +129,6 @@ type WithdrawalRequestInput struct {
 	BeneficiaryAccount string  `json:"beneficiary_account" binding:"required"`
 }
 
-// WithdrawalResponse is the output structure after a withdrawal request.
 type WithdrawalResponse struct {
 	WithdrawalID       uint              `json:"withdrawal_id"`
 	Amount             float64           `json:"amount"`
@@ -183,7 +180,6 @@ type WithdrawRequest struct {
 	AdminNotes          string            `gorm:"type:text" json:"admin_notes,omitempty"`
 }
 
-// WalletSummaryResponse provides a summary of a user's wallet.
 type WalletSummaryResponse struct {
 	UserID      uint      `json:"user_id"`
 	WalletID    uint      `json:"wallet_id"`

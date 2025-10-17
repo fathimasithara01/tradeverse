@@ -48,7 +48,6 @@ func SetupRouter(
 		protected.GET("/signals", custmerTraderSignlsController.GetSignalsFromSubscribedTraders)
 		protected.GET("/my-trader-subscriptions", custmerTraderSignlsController.GetMyActiveTraderSubscriptions)
 		protected.GET("/subscribed-to-trader/:traderId", custmerTraderSignlsController.IsSubscribedToTrader)
-		// protected.POST("/subscribe/trader/:traderId/plan/:planId", subsController.SubscribeToTraderPlan)
 
 		kycGroup := protected.Group("/customers")
 		{

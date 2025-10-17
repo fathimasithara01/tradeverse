@@ -78,29 +78,57 @@ func (ctrl *WalletController) VerifyDeposit(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, resp)
 }
-
 func (ctrl *WalletController) RequestWithdrawal(c *gin.Context) {
-	userID := c.MustGet("userID").(uint)
-	var input models.WithdrawalRequestInput
+	userID, ok := c.Get("userID")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "user not found in context"})
+		return
+	}
 
+	var input models.WithdrawalRequestInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	resp, err := ctrl.WalletSvc.RequestWithdrawal(userID, input)
+	resp, err := ctrl.WalletSvc.RequestWithdrawal(userID.(uint), input)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
-		if errors.Is(err, service.ErrWalletServiceInsufficientFunds) {
+		switch {
+		case errors.Is(err, service.ErrWalletServiceInsufficientFunds):
 			statusCode = http.StatusBadRequest
-		} else if errors.Is(err, service.ErrUserWalletNotFound) {
+		case errors.Is(err, service.ErrUserWalletNotFound):
 			statusCode = http.StatusNotFound
 		}
 		c.JSON(statusCode, gin.H{"message": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, resp)
 }
+
+// func (ctrl *WalletController) RequestWithdrawal(c *gin.Context) {
+// 	userID := c.MustGet("userID").(uint)
+// 	var input models.WithdrawalRequestInput
+
+// 	if err := c.ShouldBindJSON(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+// 		return
+// 	}
+
+// 	resp, err := ctrl.WalletSvc.RequestWithdrawal(userID, input)
+// 	if err != nil {
+// 		statusCode := http.StatusInternalServerError
+// 		if errors.Is(err, service.ErrWalletServiceInsufficientFunds) {
+// 			statusCode = http.StatusBadRequest
+// 		} else if errors.Is(err, service.ErrUserWalletNotFound) {
+// 			statusCode = http.StatusNotFound
+// 		}
+// 		c.JSON(statusCode, gin.H{"message": err.Error()})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, resp)
+// }
 
 func (ctrl *WalletController) GetWalletTransactions(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
