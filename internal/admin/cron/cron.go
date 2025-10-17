@@ -26,10 +26,10 @@ func (j *SubscriptionCronJob) Run() {
 }
 
 type TraderSubscriptionCronJob struct {
-	CustomerService customerService.AdminSubscriptionService
+	CustomerService customerService.CustomerSubscriptionService
 }
 
-func NewTraderSubscriptionCronJob(custService customerService.AdminSubscriptionService) *TraderSubscriptionCronJob {
+func NewTraderSubscriptionCronJob(custService customerService.CustomerSubscriptionService) *TraderSubscriptionCronJob {
 	return &TraderSubscriptionCronJob{
 		CustomerService: custService,
 	}
@@ -42,7 +42,7 @@ func (j *TraderSubscriptionCronJob) Run() {
 	}
 }
 
-func StartCronJob(adminSubService service.ISubscriptionService, custSubService customerService.AdminSubscriptionService) {
+func StartCronJob(adminSubService service.ISubscriptionService, custSubService customerService.CustomerSubscriptionService) {
 	c := cron.New()
 
 	_, err := c.AddJob("* * * * *", NewSubscriptionCronJob(adminSubService))

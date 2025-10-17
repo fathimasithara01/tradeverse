@@ -15,7 +15,7 @@ func SetupRouter(
 	walletCtrl *controllers.WalletController,
 	traderController *controllers.TraderController,
 	custmerTraderSignlsController *controllers.CustomerTraderSignalSubscriptionController,
-
+	subscriptionPlanController *controllers.SubscriptionPlanController,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -33,10 +33,11 @@ func SetupRouter(
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
 
-		// protected.GET("/subscription-plans", adminSubCntrl.ListTraderSubscriptionPlans)
-		// protected.POST("/subscription-plans/:plan_id/subscribe", adminSubCntrl.SubscribeToTraderPlan)
-		// protected.GET("/trader-subscription", adminSubCntrl.GetCustomerTraderSubscription)
-		// protected.DELETE("/trader-subscription/:subscription_id", adminSubCntrl.CancelCustomerTraderSubscription)
+		protected.GET("/subscription-plans", subscriptionPlanController.GetAllSubscriptionPlans)
+		protected.GET("/subscription-plans/:id", subscriptionPlanController.GetSubscriptionPlanByID)
+		protected.POST("/subscription-plans/:id/subscribe", subscriptionPlanController.SubscribeToPlan)
+		protected.DELETE("/my-subscriptions/:id", subscriptionPlanController.CancelSubscription)
+		protected.GET("/my-subscriptions", subscriptionPlanController.GetUserSubscriptions)
 
 		protected.GET("/profile", profileController.GetProfile)
 		protected.PUT("/profile", profileController.UpdateProfile)
@@ -44,7 +45,7 @@ func SetupRouter(
 
 		protected.GET("/traders/plans", custmerTraderSignlsController.GetAvailableTradersWithPlans)
 		protected.POST("/subscribe", custmerTraderSignlsController.SubscribeToTrader)
-		protected.GET("/signals", custmerTraderSignlsController.GetSignalsFromSubscribedTraders) // Access signals
+		protected.GET("/signals", custmerTraderSignlsController.GetSignalsFromSubscribedTraders)
 		protected.GET("/my-trader-subscriptions", custmerTraderSignlsController.GetMyActiveTraderSubscriptions)
 		protected.GET("/subscribed-to-trader/:traderId", custmerTraderSignlsController.IsSubscribedToTrader)
 		// protected.POST("/subscribe/trader/:traderId/plan/:planId", subsController.SubscribeToTraderPlan)

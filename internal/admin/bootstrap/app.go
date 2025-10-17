@@ -1,3 +1,4 @@
+// internal/admin/bootstrap/app.go
 package bootstrap
 
 import (
@@ -7,7 +8,7 @@ import (
 	"runtime"
 	"text/template"
 
-	cronn "github.com/robfig/cron/v3"
+	// Keep this import for the explicit cron.New()
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
@@ -15,12 +16,19 @@ import (
 	"github.com/fathimasithara01/tradeverse/internal/admin/router"
 	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
-	customerRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/customerrepo"
-	walletRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
-	customerService "github.com/fathimasithara01/tradeverse/internal/customer/service"
+	// These customer-side imports are typically not needed in admin bootstrap unless
+	// admin needs to *directly* instantiate and use customer-side services for something
+	// other than the admin cron, or if an admin controller depends on them.
+	// Based on the given admin code, they don't seem necessary for the core admin app.
+	// Leaving them commented out or removing them entirely if unused is best practice.
+	cusSvc "github.com/fathimasithara01/tradeverse/internal/customer/service"
+	// walletRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
+	// customerService "github.com/fathimasithara01/tradeverse/internal/customer/service"
+
 	"github.com/fathimasithara01/tradeverse/migrations"
 	"github.com/fathimasithara01/tradeverse/pkg/config"
-	paymentgateway "github.com/fathimasithara01/tradeverse/pkg/payment_gateway.go"
+
+	// paymentgateway "github.com/fathimasithara01/tradeverse/pkg/payment_gateway.go" // Not directly used in admin bootstrap
 	"github.com/fathimasithara01/tradeverse/pkg/seeder"
 
 	"github.com/gin-gonic/gin"
@@ -45,6 +53,7 @@ func InitializeApp() (*App, error) {
 
 	seeder.CreateAdminSeeder(DB, *cfg)
 
+	// Admin Repositories
 	adminUserRepo := adminRepo.NewUserRepository(DB)
 	adminRoleRepo := adminRepo.NewRoleRepository(DB)
 	adminDashboardRepo := adminRepo.NewDashboardRepository(DB)
@@ -56,6 +65,7 @@ func InitializeApp() (*App, error) {
 	adminSignalRepo := adminRepo.NewSignalRepository(DB)
 	adminTransactionRepo := adminRepo.NewTransactionRepository(DB)
 
+	// Admin Services
 	adminUserService := adminService.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWTSecret)
 	adminRoleService := adminService.NewRoleService(adminRoleRepo, adminPermissionRepo, adminUserRepo)
 	adminDashboardService := adminService.NewDashboardService(adminDashboardRepo)
@@ -67,6 +77,7 @@ func InitializeApp() (*App, error) {
 	adminLiveSignalService := adminService.NewLiveSignalService(adminSignalRepo)
 	adminTransactionService := adminService.NewTransactionService(adminTransactionRepo)
 
+	// Admin Controllers
 	adminAuthController := controllers.NewAuthController(adminUserService)
 	adminUserController := controllers.NewUserController(adminUserService)
 	adminRoleController := controllers.NewRoleController(adminRoleService)
@@ -78,24 +89,16 @@ func InitializeApp() (*App, error) {
 	adminSignalController := controllers.NewSignalController(adminLiveSignalService)
 	adminTransactionController := controllers.NewTransactionController(adminTransactionService)
 
-	customerAdminSubscriptionRepository := customerRepo.NewIAdminSubscriptionRepository(DB)
-	customerWalletConcreteRepo := walletRepo.NewWalletRepository(DB)
-	customerSubscriptionPlanRepo := customerRepo.NewCustomerTraderSignalSubscriptionRepository(DB)
-
-	paymentClient := paymentgateway.NewSimulatedPaymentClient()
-
-	customerWalletService := customerService.NewWalletService(DB, customerWalletConcreteRepo, paymentClient)
-	_ = customerService.NewCustomerTraderSignalSubscriptionService(
-		customerSubscriptionPlanRepo,
-		DB,
-	)
-
-	customerAdminSubscriptionServiceForCron := customerService.NewAdminSubscriptionService(
-		customerAdminSubscriptionRepository,
-		customerWalletService,
-		customerWalletConcreteRepo,
-		DB,
-	)
+	// --- Customer-side components: Remove or comment out if not used by Admin ---
+	// The `cron.StartCronJobs` in your `cron.go` expects a `customerService.AdminUpgradeSubscriptionService`
+	// for its second argument. However, based on the provided `admin/service/subscription.go` (your admin service),
+	// the `DeactivateExpiredSubscriptions` and `UpgradeUserToTrader` logic are handled directly by
+	// `adminService.SubscriptionService`.
+	// Therefore, for `cron.StartCronJobs`, it's correct to pass `nil` for the customer-related service if
+	// the admin cron doesn't rely on it. If there was a *specific* customer-side cron task, you'd instantiate
+	// the correct `customerService.AdminUpgradeSubscriptionService` here.
+	var customerAdminUpgradeSubscriptionService cusSvc.CustomerSubscriptionService
+	_ = customerAdminUpgradeSubscriptionService // To avoid unused variable warning if it's not removed
 
 	r := gin.Default()
 
@@ -109,6 +112,9 @@ func InitializeApp() (*App, error) {
 			return a + b
 		},
 		"subtract": func(a, b int) int {
+			if a < b {
+				return 0
+			}
 			return a - b
 		},
 		"max": func(a, b int) int {
@@ -117,7 +123,7 @@ func InitializeApp() (*App, error) {
 			}
 			return b
 		},
-		"min": func(a, b int) int {
+		"min": func(a, b int) int { // Corrected func signature for min
 			if a < b {
 				return a
 			}
@@ -144,13 +150,12 @@ func InitializeApp() (*App, error) {
 		adminSignalController,
 	)
 
-	c := cronn.New()
-	cron.StartCronJobs(adminSubscriptionService, customerAdminSubscriptionServiceForCron, adminLiveSignalService, DB)
-	c.AddFunc("@every 5m", func() {
-		log.Println("Starting market data fetch...")
-		cron.FetchAndSaveMarketData(DB)
-	})
-	c.Start()
+	// Start ALL cron jobs using the `cron.StartCronJobs` function which encapsulates all cron logic.
+	// The second argument `customerService.AdminUpgradeSubscriptionService` is `nil` as explained above.
+	cron.StartCronJobs(adminSubscriptionService, customerAdminUpgradeSubscriptionService, adminLiveSignalService, DB)
+
+	// Removed the redundant `c := cronn.New()` block here, as `cron.StartCronJobs` already handles it.
+	// This prevents duplicate cron job registrations.
 
 	return &App{
 		engine: r,

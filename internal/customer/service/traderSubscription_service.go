@@ -30,6 +30,7 @@ func NewCustomerTraderSignalSubscriptionService(repo customerrepo.ICustomerTrade
 	return &CustomerTraderSignalSubscriptionService{repo: repo, db: db}
 }
 
+
 func (s *CustomerTraderSignalSubscriptionService) GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error) {
 	return s.repo.GetTradersWithPlans(ctx)
 }

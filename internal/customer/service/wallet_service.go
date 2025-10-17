@@ -34,6 +34,7 @@ type IWalletService interface {
 	VerifyDeposit(depositID uint, input models.DepositVerifyInput) (*models.DepositVerifyResponse, error)
 	RequestWithdrawal(userID uint, input models.WithdrawalRequestInput) (*models.WithdrawalResponse, error)
 	GetTransactions(userID uint, pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
+	DebitUserWallet(userID uint, amount float64, currency, description, transactionID string) error
 }
 
 type walletService struct {
@@ -50,7 +51,47 @@ func NewWalletService(db *gorm.DB, repo walletrepo.WalletRepository, pgClient pa
 		paymentGateway: pgClient,
 	}
 }
+func (s *walletService) DebitUserWallet(userID uint, amount float64, currency, description, transactionID string) error {
+	if amount <= 0 {
+		return errors.New("debit amount must be positive")
+	}
 
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		wallet, err := s.walletRepo.GetUserWallet(userID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrUserWalletNotFound
+			}
+			return fmt.Errorf("failed to retrieve wallet for user %d: %w", userID, err)
+		}
+
+		if wallet.Balance < amount {
+			return ErrWalletServiceInsufficientFunds
+		}
+
+		wallet.Balance -= amount
+		if err := s.walletRepo.UpdateWallet(wallet); err != nil { // Use UpdateWalletInTx
+			return fmt.Errorf("failed to update wallet balance in transaction: %w", err)
+		}
+
+		// Record the debit transaction
+		transaction := &models.WalletTransaction{
+			UserID:          userID,
+			TransactionType: models.TxTypeDebit, // Or a specific SubscriptionType
+			Amount:          amount,
+			Currency:        currency,
+			Status:          models.TxStatusSuccess,
+			Description:     description,
+			// GatewayTxID:     transactionID, // Use the provided transactionID for uniqueness
+		}
+
+		if err := s.walletRepo.CreateWalletTransaction(tx, transaction); err != nil { // Use CreateTransactionInTx
+			return fmt.Errorf("failed to record debit transaction in transaction: %w", err)
+		}
+
+		return nil
+	})
+}
 func (s *walletService) GetUserWallet(ctx context.Context, userID uint) (*models.Wallet, error) {
 	wallet, err := s.walletRepo.GetUserWallet(userID)
 	if err != nil {

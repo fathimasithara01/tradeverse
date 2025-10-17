@@ -82,7 +82,7 @@ func FetchAndSaveMarketData(db *gorm.DB) {
 
 func StartCronJobs(
 	subscriptionService service.ISubscriptionService,
-	customerServiceForTraderSubs customerService.AdminSubscriptionService,
+	customerServiceForTraderSubs customerService.CustomerSubscriptionService,
 	liveSignalService service.ILiveSignalService,
 	db *gorm.DB,
 ) {

@@ -36,19 +36,40 @@ func InitializeApp() (*App, error) {
 
 	userRepo := adminRepo.NewUserRepository(db)
 	roleRepo := adminRepo.NewRoleRepository(db)
-	// adminWalletRepo := adminRepo.NewAdminWalletRepository(db)
+	adminSubscriptionPlanRepo := adminRepo.NewSubscriptionPlanRepository(db)
+	adminAdminWalletRepo := adminRepo.NewAdminWalletRepository(db)
+	adminUserRepo := adminRepo.NewUserRepository(db)
+
+	customerSubscriptionPlanRepo := customerrepo.NewCustomerSubscriptionPlanRepository(db)
+	customerSubscriptionRepo := customerrepo.NewCustomerSubscriptionRepository(db)
+	customerWalletRepo := walletrepo.NewWalletRepository(db)
 	kycRepo := customerrepo.NewKYCRepository(db)
 	traderRepo := customerrepo.NewTraderRepository(db)
-	customerWalletRepo := walletrepo.NewWalletRepository(db)
 	customerTraderSubsRepo := customerrepo.NewCustomerTraderSignalSubscriptionRepository(db)
 
 	// --- Services ---
+	adminAdminWalletService := adminSvc.NewAdminWalletService(adminAdminWalletRepo, db)
+	customerWalletService := service.NewWalletService(db, customerWalletRepo, paymentgateway.NewSimulatedPaymentClient())
+	customerSubscriptionPlanService := service.NewCustomerSubscriptionPlanService(customerSubscriptionPlanRepo)
+	customerSubscriptionService := service.NewCustomerSubscriptionService(
+		customerSubscriptionRepo,
+		adminSubscriptionPlanRepo,
+		adminAdminWalletService,
+		adminUserRepo,
+		db,
+	)
 	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
 	kycService := service.NewKYCService(kycRepo)
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 	walletService := service.NewWalletService(db, customerWalletRepo, paymentClient)
 	traderService := service.NewTraderService(traderRepo, db)
 	customerTraderSubsService := service.NewCustomerTraderSignalSubscriptionService(customerTraderSubsRepo, db)
+
+	subscriptionPlanController := controllers.NewSubscriptionPlanController(
+		customerSubscriptionPlanService,
+		customerSubscriptionService,
+		customerWalletService,
+	)
 
 	customerTraderSubsController := controllers.NewCustomerTraderSignalSubscriptionController(customerTraderSubsService)
 	authController := controllers.NewAuthController(userService)
@@ -65,6 +86,7 @@ func InitializeApp() (*App, error) {
 		walletController,
 		traderController,
 		customerTraderSubsController,
+		subscriptionPlanController,
 	)
 
 	return &App{
