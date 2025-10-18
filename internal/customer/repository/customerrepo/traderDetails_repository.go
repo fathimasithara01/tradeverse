@@ -54,7 +54,6 @@ func (r *TraderRepository) FindApprovedTradersWithUsers(filters map[string]inter
 		if err := r.db.Where("id = ?", traderProfiles[i].UserID).First(&user).Error; err != nil {
 			continue
 		}
-		// traderProfiles[i].User = user
 	}
 
 	return traderProfiles, total, nil

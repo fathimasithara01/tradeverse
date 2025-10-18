@@ -29,10 +29,6 @@ func (r *CustomerSubscriptionRepository) CreateSubscription(subscription *models
 }
 func (r *CustomerSubscriptionRepository) GetActiveTraderSubscriptions() ([]models.CustomerToTraderSub, error) {
 	var subscriptions []models.CustomerToTraderSub
-	// Fetch active subscriptions where IsActive is true and EndDate is in the past
-	// Although the service checks EndDate.Before(now), fetching all active and then filtering
-	// can be done, or you can add the EndDate check to the query for efficiency.
-	// For cron, it's safer to check both isActive and endDate.
 	err := r.DB.Where("is_active = ?", true).Find(&subscriptions).Error
 	if err != nil {
 		return nil, err

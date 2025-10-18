@@ -5,7 +5,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserRole defines the possible roles a user can have.
 type UserRole string
 
 const (

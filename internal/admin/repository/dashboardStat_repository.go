@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -10,16 +12,19 @@ import (
 type IDashboardRepository interface {
 	GetCustomerCount() (int64, error)
 	GetApprovedTraderCount() (int64, error)
-	GetActiveSessionCount() (int64, error)
-	GetMonthlySignups(role models.UserRole) ([]SignupStat, error)
+	// GetActiveSessionCount() (int64, error)
 	GetMonthlyRecurringRevenue() (int64, error)
+	GetTotalSignalCount() (int64, error)
+	GetMonthlySignups(role models.UserRole) ([]SignupStat, error)
 	GetLatestSignups() ([]models.User, error)
 	GetTopTraders() ([]models.User, error)
 }
 
 type DashboardRepository struct{ DB *gorm.DB }
 
-func NewDashboardRepository(db *gorm.DB) IDashboardRepository { return &DashboardRepository{DB: db} }
+func NewDashboardRepository(db *gorm.DB) IDashboardRepository {
+	return &DashboardRepository{DB: db}
+}
 
 func (r *DashboardRepository) GetCustomerCount() (int64, error) {
 	var count int64
@@ -36,18 +41,44 @@ func (r *DashboardRepository) GetApprovedTraderCount() (int64, error) {
 	return count, err
 }
 
-func (r *DashboardRepository) GetActiveSessionCount() (int64, error) {
+// func (r *DashboardRepository) GetActiveSessionCount() (int64, error) {
+// 	var count int64
+// 	err := r.DB.Model(&models.CopySession{}).Where("is_active = ?", true).Count(&count).Error
+// 	return count, err
+// }
+
+func (r *DashboardRepository) GetTotalSignalCount() (int64, error) {
 	var count int64
-	err := r.DB.Model(&models.CopySession{}).Where("is_active = ?", true).Count(&count).Error
+	err := r.DB.Model(&models.Signal{}).Count(&count).Error
 	return count, err
 }
-
+func (r *DashboardRepository) FindAdminUser() (*models.User, error) {
+	var adminUser models.User
+	err := r.DB.Where("role = ?", models.RoleAdmin).First(&adminUser).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("admin user not found")
+		}
+		return nil, fmt.Errorf("failed to find admin user: %w", err)
+	}
+	return &adminUser, nil
+}
 func (r *DashboardRepository) GetMonthlyRecurringRevenue() (int64, error) {
-	// MOCK DATA: Replace with a real query when you have a subscriptions table.
-	// Example real query:
-	// var total int64
-	// r.DB.Table("subscriptions").Where("status = ?", "active").Select("SUM(price)").Row().Scan(&total)
-	return 12450, nil
+	adminUser, err := r.FindAdminUser()
+	if err != nil {
+		return 0, err
+	}
+
+	var total float64
+	err = r.DB.Model(&models.WalletTransaction{}).
+		Where("user_id = ? AND type = ? AND status = ?", adminUser.ID, models.TxTypeSubscription, models.TxStatusSuccess).
+		Select("COALESCE(SUM(amount),0)").
+		Scan(&total).Error
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate MRR: %w", err)
+	}
+
+	return int64(total), nil
 }
 
 type SignupStat struct {
@@ -69,6 +100,13 @@ func (r *DashboardRepository) GetMonthlySignups(role models.UserRole) ([]SignupS
 	return results, err
 }
 
+func (r *DashboardRepository) GetLatestSignups() ([]models.User, error) {
+	var users []models.User
+	err := r.DB.Order("created_at DESC").Limit(5).Find(&users).Error
+	return users, err
+}
+
+// Top 5 traders by PNL
 func (r *DashboardRepository) GetTopTraders() ([]models.User, error) {
 	var users []models.User
 	err := r.DB.Joins("JOIN trader_profiles ON users.id = trader_profiles.user_id").
@@ -77,11 +115,5 @@ func (r *DashboardRepository) GetTopTraders() ([]models.User, error) {
 		Limit(5).
 		Preload("TraderProfile").
 		Find(&users).Error
-	return users, err
-}
-
-func (r *DashboardRepository) GetLatestSignups() ([]models.User, error) {
-	var users []models.User
-	err := r.DB.Order("created_at DESC").Limit(5).Find(&users).Error
 	return users, err
 }

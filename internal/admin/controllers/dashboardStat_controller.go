@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DashboardController struct{ DashboardSvc service.IDashboardService }
+type DashboardController struct {
+	DashboardSvc service.IDashboardService
+}
 
 func NewDashboardController(dashboardSvc service.IDashboardService) *DashboardController {
 	return &DashboardController{DashboardSvc: dashboardSvc}
@@ -24,12 +26,13 @@ func (ctrl *DashboardController) ShowDashboardPage(c *gin.Context) {
 func (ctrl *DashboardController) GetDashboardStats(c *gin.Context) {
 	stats, err := ctrl.DashboardSvc.GetDashboardStats()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stats"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get dashboard stats"})
 		return
 	}
 	c.JSON(http.StatusOK, stats)
 }
 
+// GetChartData returns data for charts like user growth and distribution
 func (ctrl *DashboardController) GetChartData(c *gin.Context) {
 	charts, err := ctrl.DashboardSvc.GetChartData()
 	if err != nil {
@@ -39,6 +42,7 @@ func (ctrl *DashboardController) GetChartData(c *gin.Context) {
 	c.JSON(http.StatusOK, charts)
 }
 
+// GetTopTraders returns top 5 traders by performance
 func (ctrl *DashboardController) GetTopTraders(c *gin.Context) {
 	traders, err := ctrl.DashboardSvc.GetTopTraders()
 	if err != nil {
@@ -48,6 +52,7 @@ func (ctrl *DashboardController) GetTopTraders(c *gin.Context) {
 	c.JSON(http.StatusOK, traders)
 }
 
+// GetLatestSignups returns latest 5 registered users
 func (ctrl *DashboardController) GetLatestSignups(c *gin.Context) {
 	users, err := ctrl.DashboardSvc.GetLatestSignups()
 	if err != nil {

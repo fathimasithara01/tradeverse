@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"sync"
 	"time"
 
@@ -20,19 +21,23 @@ type GrowthData struct {
 	Followers []int    `json:"followers"`
 	Traders   []int    `json:"traders"`
 }
+
 type DistributionData struct {
 	Labels []string `json:"labels"`
 	Data   []int64  `json:"data"`
 }
+
 type ChartData struct {
 	Growth       GrowthData       `json:"growth"`
 	Distribution DistributionData `json:"distribution"`
 }
+
 type DashboardStats struct {
 	MRR       int64 `json:"mrr"`
 	Followers int64 `json:"followers"`
 	Traders   int64 `json:"traders"`
 	Sessions  int64 `json:"sessions"`
+	Signals   int64 `json:"signals"`
 }
 
 type DashboardService struct {
@@ -45,39 +50,64 @@ func NewDashboardService(repo repository.IDashboardRepository) IDashboardService
 
 func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 	var stats DashboardStats
-	var err error
 	var wg sync.WaitGroup
-	var errChan = make(chan error, 4)
+	errChan := make(chan error, 5)
 
-	wg.Add(4)
+	wg.Add(5)
 
 	go func() {
 		defer wg.Done()
-		stats.MRR, _ = s.Repo.GetMonthlyRecurringRevenue() // Ignoring error for mock data
+		mrr, err := s.Repo.GetMonthlyRecurringRevenue()
+		if err != nil {
+			errChan <- err
+			log.Println("Error fetching MRR:", err)
+			return
+		}
+		stats.MRR = mrr
 	}()
 
 	go func() {
 		defer wg.Done()
-		stats.Followers, err = s.Repo.GetCustomerCount() // Corrected function call
+		count, err := s.Repo.GetCustomerCount()
 		if err != nil {
 			errChan <- err
+			log.Println("Error fetching customer count:", err)
+			return
 		}
+		stats.Followers = count
 	}()
 
 	go func() {
 		defer wg.Done()
-		stats.Traders, err = s.Repo.GetApprovedTraderCount()
+		count, err := s.Repo.GetApprovedTraderCount()
 		if err != nil {
 			errChan <- err
+			log.Println("Error fetching trader count:", err)
+			return
 		}
+		stats.Traders = count
 	}()
+
+	// go func() {
+	// 	defer wg.Done()
+	// 	count, err := s.Repo.GetActiveSessionCount()
+	// 	if err != nil {
+	// 		errChan <- err
+	// 		log.Println("Error fetching active sessions:", err)
+	// 		return
+	// 	}
+	// 	stats.Sessions = count
+	// }()
 
 	go func() {
 		defer wg.Done()
-		stats.Sessions, err = s.Repo.GetActiveSessionCount()
+		count, err := s.Repo.GetTotalSignalCount()
 		if err != nil {
 			errChan <- err
+			log.Println("Error fetching total signals:", err)
+			return
 		}
+		stats.Signals = count
 	}()
 
 	wg.Wait()
@@ -103,9 +133,11 @@ func (s *DashboardService) GetChartData() (ChartData, error) {
 	if err != nil {
 		return ChartData{}, err
 	}
+
 	chartData.Distribution.Labels = []string{"Followers", "Traders"}
 	chartData.Distribution.Data = []int64{followerCount, traderCount}
 
+	// Last 6 months
 	followerSignups, err := s.Repo.GetMonthlySignups(models.RoleCustomer)
 	if err != nil {
 		return ChartData{}, err
@@ -146,11 +178,11 @@ func processSignupStats(stats []repository.SignupStat) ([]string, []int) {
 	}
 	return labels, data
 }
-
 func (s *DashboardService) GetTopTraders() ([]models.User, error) {
 	return s.Repo.GetTopTraders()
 }
 
+// GetLatestSignups returns latest 5 users
 func (s *DashboardService) GetLatestSignups() ([]models.User, error) {
 	return s.Repo.GetLatestSignups()
 }

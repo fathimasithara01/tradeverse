@@ -125,19 +125,19 @@ func (ctrl *SubscriptionController) GetSubscriptionPlanByID(c *gin.Context) {
 		status = "active"
 	}
 	responsePlan := SubscriptionPlanResponseDTO{
-		ID:              plan.ID,
-		Name:            plan.Name,
-		Description:     plan.Description,
-		Price:           plan.Price,
-		Duration:        int(plan.Duration),
-		Interval:        plan.Interval,
-		MaxFollowers:    plan.MaxFollowers,
-		Status:          status,
-		Features:        plan.Features,
-		CommissionRate:  plan.CommissionRate,
-		AnalyticsAccess: plan.AnalyticsAccess,
-		IsTraderPlan:    plan.IsTraderPlan,
-		IsActive:        plan.IsActive,
+		ID:           plan.ID,
+		Name:         plan.Name,
+		Description:  plan.Description,
+		Price:        plan.Price,
+		Duration:     int(plan.Duration),
+		Interval:     plan.Interval,
+		MaxFollowers: plan.MaxFollowers,
+		Status:       status,
+		// Features:        plan.Features,
+		// CommissionRate:  plan.CommissionRate,
+		// AnalyticsAccess: plan.AnalyticsAccess,
+		IsTraderPlan: plan.IsTraderPlan,
+		IsActive:     plan.IsActive,
 	}
 
 	c.JSON(http.StatusOK, responsePlan)
@@ -177,14 +177,14 @@ func (ctrl *SubscriptionController) GetSubscriptionPlans(c *gin.Context) {
 }
 
 func (ctrl *SubscriptionController) GetSubscriptions(c *gin.Context) {
-	log.Println("DEBUG: GetSubscriptions handler was called.") // Add this
+	log.Println("DEBUG: GetSubscriptions handler was called.") 
 	subs, err := ctrl.SubscriptionService.GetAllSubscriptions()
 	if err != nil {
 		log.Printf("ERROR: controllers.SubscriptionController.GetSubscriptions failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch subscriptions"})
 		return
 	}
-	log.Printf("DEBUG: Successfully fetched %d subscriptions.", len(subs)) // Add this
+	log.Printf("DEBUG: Successfully fetched %d subscriptions.", len(subs))
 	c.JSON(http.StatusOK, subs)
 }
 

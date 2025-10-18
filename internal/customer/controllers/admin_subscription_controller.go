@@ -87,7 +87,6 @@ func (ctrl *SubscriptionPlanController) SubscribeToPlan(c *gin.Context) {
 		return
 	}
 
-	// ✅ Generate a safe transaction ID
 	transactionID := fmt.Sprintf("SUB_TX_%d_%d_%d", userID, planID, time.Now().UnixNano())
 
 	err = ctrl.WalletService.DebitUserWallet(userID, plan.Price, plan.Currency, "Subscription to "+plan.Name, transactionID)

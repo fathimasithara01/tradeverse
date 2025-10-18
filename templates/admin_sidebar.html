@@ -62,22 +62,33 @@
             <a href="#activitySubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "activity"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "activity"}}true{{else}}false{{end}}">
                 <i class="fas fa-sync-alt"></i>
-                <span>Platform Activity</span>
+                <span>Signal Activity</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
             <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "activity"}}show{{end}}"
                 id="activitySubmenu">
-                <li class="nav-item {{if eq .ActiveSubTab "live_signals"}}active{{end}}"><a href="/admin/signals">Live
-                        Signals</a></li>
-                <!-- <li class="nav-item {{if eq .ActiveSubTab "live_copying"}}active{{end}}"><a
-                        href="/admin/activity/live">Live Copying</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "trade_log_errors"}}active{{end}}"><a
-                        href="/admin/activity/errors">Trade Log & Errors</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "signal_cards"}}active{{end}}"> -->
+                
                     <a href="/admin/signal-cards"><i class="fas fa-chart-line"></i> Signal Cards</a>
                 </li>
             </ul>
         </li>
+ <li class="nav-item">
+            <a href="#subscriptionSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "subscription"}}active{{end}}" aria-expanded="{{if eq .ActiveTab "subscription"}}true{{else}}false{{end}}">
+                <i class="fas fa-wallet"></i>
+                <span>Upgrade Subscription</span>
+                <i class="fas fa-chevron-right collapse-arrow"></i>
+            </a>
+            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "subscription"}}show{{end}}"
+                id="subscriptionSubmenu">
+                
+                <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a
+                        href="/admin/financials/subscriptions">Subscriptions</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a
+                        href="/admin/financials/subscription-plans">Subscription Plans</a></li>
+                
+            </ul>
+        </li>
+
 
         <li class="nav-item">
             <a href="#financialsSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "financials"}}active{{end}}" aria-expanded="{{if eq .ActiveTab "financials"}}true{{else}}false{{end}}">
@@ -89,63 +100,12 @@
                 id="financialsSubmenu">
                 <li class="nav-item {{if eq .ActiveSubTab "admin_wallet"}}active{{end}}"><a
                         href="/admin/financials/wallet">Admin Wallet</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a
-                        href="/admin/financials/subscriptions">Subscriptions</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a
-                        href="/admin/financials/subscription-plans">Subscription Plans</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "trader_payouts"}}active{{end}}"><a href="/admin/financials/trader-payouts">Trader Payouts</a></li>
                 <li class="nav-item {{if eq .ActiveSubTab "transactions"}}active{{end}}"><a
                         href="/admin/transactions">Transactions</a></li>
             </ul>
         </li>
 
-    <li class="nav-heading">Growth & Support</li>
-    <li class="nav-item">
-        <a href="#marketingSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "marketing"}}active{{end}}"
-            aria-expanded="{{if eq .ActiveTab "marketing"}}true{{else}}false{{end}}">
-            <i class="fas fa-bullhorn"></i>
-            <span>Marketing & Promos</span>
-            <i class="fas fa-chevron-right collapse-arrow"></i>
-        </a>
-        <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "marketing"}}show{{end}}"
-            id="marketingSubmenu">
-            <li class="nav-item {{if eq .ActiveSubTab "promo_codes"}}active{{end}}"><a
-                    href="/admin/marketing/promo-codes">Promo Codes</a></li>
-            <li class="nav-item {{if eq .ActiveSubTab "campaigns"}}active{{end}}"><a
-                    href="/admin/marketing/campaigns">Campaigns</a></li>
-        </ul>
-    </li>
-
-    <li class="nav-item">
-        <a href="#contentSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "content"}}active{{end}}"
-            aria-expanded="{{if eq .ActiveTab "content"}}true{{else}}false{{end}}">
-            <i class="fas fa-file-alt"></i>
-            <span>Content Management</span>
-            <i class="fas fa-chevron-right collapse-arrow"></i>
-        </a>
-        <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "content"}}show{{end}}" id="contentSubmenu">
-            <li class="nav-item {{if eq .ActiveSubTab "blog_posts"}}active{{end}}"><a
-                    href="/admin/content/blog-posts">Blog Posts</a></li>
-            <li class="nav-item {{if eq .ActiveSubTab "pages"}}active{{end}}"><a href="/admin/content/pages">Pages</a>
-            </li>
-            <li class="nav-item {{if eq .ActiveSubTab "faq"}}active{{end}}"><a href="/admin/content/faq">FAQ</a></li>
-        </ul>
-    </li>
-
-    <li class="nav-item">
-        <a href="#supportSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "support"}}active{{end}}"
-            aria-expanded="{{if eq .ActiveTab "support"}}true{{else}}false{{end}}">
-            <i class="fas fa-headset"></i>
-            <span>Support & Help</span>
-            <i class="fas fa-chevron-right collapse-arrow"></i>
-        </a>
-        <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "support"}}show{{end}}" id="supportSubmenu">
-            <li class="nav-item {{if eq .ActiveSubTab "support_tickets"}}active{{end}}"><a
-                    href="/admin/support/tickets">Support Tickets</a></li>
-            <li class="nav-item {{if eq .ActiveSubTab "announcements"}}active{{end}}"><a
-                    href="/admin/support/announcements">Announcements</a></li>
-        </ul>
-    </li>
+   
 
     <li class="nav-heading">Settings</li>
     <li class="nav-item {{if eq .ActiveTab "system_settings"}}active{{end}}">
