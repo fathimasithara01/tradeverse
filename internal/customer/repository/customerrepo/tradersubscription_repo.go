@@ -34,8 +34,7 @@ func NewCustomerTraderSignalSubscriptionRepository(db *gorm.DB) ICustomerTraderS
 
 func (r *CustomerTraderSignalSubscriptionRepository) GetTraderByID(ctx context.Context, traderID uint) (*models.User, error) {
 	var trader models.User
-	// --- FIX HERE ---
-	// Changed "is_trader = ?" to "role = ?" and true to models.RoleTrader
+
 	if err := r.db.WithContext(ctx).Where("id = ? AND role = ?", traderID, models.RoleTrader).First(&trader).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("trader not found")
@@ -47,20 +46,16 @@ func (r *CustomerTraderSignalSubscriptionRepository) GetTraderByID(ctx context.C
 
 func (r *CustomerTraderSignalSubscriptionRepository) GetTradersWithPlans(ctx context.Context) ([]models.User, error) {
 	var traders []models.User
-	// Fetch users who are marked as traders and have at least one active TraderSubscriptionPlan
 	err := r.db.WithContext(ctx).
 		Preload("TraderSubscriptionPlans", func(db *gorm.DB) *gorm.DB {
 			return db.Where("is_active = ?", true)
 		}).
-		// --- FIX HERE ---
-		// Changed "is_trader = ?" to "role = ?" and true to models.RoleTrader
 		Where("role = ?", models.RoleTrader).
 		Find(&traders).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get traders with plans: %w", err)
 	}
 
-	// Filter out traders who genuinely have no active plans after preloading
 	var activeTraders []models.User
 	for _, trader := range traders {
 		if len(trader.TraderSubscriptionPlans) > 0 {
@@ -128,13 +123,12 @@ func (r *CustomerTraderSignalSubscriptionRepository) GetAllSignalsFromSubscribed
 	}
 
 	if len(subscribedTraderIDs) == 0 {
-		return []models.Signal{}, nil // No subscriptions, no signals
+		return []models.Signal{}, nil
 	}
 
-	// Then, fetch all signals from those traders
 	err = r.db.WithContext(ctx).
 		Where("trader_id IN (?)", subscribedTraderIDs).
-		Order("published_at DESC"). // Order by publication date, newest first
+		Order("published_at DESC").
 		Find(&signals).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get signals from subscribed traders: %w", err)
@@ -153,9 +147,7 @@ func (r *CustomerTraderSignalSubscriptionRepository) CreateWalletTransaction(ctx
 
 func (r *CustomerTraderSignalSubscriptionRepository) GetAdminWallet(ctx context.Context) (*models.Wallet, error) {
 	var adminUser models.User
-	// Assuming there's an admin user with RoleAdmin
-	// --- FIX HERE ---
-	// Changed "is_admin = ?" to "role = ?" and true to models.RoleAdmin
+
 	if err := r.db.WithContext(ctx).Where("role = ?", models.RoleAdmin).First(&adminUser).Error; err != nil {
 		return nil, fmt.Errorf("admin user not found: %w", err)
 	}

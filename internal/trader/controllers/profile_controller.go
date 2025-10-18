@@ -145,7 +145,7 @@ func (c *TraderProfileController) ApproveTraderProfile(ctx *gin.Context) {
 		return
 	}
 
-	profile, err := c.traderService.GetProfile(uint(profileID)) // This gets by userID, not profileID, need to adjust service or fetch
+	profile, err := c.traderService.GetProfile(uint(profileID))
 
 	profile, err = c.traderService.GetProfile(uint(profileID))
 	if err != nil {

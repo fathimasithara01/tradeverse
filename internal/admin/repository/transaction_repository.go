@@ -52,7 +52,6 @@ func (r *transactionRepository) GetAllTransactions(page, limit int, search strin
 	return transactions, total, nil
 }
 
-// GetAvailableYears fetches all distinct years from transaction history
 func (r *transactionRepository) GetAvailableYears() ([]int, error) {
 	var years []int
 	err := r.db.Model(&models.WalletTransaction{}).

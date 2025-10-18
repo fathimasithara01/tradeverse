@@ -4,7 +4,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// MarketData represents the real-time or near real-time market information for a cryptocurrency.
 type MarketData struct {
 	gorm.Model
 	Symbol         string  `gorm:"uniqueIndex;not null" json:"symbol"` // e.g., "BTCUSDT"
@@ -16,7 +15,6 @@ type MarketData struct {
 	LogoURL        string  `json:"logo_url"` // URL to the coin's logo
 }
 
-// MarketDataAPIResponse structure for data sent to the frontend
 type MarketDataAPIResponse struct {
 	Symbol         string  `json:"symbol"`
 	Name           string  `json:"name"`

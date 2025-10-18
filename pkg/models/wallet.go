@@ -57,7 +57,7 @@ type DepositRequest struct {
 	UserID   uint              `gorm:"index;not null"`
 	Amount   float64           `gorm:"type:numeric(18,4);not null"`
 	Currency string            `gorm:"size:3;not null"`
-	Status   TransactionStatus `gorm:"type:varchar(20);default:'PENDING'"` // Changed to TransactionStatus
+	Status   TransactionStatus `gorm:"type:varchar(20);default:'PENDING'"`
 
 	PaymentGateway      string    `gorm:"size:50"`
 	PaymentGatewayTxID  string    `gorm:"size:100"`
@@ -133,7 +133,7 @@ type WithdrawalResponse struct {
 	WithdrawalID       uint              `json:"withdrawal_id"`
 	Amount             float64           `json:"amount"`
 	Currency           string            `json:"currency"`
-	Status             TransactionStatus `json:"status"` // Changed to TransactionStatus
+	Status             TransactionStatus `json:"status"`
 	PaymentGatewayTxID string            `json:"payment_gateway_tx_id,omitempty"`
 	Message            string            `json:"message"`
 }

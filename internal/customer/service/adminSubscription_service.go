@@ -1,4 +1,3 @@
-// internal/customer/service/customer_subscription_service.go
 package service
 
 import (
@@ -48,7 +47,6 @@ func NewCustomerSubscriptionService(
 func (s *CustomerSubscriptionService) DeactivateExpiredTraderSubscriptions() error {
 	log.Println("Running DeactivateExpiredTraderSubscriptions cron job...")
 
-	// Get all active trader subscriptions
 	activeSubscriptions, err := s.customerSubscriptionRepo.GetActiveTraderSubscriptions()
 	if err != nil {
 		return err
@@ -58,15 +56,13 @@ func (s *CustomerSubscriptionService) DeactivateExpiredTraderSubscriptions() err
 	var deactivatedCount int
 
 	for _, sub := range activeSubscriptions {
-		if sub.EndDate.Before(now) && sub.IsActive { // Assuming an EndDate field and an IsActive boolean
+		if sub.EndDate.Before(now) && sub.IsActive {
 			log.Printf("Deactivating trader subscription ID: %d for user: %d, expired on: %s", sub.ID, sub.UserID, sub.EndDate.Format(time.RFC3339))
 			sub.IsActive = false
 			sub.DeactivatedAt = &now // Assuming a DeactivatedAt field
 			err := s.customerSubscriptionRepo.UpdateTraderSubscription(&sub)
 			if err != nil {
 				log.Printf("Error deactivating trader subscription ID %d: %v", sub.ID, err)
-				// Depending on your error handling strategy, you might return here or continue
-				// and log all errors. For a cron job, logging and continuing might be better.
 			} else {
 				deactivatedCount++
 			}
@@ -121,7 +117,6 @@ func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, am
 			return fmt.Errorf("failed to credit admin wallet for subscription: %w", err)
 		}
 
-		// If it's a trader upgrade plan, update user role
 		if plan.IsUpgradeToTrader {
 			user, err := s.userRepo.GetUserByID(userID)
 			if err != nil {

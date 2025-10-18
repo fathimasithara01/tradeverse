@@ -14,7 +14,6 @@ const (
 	RoleTrader   UserRole = "trader"
 )
 
-// User represents a user in the system.
 type User struct {
 	gorm.Model
 	Name     string `gorm:"size:100;not null" json:"name"`
@@ -30,7 +29,6 @@ type User struct {
 	IsBlocked  bool   `gorm:"default:false" json:"is_blocked"`
 	IsVerified bool   `gorm:"default:false" json:"is_verified"`
 	ProfilePic string `json:"profile_pic"`
-	// ReferralCode string `gorm:"unique" json:"referral_code"`
 
 	CustomerProfile CustomerProfile `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"customer_profile,omitempty"`
 	TraderProfile   *TraderProfile  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"trader_profile,omitempty"`
@@ -46,13 +44,6 @@ type User struct {
 	Trades []Trade `gorm:"foreignKey:TraderID;constraint:OnDelete:SET NULL;" json:"trades,omitempty"`
 
 	TraderPerformance *TraderPerformance `gorm:"foreignKey:TraderID;constraint:OnDelete:CASCADE;" json:"trader_performance,omitempty"`
-
-	Notifications []Notification `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"notifications,omitempty"`
-
-	Referrals  []Referral `gorm:"foreignKey:ReferrerID;constraint:OnDelete:SET NULL;" json:"referrals,omitempty"`
-	ReferredBy *Referral  `gorm:"foreignKey:RefereeID;constraint:OnDelete:SET NULL;" json:"referred_by,omitempty"`
-
-	AdminActionLogs []AdminActionLog `gorm:"foreignKey:AdminID;constraint:OnDelete:SET NULL;" json:"admin_action_logs,omitempty"`
 }
 
 func (u *User) AfterCreate(tx *gorm.DB) (err error) {

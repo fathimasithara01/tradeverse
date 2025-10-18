@@ -19,7 +19,6 @@ func WireAdminRoutes(
 	permCtrl *controllers.PermissionController,
 	activityCtrl *controllers.ActivityController,
 	roleService service.IRoleService,
-	// signalCtrl *controllers.SignalController,
 	adminWalletController *controllers.AdminWalletController,
 	subscriptionController *controllers.SubscriptionController,
 	tranasactionController *controllers.TransactionController,

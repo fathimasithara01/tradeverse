@@ -30,7 +30,6 @@ func NewCustomerTraderSignalSubscriptionService(repo customerrepo.ICustomerTrade
 	return &CustomerTraderSignalSubscriptionService{repo: repo, db: db}
 }
 
-
 func (s *CustomerTraderSignalSubscriptionService) GetAvailableTradersWithPlans(ctx context.Context) ([]models.User, error) {
 	return s.repo.GetTradersWithPlans(ctx)
 }
@@ -117,14 +116,12 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 	}
 	traderBalanceAfter := traderWallet.Balance + traderRevenueAmount
 
-	// 3. Create wallet transactions
-	// Customer transaction (debit)
 	customerTx := models.WalletTransaction{
 		WalletID:        customerWallet.ID,
 		UserID:          customerID,
 		Type:            models.TxTypeSubscription,
 		TransactionType: models.TxTypeDebit,
-		Name:            "Debit for Trader Subscription",
+		Name:            "Trader Subscription Debit",
 		Amount:          plan.Price,
 		Currency:        plan.Currency,
 		Status:          models.TxStatusSuccess,
@@ -132,14 +129,14 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		BalanceBefore:   customerWallet.Balance,
 		BalanceAfter:    customerBalanceAfter,
 		ReferenceID:     fmt.Sprintf("TRADER_SUB_%d_PLAN_%d", customerID, plan.ID),
-		TransactionID:   fmt.Sprintf("TRADER_SUB_%d_%d_%d", customerID, plan.TraderID, time.Now().UnixNano()), // Unique ID for this transaction
+		TransactionID:   fmt.Sprintf("TRADER_SUB_%d_%d_%d", customerID, plan.TraderID, time.Now().UnixNano()), // unique
 	}
+
 	if err := s.repo.CreateWalletTransaction(ctx, &customerTx, tx); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to record customer transaction: %w", err)
 	}
 
-	// Admin transaction (credit)
 	adminTx := models.WalletTransaction{
 		WalletID:        adminWallet.ID,
 		UserID:          adminWallet.UserID,
