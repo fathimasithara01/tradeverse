@@ -89,23 +89,19 @@ func InitializeApp() (*App, error) {
 	adminSignalController := controllers.NewSignalController(adminLiveSignalService)
 	adminTransactionController := controllers.NewTransactionController(adminTransactionService)
 
-	// --- Customer-side components: Remove or comment out if not used by Admin ---
-	// The `cron.StartCronJobs` in your `cron.go` expects a `customerService.AdminUpgradeSubscriptionService`
-	// for its second argument. However, based on the provided `admin/service/subscription.go` (your admin service),
-	// the `DeactivateExpiredSubscriptions` and `UpgradeUserToTrader` logic are handled directly by
-	// `adminService.SubscriptionService`.
-	// Therefore, for `cron.StartCronJobs`, it's correct to pass `nil` for the customer-related service if
-	// the admin cron doesn't rely on it. If there was a *specific* customer-side cron task, you'd instantiate
-	// the correct `customerService.AdminUpgradeSubscriptionService` here.
 	var customerAdminUpgradeSubscriptionService cusSvc.CustomerSubscriptionService
-	_ = customerAdminUpgradeSubscriptionService // To avoid unused variable warning if it's not removed
+	_ = customerAdminUpgradeSubscriptionService
 
 	r := gin.Default()
 
-	_, filename, _, _ := runtime.Caller(0)
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatal("Unable to get current file path")
+	}
 	currentDir := filepath.Dir(filename)
 	projectRoot := filepath.Join(currentDir, "..", "..", "..")
 	templatesPath := filepath.Join(projectRoot, "templates", "*.html")
+	staticPath := filepath.Join(projectRoot, "static")
 
 	r.SetFuncMap(template.FuncMap{
 		"add": func(a, b int) int {
@@ -123,7 +119,7 @@ func InitializeApp() (*App, error) {
 			}
 			return b
 		},
-		"min": func(a, b int) int { // Corrected func signature for min
+		"min": func(a, b int) int {
 			if a < b {
 				return a
 			}
@@ -132,6 +128,7 @@ func InitializeApp() (*App, error) {
 	})
 
 	r.LoadHTMLGlob(templatesPath)
+	r.Static("/static", staticPath)
 
 	router.WireAdminRoutes(
 		r,
@@ -150,12 +147,7 @@ func InitializeApp() (*App, error) {
 		adminSignalController,
 	)
 
-	// Start ALL cron jobs using the `cron.StartCronJobs` function which encapsulates all cron logic.
-	// The second argument `customerService.AdminUpgradeSubscriptionService` is `nil` as explained above.
 	cron.StartCronJobs(adminSubscriptionService, customerAdminUpgradeSubscriptionService, adminLiveSignalService, DB)
-
-	// Removed the redundant `c := cronn.New()` block here, as `cron.StartCronJobs` already handles it.
-	// This prevents duplicate cron job registrations.
 
 	return &App{
 		engine: r,

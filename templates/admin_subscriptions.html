@@ -6,260 +6,216 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{.Title}}</title>
 
-  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/sidebar.css">
 
- <style>
-        :root {
-            --sidebar-bg: #ffffff;
-            --sidebar-width: 280px;
-            --main-bg: #f7f9fc;
-            --brand-color: #1a73e8;
-            --text-color: #343a40;
-            --link-color: #5f6368;
-            --link-hover-bg: #f1f3f4;
-            --link-active-bg: #e8f0fe;
-            --link-active-color: #1967d2;
-            --border-color: #e9ecef;
-            --shadow-color: rgba(0, 0, 0, 0.08);
+  <style>
+    h2 {
+      color: var(--text-heading);
+      font-weight: var(--font-weight-bold);
+      font-size: 1.75rem;
+      margin-bottom: var(--spacing-xl);
+    }
 
-            /* Status badge colors */
-            --status-active-bg: #e6ffed; /* Light green */
-            --status-active-color: #007f35; /* Dark green */
-            --status-pending-bg: #fffbe6; /* Light yellow */
-            --status-pending-color: #7a5c00; /* Dark yellow */
-            --status-expired-bg: #ffe6e6; /* Light red */
-            --status-expired-color: #990000; /* Dark red */
-            --status-inactive-bg: #e9ecef; /* Light gray */
-            --status-inactive-color: #495057; /* Dark gray */
-            --status-approved-bg: #e6ffed; /* Light green */
-            --status-approved-color: #007f35; /* Dark green */
-            --status-rejected-bg: #ffe6e6; /* Light red */
-            --status-rejected-color: #990000; /* Dark red */
-            --status-pending-approval-bg: #fffbe6; /* Light yellow */
-            --status-pending-approval-color: #7a5c00; /* Dark yellow */
-        }
+    /* Cards */
+    .card {
+      border: 1px solid var(--border-light);
+      /* Explicit border for definition */
+      border-radius: var(--border-radius-lg);
+      /* More rounded corners */
+      box-shadow: 0 4px 15px var(--shadow-subtle);
+      /* Very subtle shadow */
+      margin-bottom: var(--spacing-xl);
+      /* More space between cards */
+      background-color: var(--bg-card);
+    }
 
-        body {
-            background-color: var(--main-bg);
-            font-family: 'Inter', sans-serif;
-            margin: 0; /* Ensure no default body margin */
-        }
+    .card-header {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-light);
+      font-weight: var(--font-weight-semibold);
+      padding: var(--spacing-lg);
+      font-size: var(--font-size-large);
+      color: var(--text-heading);
+      border-top-left-radius: var(--border-radius-lg);
+      border-top-right-radius: var(--border-radius-lg);
+    }
 
-        .wrapper {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-        }
+    .card-body {
+      padding: var(--spacing-lg);
+    }
 
-        #sidebar {
-            width: var(--sidebar-width);
-            min-width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            transition: all 0.3s;
-            box-shadow: 0 0 25px var(--shadow-color);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-        }
+    /* Tables (Bootstrap override for modern look) */
+    .table {
+      --bs-table-bg: var(--bg-card);
+      --bs-table-color: var(--text-body);
+      --bs-table-striped-bg: var(--bg-light);
+      --bs-table-hover-bg: #f2f5f7;
+      /* Very light hover */
+      border: none;
+      /* Removed outer border, card handles it */
+      border-radius: var(--border-radius-lg);
+      /* Consistent with card */
+      overflow: hidden;
+    }
 
-        .sidebar-header {
-            padding: 1.25rem 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-        }
+    .table thead {
+      background-color: var(--bg-light);
+      /* Lighter header for a softer feel */
+      color: var(--text-heading);
+      border-bottom: 1px solid var(--border-light);
+    }
 
-        .sidebar-header h3 {
-            color: var(--brand-color);
-            font-weight: 700;
-            margin-bottom: 0;
-            font-size: 1.5rem;
-        }
+    .table thead th {
+      border-bottom: none;
+      /* No border below header for cleaner look */
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--text-muted);
+      /* Muted header text */
+      vertical-align: middle;
+    }
 
-        #sidebar-nav {
-            flex-grow: 1;
-            padding: 1rem 0;
-            overflow-y: auto; /* Enable scrolling for long sidebars */
-        }
+    .table tbody tr td {
+      border-top: 1px solid var(--border-light);
+      /* Light horizontal borders */
+      border-bottom: none;
+      padding: var(--spacing-md) var(--spacing-lg);
+      vertical-align: middle;
+      font-size: var(--font-size-base);
+    }
 
-        #sidebar-nav .nav-heading {
-            padding: 0.5rem 1.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #adb5bd;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
+    .table tbody tr:first-child td {
+      border-top: none;
+      /* No top border for first row */
+    }
 
-        #sidebar-nav .nav-item a {
-            padding: 0.8rem 1.5rem;
-            font-size: 0.95rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            color: var(--link-color);
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
-        }
 
-        #sidebar-nav .nav-item a:hover {
-            background: var(--link-hover-bg);
-            color: var(--text-color);
-        }
+    /* Status Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3em 0.7em;
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-semibold);
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: middle;
+      /* Align middle with text */
+      border-radius: var(--border-radius-sm);
+      /* Slightly less rounded than cards */
+      text-transform: capitalize;
+    }
 
-        #sidebar-nav .nav-item.active>a,
-        #sidebar-nav .nav-item a[aria-expanded="true"] {
-            background: var(--link-active-bg);
-            color: var(--link-active-color);
-            border-left-color: var(--link-active-color);
-        }
+    .status-badge::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      background-color: currentColor;
+      /* Dot matches text color */
+    }
 
-        #sidebar-nav .nav-item a i {
-            margin-right: 1rem;
-            width: 20px;
-            text-align: center;
-            font-size: 1.1rem;
-        }
+    .status-active,
+    .status-approved {
+      color: var(--status-active-color);
+      background-color: var(--status-active-bg);
+    }
 
-        .collapse-arrow {
-            margin-left: auto;
-            transition: transform 0.2s ease-in-out;
-        }
+    .status-pending,
+    .status-pending-approval {
+      color: var(--status-pending-color);
+      background-color: var(--status-pending-bg);
+    }
 
-        a[aria-expanded="true"] .collapse-arrow {
-            transform: rotate(90deg);
-        }
+    .status-expired,
+    .status-rejected {
+      color: var(--status-expired-color);
+      background-color: var(--status-expired-bg);
+    }
 
-        .nav-collapse .nav-item a {
-            padding-left: 3.8rem !important;
-            font-size: 0.9rem;
-            border-left: none;
-            position: relative;
-            color: #6c757d;
-        }
+    .status-inactive {
+      color: var(--status-inactive-color);
+      background-color: var(--status-inactive-bg);
+    }
 
-        .nav-collapse .nav-item.active a {
-            color: var(--link-active-color);
-            font-weight: 600;
-        }
+    /* Buttons */
+    .btn {
+      font-weight: var(--font-weight-medium);
+      border-radius: var(--border-radius-sm);
+      /* Consistent with badges */
+      padding: 0.45rem 1rem;
+      font-size: var(--font-size-base);
+      transition: all 0.2s ease;
+    }
 
-        .sidebar-footer {
-            border-top: 1px solid var(--border-color);
-            padding: 1rem 1.5rem;
-        }
+    .btn-sm {
+      padding: 0.3rem 0.75rem;
+      font-size: var(--font-size-small);
+    }
 
-        #content {
-            flex-grow: 1;
-            padding: 2.5rem;
-            overflow-x: auto; /* Allow horizontal scrolling for table */
-        }
+    .btn-success {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+      --bs-btn-hover-bg: #218838;
+      --bs-btn-hover-border-color: #1e7e34;
+    }
 
-        .card {
-            border: none;
-            border-radius: 0.75rem;
-            box-shadow: 0 2px 10px var(--shadow-color);
-            margin-bottom: 1.5rem;
-        }
-
-        .card-header {
-            background-color: #fff;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-        }
-
-        .stat-card {
-            text-align: center;
-            padding: 1.5rem;
-        }
-
-        .stat-card .icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .stat-card .title {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        /* Status Badges */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: .35em .65em;
-            font-size: .75em;
-            font-weight: 600;
-            line-height: 1;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: baseline;
-            border-radius: .375rem;
-            margin-bottom: 0; /* Ensure no extra margin from parent */
-        }
-
-        .status-active, .status-approved {
-            color: var(--status-active-color);
-            background-color: var(--status-active-bg);
-        }
-
-        .status-pending, .status-pending-approval {
-            color: var(--status-pending-color);
-            background-color: var(--status-pending-bg);
-        }
-
-        .status-expired, .status-rejected {
-            color: var(--status-expired-color);
-            background-color: var(--status-expired-bg);
-        }
-
-        .status-inactive {
-            color: var(--status-inactive-color);
-            background-color: var(--status-inactive-bg);
-        }
-    </style>
+    .btn-danger {
+      background-color: var(--danger-color);
+      border-color: var(--danger-color);
+      --bs-btn-hover-bg: #c82333;
+      --bs-btn-hover-border-color: #bd2130;
+    }
+  </style>
 </head>
 
-<body class="bg-light">
+<body>
   <div class="wrapper">
+    <!-- The "admin_sidebar" template would contain your sidebar HTML structure -->
     {{template "admin_sidebar" .}}
 
     <div id="content">
       <h2 class="mb-4">{{.Title}}</h2>
 
-      <div class="table-responsive">
-        <table class="table table-bordered table-hover text-center align-middle">
-          <thead class="table-dark">
-            <tr>
-              <th>ID</th>
-              <th>Customer Name</th>
-              <th>Trader Name</th>
-              <th>Trader Status</th>
-              <th>Plan</th>
-              <th>Subscription Status</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="subscriptions-table">
-            <tr>
-              <td colspan="9" class="text-muted">Fetching subscriptions...</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="card p-0">
+        <div class="card-header">
+          Subscriptions Overview
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover text-center align-middle mb-0">
+              <thead class="text-white"> <!-- Removed Bootstrap bg-primary, now handled by custom CSS -->
+                <tr>
+                  <th>ID</th>
+                  <th>Customer Name</th>
+                  <th>Trader Name</th>
+                  <th>Trader Status</th>
+                  <th>Plan</th>
+                  <th>Subscription Status</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="subscriptions-table">
+                <tr>
+                  <td colspan="9" class="text-muted">Fetching subscriptions...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -344,11 +300,11 @@
                   break;
                 case 'pending_approval':
                   actionsHtml = `
-                    <button class="btn btn-sm btn-success me-2" 
+                    <button class="btn btn-sm btn-success me-2"
                             onclick="updateTraderStatus(${sub.user.id}, 'approved')">
                       Approve
                     </button>
-                    <button class="btn btn-sm btn-danger" 
+                    <button class="btn btn-sm btn-danger"
                             onclick="updateTraderStatus(${sub.user.id}, 'rejected')">
                       Reject
                     </button>`;
@@ -356,7 +312,7 @@
                 case 'rejected':
                   actionsHtml = `
                     <span class="status-badge status-rejected me-2">Trader Rejected</span>
-                    <button class="btn btn-sm btn-success" 
+                    <button class="btn btn-sm btn-success"
                             onclick="updateTraderStatus(${sub.user.id}, 'approved')">
                       Approve Anyway
                     </button>`;
