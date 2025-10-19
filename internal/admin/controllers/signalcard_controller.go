@@ -84,24 +84,20 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		TotalDuration string  `json:"totalDuration"`
 	}
 
-	// ✅ Bind JSON body to request struct once
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// ✅ Debug: Print the entire request data
 	reqJSON, _ := json.MarshalIndent(req, "", "  ")
-	log.Printf("📥 Received Signal Request:\n%s", string(reqJSON))
+	log.Printf("Received Signal Request:\n%s", string(reqJSON))
 
-	// ✅ Normalize symbol name
 	if !strings.HasSuffix(strings.ToUpper(req.Symbol), "USDT") {
 		req.Symbol = strings.ToUpper(req.Symbol) + "USDT"
 	} else {
 		req.Symbol = strings.ToUpper(req.Symbol)
 	}
 
-	// ✅ Parse start and end dates
 	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
 		log.Printf("❌ Invalid startDate: %v", err)
@@ -116,7 +112,6 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		return
 	}
 
-	// ✅ Map to Signal model
 	signal := models.Signal{
 		TraderName:     req.TraderName,
 		Symbol:         req.Symbol,
@@ -133,10 +128,8 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		PublishedAt:    time.Now(),
 	}
 
-	// ✅ Debug log specific fields
 	log.Printf("✅ Parsed Signal Data: %+v", signal)
 
-	// ✅ Save to DB through your service
 	createdSignal, err := ctrl.liveSignalService.CreateSignal(c, &signal)
 	if err != nil {
 		log.Printf("❌ Error creating signal: %v", err)
@@ -144,7 +137,6 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		return
 	}
 
-	// ✅ Success response
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Signal created successfully",
 		"data":    createdSignal,
