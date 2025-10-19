@@ -51,10 +51,11 @@ func NewDashboardService(repo repository.IDashboardRepository) IDashboardService
 func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 	var stats DashboardStats
 	var wg sync.WaitGroup
-	errChan := make(chan error, 5)
+	errChan := make(chan error, 4)
 
-	wg.Add(5)
+	wg.Add(4)
 
+	// Revenue
 	go func() {
 		defer wg.Done()
 		mrr, err := s.Repo.GetMonthlyRecurringRevenue()
@@ -66,6 +67,7 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 		stats.MRR = mrr
 	}()
 
+	// Customers
 	go func() {
 		defer wg.Done()
 		count, err := s.Repo.GetCustomerCount()
@@ -77,6 +79,7 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 		stats.Followers = count
 	}()
 
+	// Traders
 	go func() {
 		defer wg.Done()
 		count, err := s.Repo.GetApprovedTraderCount()
@@ -88,23 +91,13 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 		stats.Traders = count
 	}()
 
-	// go func() {
-	// 	defer wg.Done()
-	// 	count, err := s.Repo.GetActiveSessionCount()
-	// 	if err != nil {
-	// 		errChan <- err
-	// 		log.Println("Error fetching active sessions:", err)
-	// 		return
-	// 	}
-	// 	stats.Sessions = count
-	// }()
-
+	// Signals
 	go func() {
 		defer wg.Done()
 		count, err := s.Repo.GetTotalSignalCount()
 		if err != nil {
 			errChan <- err
-			log.Println("Error fetching total signals:", err)
+			log.Println("Error fetching signals:", err)
 			return
 		}
 		stats.Signals = count
