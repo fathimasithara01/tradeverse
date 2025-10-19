@@ -73,21 +73,84 @@ func (s *CustomerSubscriptionService) DeactivateExpiredTraderSubscriptions() err
 	return nil
 }
 
-func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, amountPaid float64, transactionID string) (*models.CustomerToTraderSub, error) {
+func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.CustomerToTraderSub, error) {
 	var subscription *models.CustomerToTraderSub
 
 	err := s.DB.Transaction(func(tx *gorm.DB) error {
-		// 1️⃣ Fetch subscription plan
+		// 1️⃣ Get plan from admin repo
 		plan, err := s.adminSubscriptionPlanRepo.GetSubscriptionPlanByID(planID)
 		if err != nil {
 			return fmt.Errorf("plan not found: %w", err)
 		}
 
-		// 2️⃣ Calculate start and end dates
+		// 2️⃣ Fetch wallets
+		var customerWallet, adminWallet models.Wallet
+		if err := tx.Where("user_id = ?", userID).First(&customerWallet).Error; err != nil {
+			return fmt.Errorf("customer wallet not found: %w", err)
+		}
+		if err := tx.Where("user_id = ?", 1).First(&adminWallet).Error; err != nil { // admin ID = 1
+			return fmt.Errorf("admin wallet not found: %w", err)
+		}
+
+		if customerWallet.Balance < amount {
+			return fmt.Errorf("insufficient wallet balance")
+		}
+
+		// 3️⃣ Wallet Balances Before Transfer
+		beforeCustomer := customerWallet.Balance
+		beforeAdmin := adminWallet.Balance
+
+		// 4️⃣ Perform Transfer
+		customerWallet.Balance -= amount
+		adminWallet.Balance += amount
+		customerWallet.LastUpdated = time.Now()
+		adminWallet.LastUpdated = time.Now()
+
+		if err := tx.Save(&customerWallet).Error; err != nil {
+			return fmt.Errorf("failed to update customer wallet: %w", err)
+		}
+		if err := tx.Save(&adminWallet).Error; err != nil {
+			return fmt.Errorf("failed to update admin wallet: %w", err)
+		}
+
+		// 5️⃣ Create Transactions
+		customerTx := models.WalletTransaction{
+			WalletID:        customerWallet.ID,
+			UserID:          userID,
+			Type:            models.TxTypeSubscription,
+			TransactionType: models.TxTypeDebit,
+			Amount:          amount,
+			Currency:        plan.Currency,
+			Status:          models.TxStatusSuccess,
+			Description:     fmt.Sprintf("Subscription to %s", plan.Name),
+			BalanceBefore:   beforeCustomer,
+			BalanceAfter:    customerWallet.Balance,
+			TransactionID:   transactionID,
+		}
+		if err := tx.Create(&customerTx).Error; err != nil {
+			return fmt.Errorf("failed to record customer transaction: %w", err)
+		}
+
+		adminTx := models.WalletTransaction{
+			WalletID:        adminWallet.ID,
+			UserID:          1, // Admin user ID
+			Type:            models.TxTypeSubscription,
+			TransactionType: models.TxTypeCredit,
+			Amount:          amount,
+			Currency:        plan.Currency,
+			Status:          models.TxStatusSuccess,
+			Description:     fmt.Sprintf("Received subscription payment from user %d", userID),
+			BalanceBefore:   beforeAdmin,
+			BalanceAfter:    adminWallet.Balance,
+			TransactionID:   transactionID,
+		}
+		if err := tx.Create(&adminTx).Error; err != nil {
+			return fmt.Errorf("failed to record admin transaction: %w", err)
+		}
+
+		// 6️⃣ Create Subscription Record
 		startDate := time.Now()
 		endDate := startDate.AddDate(0, int(plan.Duration), 0)
-
-		// 3️⃣ Create new subscription
 		subscription = &models.CustomerToTraderSub{
 			UserID:             userID,
 			SubscriptionPlanID: plan.ID,
@@ -95,41 +158,35 @@ func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, am
 			EndDate:            endDate,
 			IsActive:           true,
 			PaymentStatus:      "paid",
-			AmountPaid:         amountPaid,
+			AmountPaid:         amount,
 			TransactionID:      transactionID,
 		}
-
 		if err := tx.Create(subscription).Error; err != nil {
 			return fmt.Errorf("failed to create subscription: %w", err)
 		}
 
-		// 4️⃣ Get user and upgrade role
+		// 7️⃣ Upgrade user to trader
 		var user models.User
 		if err := tx.First(&user, userID).Error; err != nil {
 			return fmt.Errorf("user not found: %w", err)
 		}
+		user.Role = "trader"
+		user.RoleID = uintPtr(3) // trader role_id = 3
 
-		if user.Role == models.RoleCustomer {
-			user.Role = models.RoleTrader
-			user.RoleID = uintPtr(3) // trader = role_id 3
+		if err := tx.Save(&user).Error; err != nil {
+			return fmt.Errorf("failed to update user role: %w", err)
+		}
 
-			if err := tx.Save(&user).Error; err != nil {
-				return fmt.Errorf("failed to update user role: %w", err)
+		// 8️⃣ Ensure trader profile exists
+		var existingProfile models.TraderProfile
+		err = tx.Where("user_id = ?", user.ID).First(&existingProfile).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newProfile := models.TraderProfile{
+				UserID: user.ID,
+				Status: models.StatusApproved,
 			}
-
-			// 5️⃣ Create TraderProfile if not already exists
-			var profile models.TraderProfile
-			err = tx.Where("user_id = ?", user.ID).First(&profile).Error
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				newProfile := models.TraderProfile{
-					UserID: user.ID,
-					Bio:    "New trader joined TradeVerse.",
-				}
-				if err := tx.Create(&newProfile).Error; err != nil {
-					return fmt.Errorf("failed to create trader profile: %w", err)
-				}
-			} else if err != nil {
-				return fmt.Errorf("failed to check trader profile: %w", err)
+			if err := tx.Create(&newProfile).Error; err != nil {
+				return fmt.Errorf("failed to create trader profile: %w", err)
 			}
 		}
 
@@ -139,13 +196,10 @@ func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, am
 	if err != nil {
 		return nil, err
 	}
-
 	return subscription, nil
 }
 
-func uintPtr(v uint) *uint {
-	return &v
-}
+func uintPtr(v uint) *uint { return &v }
 
 func (s *CustomerSubscriptionService) GetSubscriptionsByUserID(userID uint) ([]models.CustomerToTraderSub, error) {
 	return s.customerSubscriptionRepo.GetSubscriptionsByUserID(userID)

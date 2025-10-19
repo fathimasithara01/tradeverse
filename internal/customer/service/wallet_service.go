@@ -40,8 +40,7 @@ type IWalletService interface {
 type walletService struct {
 	db             *gorm.DB
 	walletRepo     walletrepo.WalletRepository
-	paymentGateway paymentgateway.SimulatedPaymentClient // Correct: Field name is `paymentGateway`
-
+	paymentGateway paymentgateway.SimulatedPaymentClient
 }
 
 func NewWalletService(db *gorm.DB, repo walletrepo.WalletRepository, pgClient paymentgateway.SimulatedPaymentClient) IWalletService {
