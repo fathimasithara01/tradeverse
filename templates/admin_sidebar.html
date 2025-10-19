@@ -9,108 +9,108 @@
         <li class="nav-heading">Main</li>
 
         <li class="nav-item {{if eq .ActiveTab "dashboard"}}active{{end}}">
-            <a href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
         </li>
 
         <li class="nav-heading">Core Management</li>
 
         <li class="nav-item">
-            <a href="#permissionsSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "permissions"}}active{{end}}"
+            <a href="#permissionsSubmenu" data-bs-toggle="collapse"
+                class="nav-link {{if eq .ActiveTab "permissions"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "permissions"}}true{{else}}false{{end}}">
                 <i class="fas fa-shield-alt"></i>
                 <span> Users & Permissions</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "permissions"}}show{{end}}"
-                id="permissionsSubmenu">
-                <li class="nav-item"><a href="/admin/users/all" class="{{if eq .ActiveSubTab "manage_users"}}active{{end}}">Manage User</a></li>
-                <li class="nav-item"><a href="/admin/roles" class="{{if eq .ActiveSubTab "manage_roles"}}active{{end}}">Manage Roles</a></li>
-                <li class="nav-item"><a href="/admin/roles/permissions" class="{{if eq .ActiveSubTab "assign_permissions"}}active{{end}}">Assign Permissions </a></li>
-                <li class="nav-item"><a href="/admin/users/assign-role" class="{{if eq .ActiveSubTab "assign_role_to_users"}}active{{end}}">Assign role to users</a></li>
+            <ul class="collapse list-unstyled {{if eq .ActiveTab "permissions"}}show{{end}}" id="permissionsSubmenu">
+                <li class="nav-item"><a href="/admin/users/all"
+                        class="nav-link {{if eq .ActiveSubTab "manage_users"}}active{{end}}">Manage User</a></li>
+                <li class="nav-item"><a href="/admin/roles"
+                        class="nav-link {{if eq .ActiveSubTab "manage_roles"}}active{{end}}">Manage Roles</a></li>
+                <li class="nav-item"><a href="/admin/roles/permissions"
+                        class="nav-link {{if eq .ActiveSubTab "assign_permissions"}}active{{end}}">Assign Permissions
+                    </a></li>
+                <li class="nav-item"><a href="/admin/users/assign-role"
+                        class="nav-link {{if eq .ActiveSubTab "assign_role_to_users"}}active{{end}}">Assign role to
+                        users</a></li>
             </ul>
         </li>
 
         <li class="nav-item">
-            <a href="#customerSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "customer"}}active{{end}}"
+            <a href="#customerSubmenu" data-bs-toggle="collapse"
+                class="nav-link {{if eq .ActiveTab "customer"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "customer"}}true{{else}}false{{end}}">
                 <i class="fas fa-users"></i>
                 <span>Customer Management</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "customer"}}show{{end}}"
-                id="customerSubmenu">
-                <li class="nav-item"><a href="/admin/users/customers" class="{{if eq .ActiveSubTab "customers_list"}}active{{end}}">Customers List</a></li>
+            <ul class="collapse list-unstyled {{if eq .ActiveTab "customer"}}show{{end}}" id="customerSubmenu">
+                <li class="nav-item"><a href="/admin/users/customers"
+                        class="nav-link {{if eq .ActiveSubTab "customers_list"}}active{{end}}">Customers List</a></li>
             </ul>
         </li>
 
         <li class="nav-item">
-            <a href="#traderSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "trader"}}active{{end}}"
+            <a href="#traderSubmenu" data-bs-toggle="collapse"
+                class="nav-link {{if eq .ActiveTab "trader"}}active{{end}}"
                 aria-expanded="{{if eq .ActiveTab "trader"}}true{{else}}false{{end}}">
                 <i class="fas fa-user-tie"></i>
                 <span>Trader Management</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "trader"}}show{{end}}"
-                id="traderSubmenu">
-                <li class="nav-item"><a href="/admin/users/traders" class="{{if eq .ActiveSubTab "traders_list"}}active{{end}}">Traders List</a></li>
-                <li class="nav-item"><a href="/admin/users/traders/approval" class="{{if eq .ActiveSubTab "trader_approval"}}active{{end}}">Trader Approval</a></li>
-            </ul>
-        </li>
-
-
-        <li class="nav-item ">
-            <a href="#activitySubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "activity"}}active{{end}}"
-                aria-expanded="{{if eq .ActiveTab "activity"}}true{{else}}false{{end}}">
-                <i class="fas fa-sync-alt"></i>
-                <span>Signal Activity</span>
-                <i class="fas fa-chevron-right collapse-arrow"></i>
-            </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "activity"}}show{{end}}"
-                id="activitySubmenu">
-                
-                    <a href="/admin/signal-cards"><i class="fas fa-chart-line"></i> Signal Cards</a>
+            <ul class="collapse list-unstyled {{if eq .ActiveTab "trader"}}show{{end}}" id="traderSubmenu">
+                <li class="nav-item"><a href="/admin/users/traders"
+                        class="nav-link {{if eq .ActiveSubTab "traders_list"}}active{{end}}">Traders List</a></li>
+                <li class="nav-item"><a href="/admin/users/traders/approval"
+                        class="nav-link {{if eq .ActiveSubTab "trader_approval"}}active{{end}}">Trader Approval</a>
                 </li>
             </ul>
         </li>
- <li class="nav-item">
-            <a href="#subscriptionSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "subscription"}}active{{end}}" aria-expanded="{{if eq .ActiveTab "subscription"}}true{{else}}false{{end}}">
-                <i class="fas fa-wallet"></i>
-                <span>Upgrade Subscription</span>
-                <i class="fas fa-chevron-right collapse-arrow"></i>
+
+        <li class="nav-heading">Signal Activity</li> <!-- Changed from nav-item to nav-heading if it's not a collapsible parent -->
+        <li class="nav-item {{if eq .ActiveTab "activity"}}active{{end}}">
+            <a href="/admin/signal-cards" class="nav-link">
+                <i class="fas fa-chart-line"></i> Signal Cards
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "subscription"}}show{{end}}"
-                id="subscriptionSubmenu">
-                
-                <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a
-                        href="/admin/financials/subscriptions">Subscriptions</a></li>
-                <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a
-                        href="/admin/financials/subscription-plans">Subscription Plans</a></li>
-                
-            </ul>
         </li>
 
 
         <li class="nav-item">
-            <a href="#financialsSubmenu" data-bs-toggle="collapse" class="{{if eq .ActiveTab "financials"}}active{{end}}" aria-expanded="{{if eq .ActiveTab "financials"}}true{{else}}false{{end}}">
+            <a href="#subscriptionSubmenu" data-bs-toggle="collapse"
+                class="nav-link {{if eq .ActiveTab "subscription"}}active{{end}}"
+                aria-expanded="{{if eq .ActiveTab "subscription"}}true{{else}}false{{end}}">
+                <i class="fas fa-wallet"></i>
+                <span>Upgrade Subscription</span>
+                <i class="fas fa-chevron-right collapse-arrow"></i>
+            </a>
+            <ul class="collapse list-unstyled {{if eq .ActiveTab "subscription"}}show{{end}}" id="subscriptionSubmenu">
+                <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a
+                        href="/admin/financials/subscriptions" class="nav-link">Subscriptions</a></li>
+                <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a
+                        href="/admin/financials/subscription-plans" class="nav-link">Subscription Plans</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
+            <a href="#financialsSubmenu" data-bs-toggle="collapse"
+                class="nav-link {{if eq .ActiveTab "financials"}}active{{end}}"
+                aria-expanded="{{if eq .ActiveTab "financials"}}true{{else}}false{{end}}">
                 <i class="fas fa-wallet"></i>
                 <span>Financials</span>
                 <i class="fas fa-chevron-right collapse-arrow"></i>
             </a>
-            <ul class="collapse list-unstyled nav-collapse {{if eq .ActiveTab "financials"}}show{{end}}"
-                id="financialsSubmenu">
+            <ul class="collapse list-unstyled {{if eq .ActiveTab "financials"}}show{{end}}" id="financialsSubmenu">
                 <li class="nav-item {{if eq .ActiveSubTab "admin_wallet"}}active{{end}}"><a
-                        href="/admin/financials/wallet">Admin Wallet</a></li>
+                        href="/admin/financials/wallet" class="nav-link">Admin Wallet</a></li>
                 <li class="nav-item {{if eq .ActiveSubTab "transactions"}}active{{end}}"><a
-                        href="/admin/transactions">Transactions</a></li>
+                        href="/admin/transactions" class="nav-link">Transactions</a></li>
             </ul>
         </li>
 
-   
-
-    <li class="nav-heading">Settings</li>
-    <li class="nav-item {{if eq .ActiveTab "system_settings"}}active{{end}}">
-        <a href="/admin/settings"><i class="fas fa-cogs"></i> System Settings</a>
-    </li>
+        <li class="nav-heading">Settings</li>
+        <li class="nav-item {{if eq .ActiveTab "system_settings"}}active{{end}}">
+            <a href="/admin/settings" class="nav-link"><i class="fas fa-cogs"></i> System Settings</a>
+        </li>
     </ul>
 </nav>
 {{end}}
