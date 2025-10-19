@@ -73,79 +73,63 @@ func (s *CustomerSubscriptionService) DeactivateExpiredTraderSubscriptions() err
 	return nil
 }
 
-func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, amount float64, transactionID string) (*models.CustomerToTraderSub, error) {
+func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, amountPaid float64, transactionID string) (*models.CustomerToTraderSub, error) {
 	var subscription *models.CustomerToTraderSub
+
 	err := s.DB.Transaction(func(tx *gorm.DB) error {
+		// 1️⃣ Fetch subscription plan
 		plan, err := s.adminSubscriptionPlanRepo.GetSubscriptionPlanByID(planID)
 		if err != nil {
-			return fmt.Errorf("subscription plan not found: %w", err)
+			return fmt.Errorf("plan not found: %w", err)
 		}
 
+		// 2️⃣ Calculate start and end dates
 		startDate := time.Now()
-		var endDate time.Time
+		endDate := startDate.AddDate(0, int(plan.Duration), 0)
 
-		switch plan.Interval {
-		case "days":
-			endDate = startDate.AddDate(0, 0, int(plan.Duration))
-		case "monthly":
-			endDate = startDate.AddDate(0, int(plan.Duration), 0)
-		case "yearly":
-			endDate = startDate.AddDate(int(plan.Duration), 0, 0)
-		default:
-			endDate = startDate.AddDate(0, 1, 0) // Default to 1 month if interval is unknown
-		}
-
-		newSubscription := &models.CustomerToTraderSub{
+		// 3️⃣ Create new subscription
+		subscription = &models.CustomerToTraderSub{
 			UserID:             userID,
-			SubscriptionPlanID: planID,
+			SubscriptionPlanID: plan.ID,
 			StartDate:          startDate,
 			EndDate:            endDate,
 			IsActive:           true,
 			PaymentStatus:      "paid",
-			AmountPaid:         amount,
+			AmountPaid:         amountPaid,
 			TransactionID:      transactionID,
 		}
 
-		if err := s.customerSubscriptionRepo.CreateSubscription(newSubscription); err != nil {
-			return fmt.Errorf("failed to create customer subscription: %w", err)
-		}
-		subscription = newSubscription
-
-		creditDescription := fmt.Sprintf("Subscription payment from User %d for Plan %d (Amount: %.2f)", userID, planID, amount)
-		if err := s.adminWalletService.CreditAdminWallet(tx, amount, plan.Currency, creditDescription); err != nil {
-			log.Printf("Error crediting admin wallet for subscription: %v", err)
-			return fmt.Errorf("failed to credit admin wallet for subscription: %w", err)
+		if err := tx.Create(subscription).Error; err != nil {
+			return fmt.Errorf("failed to create subscription: %w", err)
 		}
 
-		if plan.IsUpgradeToTrader {
-			user, err := s.userRepo.GetUserByID(userID)
-			if err != nil {
-				return fmt.Errorf("failed to get user for upgrade: %w", err)
-			}
-			traderRole, err := s.userRepo.GetRoleByName(models.RoleTrader)
-			if err != nil {
-				return fmt.Errorf("trader role not found: %w", err)
-			}
-			user.RoleID = &traderRole.ID
+		// 4️⃣ Get user and upgrade role
+		var user models.User
+		if err := tx.First(&user, userID).Error; err != nil {
+			return fmt.Errorf("user not found: %w", err)
+		}
+
+		if user.Role == models.RoleCustomer {
 			user.Role = models.RoleTrader
+			user.RoleID = uintPtr(3) // trader = role_id 3
 
-			if user.TraderProfile == nil || user.TraderProfile.UserID == 0 {
-				user.TraderProfile = &models.TraderProfile{
-					UserID: user.ID,
-					Status: models.StatusApproved,
-				}
-				if err := tx.Create(user.TraderProfile).Error; err != nil {
-					return fmt.Errorf("failed to create trader profile for user %d: %w", userID, err)
-				}
-			} else {
-				user.TraderProfile.Status = models.StatusApproved
-				if err := tx.Save(user.TraderProfile).Error; err != nil {
-					return fmt.Errorf("failed to update trader profile for user %d: %w", userID, err)
-				}
+			if err := tx.Save(&user).Error; err != nil {
+				return fmt.Errorf("failed to update user role: %w", err)
 			}
 
-			if err := s.userRepo.UpdateUser(user); err != nil {
-				return fmt.Errorf("failed to upgrade user to trader role: %w", err)
+			// 5️⃣ Create TraderProfile if not already exists
+			var profile models.TraderProfile
+			err = tx.Where("user_id = ?", user.ID).First(&profile).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				newProfile := models.TraderProfile{
+					UserID: user.ID,
+					Bio:    "New trader joined TradeVerse.",
+				}
+				if err := tx.Create(&newProfile).Error; err != nil {
+					return fmt.Errorf("failed to create trader profile: %w", err)
+				}
+			} else if err != nil {
+				return fmt.Errorf("failed to check trader profile: %w", err)
 			}
 		}
 
@@ -155,7 +139,12 @@ func (s *CustomerSubscriptionService) CreateSubscription(userID, planID uint, am
 	if err != nil {
 		return nil, err
 	}
+
 	return subscription, nil
+}
+
+func uintPtr(v uint) *uint {
+	return &v
 }
 
 func (s *CustomerSubscriptionService) GetSubscriptionsByUserID(userID uint) ([]models.CustomerToTraderSub, error) {
@@ -181,7 +170,7 @@ func (s *CustomerSubscriptionService) CancelSubscription(userID, subscriptionID 
 
 	subscription.IsActive = false
 	subscription.PaymentStatus = "cancelled"
-	subscription.EndDate = time.Now() // Set end date to now upon cancellation
+	subscription.EndDate = time.Now()
 
 	return s.customerSubscriptionRepo.UpdateSubscription(subscription)
 }

@@ -11,7 +11,7 @@ import (
 
 type IUserRepository interface {
 	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
-	// Add other user-related methods as needed
+	GetRoleByName(roleName string) (*models.Role, error)
 }
 
 type userRepository struct {
@@ -20,6 +20,14 @@ type userRepository struct {
 
 func NewUserRepository(db *gorm.DB) IUserRepository {
 	return &userRepository{db: db}
+}
+
+func (r *userRepository) GetRoleByName(roleName string) (*models.Role, error) {
+	var role models.Role
+	if err := r.db.Where("name = ?", roleName).First(&role).Error; err != nil {
+		return nil, err
+	}
+	return &role, nil
 }
 
 func (r *userRepository) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {

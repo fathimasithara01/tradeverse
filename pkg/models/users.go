@@ -17,13 +17,13 @@ type User struct {
 	gorm.Model
 	Name     string `gorm:"size:100;not null" json:"name"`
 	Email    string `gorm:"size:100;uniqueIndex;not null" json:"email"`
-	Password string `gorm:"size:255;not null" json:"-"` // Stored hashed, excluded from JSON output
+	Password string `gorm:"size:255;not null" json:"-"` 
 	Phone    string `json:"phone"`
 
 	Role UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
 
 	RoleID    *uint `json:"role_id"`
-	RoleModel Role  `gorm:"foreignKey:RoleID" json:"role_model,omitempty"` // Assuming Role struct exists
+	RoleModel Role  `gorm:"foreignKey:RoleID" json:"role_model,omitempty"` 
 
 	IsBlocked  bool   `gorm:"default:false" json:"is_blocked"`
 	IsVerified bool   `gorm:"default:false" json:"is_verified"`

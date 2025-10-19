@@ -71,6 +71,9 @@ func InitializeApp() (*App, error) {
 		customerWalletService,
 	)
 
+	// planService service.ICustomerSubscriptionPlanService,
+	// subService service.ICustomerSubscriptionService,
+	// walletService service.IWalletService,
 	customerTraderSubsController := controllers.NewCustomerTraderSignalSubscriptionController(customerTraderSubsService)
 	authController := controllers.NewAuthController(userService)
 	profileController := controllers.NewProfileController(userService)
