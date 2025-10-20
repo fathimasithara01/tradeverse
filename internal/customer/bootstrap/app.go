@@ -102,3 +102,7 @@ func (a *App) Run() error {
 	log.Printf("Customer API server starting on http://localhost:%s", a.port)
 	return a.engine.Run(":" + a.port)
 }
+
+func (a *App) Engine() *gin.Engine {
+	return a.engine
+}

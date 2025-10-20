@@ -146,6 +146,9 @@ func InitializeApp() (*App, error) {
 	}, nil
 }
 
+func (a *App) Engine() *gin.Engine {
+	return a.engine
+}
 func (a *App) Run() error {
 	log.Printf("Server starting on http://localhost:%s", a.port)
 	return a.engine.Run(":" + a.port)
