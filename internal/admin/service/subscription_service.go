@@ -52,12 +52,10 @@ func (s *SubscriptionService) UpdateUserTraderStatus(userID uint, status string)
 		return fmt.Errorf("failed to get user by ID %d: %w", userID, err)
 	}
 
-	// Initialize TraderProfile if it's nil or has a zero UserID
 	if user.TraderProfile == nil || user.TraderProfile.UserID == 0 {
 		return fmt.Errorf("user %d does not have an initialized trader profile", userID)
 	}
 
-	// Validate the status string against models.TraderProfileStatus
 	switch status {
 	case string(models.StatusApproved):
 		user.TraderProfile.Status = models.StatusApproved
@@ -67,19 +65,14 @@ func (s *SubscriptionService) UpdateUserTraderStatus(userID uint, status string)
 		return fmt.Errorf("invalid trader status provided: %s", status)
 	}
 
-	// Using DB.Save to update the nested TraderProfile
 	if err := s.DB.Save(&user.TraderProfile).Error; err != nil {
 		return fmt.Errorf("failed to update trader profile for user %d: %w", userID, err)
 	}
 
-	// If status is approved, ensure the user has the trader role
 	if user.TraderProfile.Status == models.StatusApproved && user.Role != models.RoleTrader {
 		traderRole, err := s.userRepo.GetRoleByName(models.RoleTrader)
 		if err != nil {
 			log.Printf("Warning: Trader role not found when approving user %d: %v", userID, err)
-			// Decide if this should be a critical error or just a warning.
-			// For now, let's just log and continue, but ideally, the role should exist.
-		} else {
 			user.RoleID = &traderRole.ID
 			user.Role = models.RoleTrader
 			if err := s.userRepo.UpdateUser(user); err != nil {
@@ -132,9 +125,8 @@ func (s *SubscriptionService) UpgradeUserToTrader(userID uint) error {
 	user.RoleID = &traderRole.ID
 	user.Role = models.RoleTrader
 
-	// Initialize TraderProfile if it's nil or has a zero UserID
 	if user.TraderProfile == nil || user.TraderProfile.UserID == 0 {
-		user.TraderProfile = &models.TraderProfile{ // Make sure to initialize as pointer if it's a pointer in the model
+		user.TraderProfile = &models.TraderProfile{
 			UserID: user.ID,
 			Status: models.StatusApproved,
 		}

@@ -175,7 +175,6 @@ func (s *DashboardService) GetTopTraders() ([]models.User, error) {
 	return s.Repo.GetTopTraders()
 }
 
-// GetLatestSignups returns latest 5 users
 func (s *DashboardService) GetLatestSignups() ([]models.User, error) {
 	return s.Repo.GetLatestSignups()
 }

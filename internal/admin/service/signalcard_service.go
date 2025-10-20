@@ -102,7 +102,6 @@ func (s *liveSignalService) CheckAndSetSignalStatuses(ctx context.Context) error
 		log.Printf("Checking signal ID %d (Symbol: %s, Status: %s, Current: %.4f, Entry: %.4f, Target: %.4f, SL: %.4f)",
 			signal.ID, signal.Symbol, signal.Status, signal.CurrentPrice, signal.EntryPrice, signal.TargetPrice, signal.StopLoss)
 
-		// 1. Check for Pending to Active transition
 		if signal.Status == "Pending" && !signal.TradeStartDate.After(time.Now()) {
 			log.Printf("Signal ID %d (by %s, %s) is now Active.", signal.ID, signal.TraderName, signal.Symbol)
 			err := s.signalRepo.UpdateSignalStatus(ctx, signal.ID, "Active")
@@ -126,7 +125,6 @@ func (s *liveSignalService) CheckAndSetSignalStatuses(ctx context.Context) error
 			continue
 		}
 
-		// 2. Check for Stop Loss Hit
 		if signal.StopLoss != 0 && signal.CurrentPrice <= signal.StopLoss {
 			log.Printf("Signal ID %d (by %s, %s) hit Stop Loss at %.4f (SL: %.4f). Updating status.", signal.ID, signal.TraderName, signal.Symbol, signal.CurrentPrice, signal.StopLoss)
 			err := s.signalRepo.UpdateSignalStatus(ctx, signal.ID, "Stop Loss")
@@ -136,7 +134,6 @@ func (s *liveSignalService) CheckAndSetSignalStatuses(ctx context.Context) error
 			continue
 		}
 
-		// 3. Check for Target Hit
 		if signal.TargetPrice != 0 && signal.CurrentPrice >= signal.TargetPrice {
 			log.Printf("Signal ID %d (by %s, %s) hit Target at %.4f (Target: %.4f). Updating status.", signal.ID, signal.TraderName, signal.Symbol, signal.CurrentPrice, signal.TargetPrice)
 			err := s.signalRepo.UpdateSignalStatus(ctx, signal.ID, "Target Hit")

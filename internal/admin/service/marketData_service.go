@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log" // Import log package
+	"log"
 	"net/http"
-	"strconv" // Use strconv.ParseFloat for better error handling
+	"strconv"
+	"strings" // Added for strings.Split
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -32,43 +33,43 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Printf("Error fetching market data from %s: %v", url, err)
+		log.Printf("ERROR: Failed to fetch market data from %s: %v", url, err)
 		return nil, fmt.Errorf("failed to fetch market data from external API: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		errorMessage := fmt.Sprintf("External API returned non-OK status: %d %s", resp.StatusCode, resp.Status)
 		bodyBytes, readErr := ioutil.ReadAll(resp.Body)
-		if readErr == nil {
-			errorMessage += fmt.Sprintf(", Response Body: %s", string(bodyBytes))
+		if readErr != nil {
+			log.Printf("ERROR: Could not read error response body from %s: %v", url, readErr)
 		}
+		errorMessage := fmt.Sprintf("ERROR: External API returned non-OK status: %d %s, Response Body: %s", resp.StatusCode, resp.Status, string(bodyBytes))
 		log.Println(errorMessage)
-		return nil, fmt.Errorf("failed to fetch market data, status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to fetch market data, status: %d, response: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error reading response body from %s: %v", url, err)
+		log.Printf("ERROR: Failed to read response body from %s: %v", url, err)
 		return nil, fmt.Errorf("failed to read market data response: %w", err)
 	}
 
 	// Log the raw response body for debugging (truncate if very long)
-	log.Printf("Raw API response (first %d chars): %s", min(len(body), 500), body[:min(len(body), 500)])
+	log.Printf("DEBUG: Raw API response (first %d chars): %s", min(len(body), 1000), body[:min(len(body), 1000)])
 
 	var kucoinResponse struct {
 		Data struct {
 			Ticker []struct {
 				Symbol     string `json:"symbol"`
 				LastPrice  string `json:"last"`
-				ChangeRate string `json:"changeRate"` // 24h change rate
-				VolValue   string `json:"volValue"`   // 24h volume
+				ChangeRate string `json:"changeRate"` // 24h change rate (e.g., "0.0123")
+				VolValue   string `json:"volValue"`   // 24h volume in quote currency (e.g., USDT)
 			} `json:"ticker"`
 		} `json:"data"`
 	}
 
 	if err := json.Unmarshal(body, &kucoinResponse); err != nil {
-		log.Printf("Error unmarshalling market data JSON: %v. Raw body: %s", err, string(body))
+		log.Printf("ERROR: Failed to unmarshal market data JSON: %v. Raw body: %s", err, string(body))
 		return nil, fmt.Errorf("failed to parse market data from API: %w", err)
 	}
 
@@ -80,7 +81,7 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 		"XRP-USDT":  "Ripple",
 		"LTC-USDT":  "Litecoin",
 		"ADA-USDT":  "Cardano",
-		"SOL-USDT":  "Solana", // Added for more variety
+		"SOL-USDT":  "Solana",
 		"DOGE-USDT": "Dogecoin",
 	}
 
@@ -90,22 +91,29 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 			continue // Skip symbols not in our interest list
 		}
 
+		// Parse values with robust error handling
 		lastPrice, pErr := parseFloatStrict(ticker.LastPrice)
-		changeRate, cErr := parseFloatStrict(ticker.ChangeRate)
-		volume, vErr := parseFloatStrict(ticker.VolValue)
-
 		if pErr != nil {
-			log.Printf("Skipping %s due to price parsing error: %v (value: '%s')", ticker.Symbol, pErr, ticker.LastPrice)
+			log.Printf("WARN: Skipping %s due to price parsing error: %v (value: '%s')", ticker.Symbol, pErr, ticker.LastPrice)
 			continue
 		}
+
+		changeRate, cErr := parseFloatStrict(ticker.ChangeRate)
 		if cErr != nil {
-			log.Printf("Skipping %s due to changeRate parsing error: %v (value: '%s')", ticker.Symbol, cErr, ticker.ChangeRate)
+			log.Printf("WARN: Skipping %s due to changeRate parsing error: %v (value: '%s')", ticker.Symbol, cErr, ticker.ChangeRate)
 			continue
 		}
+
+		volume, vErr := parseFloatStrict(ticker.VolValue)
 		if vErr != nil {
-			log.Printf("Skipping %s due to volume parsing error: %v (value: '%s')", ticker.Symbol, vErr, ticker.VolValue)
+			log.Printf("WARN: Skipping %s due to volume parsing error: %v (value: '%s')", ticker.Symbol, vErr, ticker.VolValue)
 			continue
 		}
+
+		// Generate Logo URL
+		baseSymbol := getBaseSymbol(ticker.Symbol)
+		logoURL := fmt.Sprintf("https://cryptoicons.org/api/icon/%s/24", strings.ToLower(baseSymbol)) // Use lowercase for cryptoicons.org
+		log.Printf("DEBUG: Generated LogoURL for %s: %s", ticker.Symbol, logoURL)                     // Log generated URL
 
 		marketDataList = append(marketDataList, models.MarketDataAPIResponse{
 			Symbol:         ticker.Symbol,
@@ -113,8 +121,7 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 			CurrentPrice:   lastPrice,
 			PriceChange24H: changeRate * 100, // Convert rate (e.g., 0.0123) to percentage (1.23)
 			Volume24H:      volume,
-			// Construct a generic logo URL. You might need a more robust service for actual logos.
-			LogoURL: fmt.Sprintf("https://cryptoicons.org/api/icon/%s/24", getBaseSymbol(ticker.Symbol)),
+			LogoURL:        logoURL,
 		})
 
 		if len(marketDataList) >= 7 { // Limit the number of assets displayed on dashboard
@@ -123,12 +130,12 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 	}
 
 	if len(marketDataList) == 0 {
-		log.Println("No relevant live data was successfully processed from the API. Falling back to mock data.")
+		log.Println("WARN: No relevant live data was successfully processed from the API. Falling back to mock data.")
 		// Return mock data ONLY if live data fetching and parsing entirely failed for all symbols
 		return s.getMockMarketData(), nil
 	}
 
-	log.Printf("Successfully processed %d market data entries.", len(marketDataList))
+	log.Printf("INFO: Successfully processed %d market data entries.", len(marketDataList))
 	return marketDataList, nil
 }
 
@@ -146,32 +153,11 @@ func parseFloatStrict(s string) (float64, error) {
 
 // getBaseSymbol extracts the base currency symbol (e.g., BTC from BTC-USDT)
 func getBaseSymbol(symbol string) string {
-	parts := split(symbol, "-")
+	parts := strings.Split(symbol, "-") // Using standard library strings.Split
 	if len(parts) > 0 {
 		return parts[0]
 	}
 	return symbol
-}
-
-// Simple split function (could use strings.Split)
-func split(s, sep string) []string {
-	var result []string
-	for {
-		idx := -1
-		for i := 0; i <= len(s)-len(sep); i++ {
-			if s[i:i+len(sep)] == sep {
-				idx = i
-				break
-			}
-		}
-		if idx == -1 {
-			result = append(result, s)
-			break
-		}
-		result = append(result, s[:idx])
-		s = s[idx+len(sep):]
-	}
-	return result
 }
 
 // min helper function for logging
@@ -186,7 +172,7 @@ func min(a, b int) int {
 func (s *MarketDataService) getMockMarketData() []models.MarketDataAPIResponse {
 	// Use a fixed time for consistency if the actual API fails
 	now := time.Now()
-	return []models.MarketDataAPIResponse{
+	mockData := []models.MarketDataAPIResponse{
 		{
 			Symbol:         "BTC-USDT",
 			Name:           "Bitcoin",
@@ -227,5 +213,23 @@ func (s *MarketDataService) getMockMarketData() []models.MarketDataAPIResponse {
 			Volume24H:      600000000.00,
 			LogoURL:        "https://cryptoicons.org/api/icon/ada/24",
 		},
+		{
+			Symbol:         "SOL-USDT",
+			Name:           "Solana",
+			CurrentPrice:   192.00 + float64(now.Second()%20)/10,
+			PriceChange24H: 2.10,
+			Volume24H:      3000000000.00,
+			LogoURL:        "https://cryptoicons.org/api/icon/sol/24",
+		},
+		{
+			Symbol:         "DOGE-USDT",
+			Name:           "Dogecoin",
+			CurrentPrice:   0.20 + float64(now.Second()%5)/1000,
+			PriceChange24H: 5.00,
+			Volume24H:      2000000000.00,
+			LogoURL:        "https://cryptoicons.org/api/icon/doge/24",
+		},
 	}
+	log.Println("INFO: Returning mock market data.")
+	return mockData
 }

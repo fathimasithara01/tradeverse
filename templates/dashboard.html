@@ -227,6 +227,11 @@
                         <div class="card-header">User Growth (Last 6 Months)</div>
                         <div class="card-body">
                             <canvas id="userGrowthChart"></canvas>
+                             <!-- Placeholder for chart loading/error -->
+                            <div id="userGrowthChartPlaceholder" class="text-center text-muted py-5" style="display: none;">
+                                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                                <p class="mt-2">Loading user growth chart...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -236,6 +241,11 @@
                         <div class="card-header">User Distribution</div>
                         <div class="card-body d-flex align-items-center justify-content-center">
                             <canvas id="userDistributionChart"></canvas>
+                             <!-- Placeholder for chart loading/error -->
+                            <div id="userDistributionChartPlaceholder" class="text-center text-muted py-5" style="display: none;">
+                                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                                <p class="mt-2">Loading user distribution chart...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -262,7 +272,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="marketDataBody">
-                                        <!-- Market data will be dynamically loaded here by JavaScript -->
+                                        <!-- Initial loading state -->
                                         <tr>
                                             <td colspan="5" class="text-center text-muted py-4">
                                                 <div class="spinner-border spinner-border-sm text-primary me-2"
@@ -300,8 +310,21 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Configuration for Chart.js to make it look clean
             Chart.defaults.font.family = "'Inter', sans-serif";
-            Chart.defaults.color = '#6c757d';
+            Chart.defaults.color = '#6c757d'; // Default text color for charts
             Chart.defaults.borderColor = '#e9ecef'; // Light border for charts
+            Chart.defaults.responsive = true;
+            Chart.defaults.maintainAspectRatio = false; // Important for responsive custom sizes
+
+            // Define a consistent color palette for your charts
+            const CHART_COLORS = {
+                primary: 'rgb(26, 115, 232)', // Bootstrap primary
+                success: 'rgb(25, 135, 84)', // Bootstrap success
+                info: 'rgb(13, 202, 240)',   // Bootstrap info
+                secondary: 'rgb(108, 117, 125)' // Bootstrap secondary
+            };
+
+            // Default image for missing logos
+            const DEFAULT_COIN_LOGO = '/static/default-coin.png'; // Make sure you have this file
 
             async function fetchAndRenderKPIs() {
                 try {
@@ -321,20 +344,34 @@
                 }
             }
 
-            let userGrowthChart; // Declare chart variables globally or pass them around
+            let userGrowthChart;
             let userDistributionChart;
 
             async function fetchAndRenderCharts() {
+                const growthCanvas = document.getElementById('userGrowthChart');
+                const growthPlaceholder = document.getElementById('userGrowthChartPlaceholder');
+                const distCanvas = document.getElementById('userDistributionChart');
+                const distPlaceholder = document.getElementById('userDistributionChartPlaceholder');
+
+                if (growthCanvas) growthCanvas.style.display = 'none';
+                if (growthPlaceholder) growthPlaceholder.style.display = 'block';
+                if (distCanvas) distCanvas.style.display = 'none';
+                if (distPlaceholder) distPlaceholder.style.display = 'block';
+
                 try {
                     const response = await fetch('/admin/dashboard/charts');
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const data = await response.json();
 
-                    // Destroy existing charts if they exist to prevent duplicates
                     if (userGrowthChart) userGrowthChart.destroy();
                     if (userDistributionChart) userDistributionChart.destroy();
 
-                    const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
+                    if (growthCanvas) growthCanvas.style.display = 'block';
+                    if (growthPlaceholder) growthPlaceholder.style.display = 'none';
+                    if (distCanvas) distCanvas.style.display = 'block';
+                    if (distPlaceholder) distPlaceholder.style.display = 'none';
+
+                    const growthCtx = growthCanvas.getContext('2d');
                     userGrowthChart = new Chart(growthCtx, {
                         type: 'line',
                         data: {
@@ -343,61 +380,107 @@
                                 {
                                     label: 'Followers',
                                     data: data.growth.followers,
-                                    borderColor: 'rgb(26, 115, 232)', // Bootstrap primary color equivalent
-                                    backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                                    borderColor: CHART_COLORS.primary,
+                                    backgroundColor: (context) => {
+                                        const chart = context.chart;
+                                        const { ctx, chartArea } = chart;
+                                        if (!chartArea) return;
+                                        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                        gradient.addColorStop(0, 'rgba(26, 115, 232, 0)');
+                                        gradient.addColorStop(1, 'rgba(26, 115, 232, 0.2)');
+                                        return gradient;
+                                    },
                                     fill: true,
-                                    tension: 0.4,
-                                    pointBackgroundColor: 'rgb(26, 115, 232)',
+                                    tension: 0.3,
+                                    pointBackgroundColor: CHART_COLORS.primary,
                                     pointBorderColor: '#fff',
-                                    pointHoverBackgroundColor: '#fff',
-                                    pointHoverBorderColor: 'rgb(26, 115, 232)'
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6,
+                                    pointHoverBackgroundColor: CHART_COLORS.primary,
+                                    pointHoverBorderColor: '#fff',
+                                    borderWidth: 2
                                 },
                                 {
                                     label: 'Traders',
                                     data: data.growth.traders,
-                                    borderColor: 'rgb(25, 135, 84)', // Bootstrap success color equivalent
-                                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                                    borderColor: CHART_COLORS.success,
+                                    backgroundColor: (context) => {
+                                        const chart = context.chart;
+                                        const { ctx, chartArea } = chart;
+                                        if (!chartArea) return;
+                                        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                        gradient.addColorStop(0, 'rgba(25, 135, 84, 0)');
+                                        gradient.addColorStop(1, 'rgba(25, 135, 84, 0.2)');
+                                        return gradient;
+                                    },
                                     fill: true,
-                                    tension: 0.4,
-                                    pointBackgroundColor: 'rgb(25, 135, 84)',
+                                    tension: 0.3,
+                                    pointBackgroundColor: CHART_COLORS.success,
                                     pointBorderColor: '#fff',
-                                    pointHoverBackgroundColor: '#fff',
-                                    pointHoverBorderColor: 'rgb(25, 135, 84)'
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6,
+                                    pointHoverBackgroundColor: CHART_COLORS.success,
+                                    pointHoverBorderColor: '#fff',
+                                    borderWidth: 2
                                 }
                             ]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeOutQuart'
+                            },
                             plugins: {
                                 legend: {
                                     position: 'top',
                                     labels: {
-                                        boxWidth: 20
+                                        boxWidth: 20,
+                                        padding: 15,
+                                        usePointStyle: true
                                     }
                                 },
                                 tooltip: {
                                     mode: 'index',
                                     intersect: false,
+                                    backgroundColor: 'rgba(0,0,0,0.8)',
+                                    titleFont: { weight: 'bold' },
+                                    bodySpacing: 8,
+                                    padding: 10,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: ${context.raw.toLocaleString()}`;
+                                        }
+                                    }
                                 }
                             },
                             scales: {
                                 x: {
                                     grid: {
                                         display: false
+                                    },
+                                    ticks: {
+                                        autoSkip: true,
+                                        maxRotation: 0,
+                                        minRotation: 0
                                     }
                                 },
                                 y: {
                                     beginAtZero: true,
                                     grid: {
-                                        color: '#e9ecef'
+                                        color: Chart.defaults.borderColor,
+                                        drawBorder: false
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            if (value % 1 === 0) return value;
+                                        }
                                     }
                                 }
                             }
                         }
                     });
 
-                    const distCtx = document.getElementById('userDistributionChart').getContext('2d');
+                    const distCtx = distCanvas.getContext('2d');
                     userDistributionChart = new Chart(distCtx, {
                         type: 'doughnut',
                         data: {
@@ -405,30 +488,43 @@
                             datasets: [
                                 {
                                     data: data.distribution.data,
-                                    backgroundColor: ['rgb(26, 115, 232)', 'rgb(25, 135, 84)', '#6c757d'], // Primary, Success, secondary/muted
-                                    hoverOffset: 4
+                                    backgroundColor: [CHART_COLORS.primary, CHART_COLORS.success, CHART_COLORS.secondary],
+                                    hoverOffset: 10,
+                                    borderWidth: 2,
+                                    borderColor: '#fff'
                                 }
                             ]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeOutQuart'
+                            },
                             plugins: {
                                 legend: {
                                     position: 'bottom',
                                     labels: {
-                                        boxWidth: 20
+                                        boxWidth: 20,
+                                        padding: 20,
+                                        usePointStyle: true
                                     }
                                 },
                                 tooltip: {
+                                    backgroundColor: 'rgba(0,0,0,0.8)',
+                                    titleFont: { weight: 'bold' },
+                                    bodySpacing: 8,
+                                    padding: 10,
                                     callbacks: {
                                         label: function (tooltipItem) {
                                             let label = tooltipItem.label || '';
                                             if (label) {
                                                 label += ': ';
                                             }
-                                            label += tooltipItem.raw.toLocaleString();
-                                            return label;
+                                            const total = tooltipItem.dataset.data.reduce((sum, val) => sum + val, 0);
+                                            const currentValue = tooltipItem.raw;
+                                            const percentage = total > 0 ? ((currentValue / total) * 100).toFixed(1) : 0; // Avoid division by zero
+
+                                            return `${label}${currentValue.toLocaleString()} (${percentage}%)`;
                                         }
                                     }
                                 }
@@ -437,11 +533,33 @@
                     });
                 } catch (error) {
                     console.error("Failed to fetch chart data:", error);
-                    // Optional: Display error message on dashboard
+                    if (growthPlaceholder) {
+                        growthPlaceholder.innerHTML = '<p class="text-danger">Error loading chart data.</p>';
+                        growthPlaceholder.style.display = 'block';
+                    }
+                    if (distPlaceholder) {
+                        distPlaceholder.innerHTML = '<p class="text-danger">Error loading chart data.</p>';
+                        distPlaceholder.style.display = 'block';
+                    }
+                    if (growthCanvas) growthCanvas.style.display = 'none';
+                    if (distCanvas) distCanvas.style.display = 'none';
                 }
             }
 
             async function fetchAndRenderLiveMarketData() {
+                const marketDataBody = document.getElementById('marketDataBody');
+                // Display loading state immediately
+                marketDataBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Loading live market data...
+                        </td>
+                    </tr>
+                `;
+
                 try {
                     const response = await fetch('/admin/dashboard/market-data');
                     if (!response.ok) {
@@ -449,50 +567,53 @@
                     }
                     const data = await response.json();
 
-                    const marketDataBody = document.getElementById('marketDataBody');
-                    marketDataBody.innerHTML = ''; // Clear previous data
+                    marketDataBody.innerHTML = ''; // Clear loading state
 
                     if (data && data.length > 0) {
                         data.forEach(item => {
-                            // --- BEGIN MODIFICATION ---
-                            // Provide default values if a property is missing or null, to prevent `undefined` errors
                             const currentPrice = item.current_price !== undefined && item.current_price !== null ? item.current_price : 0;
                             const priceChange24H = item.price_change_24h !== undefined && item.price_change_24h !== null ? item.price_change_24h : 0;
+                           
                             const volume24H = item.volume24H !== undefined && item.volume24H !== null ? item.volume24H : 0;
                             const name = item.name || 'N/A';
                             const symbol = item.symbol || 'N/A';
-                            const logoURL = item.logo_url || '/static/default-coin.png';
-                            // --- END MODIFICATION ---
+
+                            // Robust logo URL handling with default fallback
+                            const logoURL = item.logo_url && item.logo_url !== '' ? item.logo_url : DEFAULT_COIN_LOGO;
 
                             const row = document.createElement('tr');
                             const priceChangeClass = priceChange24H >= 0 ? 'price-up' : 'price-down';
                             const priceChangeIcon = priceChange24H >= 0 ? '<i class="fas fa-caret-up price-change-icon"></i>' : '<i class="fas fa-caret-down price-change-icon"></i>';
 
                             row.innerHTML = `
-            <td><img src="${logoURL}" alt="${name}" class="me-2">${name}</td>
-            <td>${symbol.replace('-USDT', '')}</td>
-            <td>$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: currentPrice < 1 ? 6 : 2 })}</td>
-            <td class="${priceChangeClass}">${priceChangeIcon} ${priceChange24H.toFixed(2)}%</td>
-            <td>$${volume24H.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-          `;
+                                <td>
+                                    <img src="${logoURL}" alt="${name} logo" class="me-2" onerror="this.onerror=null;this.src='${DEFAULT_COIN_LOGO}';">
+                                    ${name}
+                                </td>
+                                <td>${symbol.replace('-USDT', '')}</td>
+                                <td>$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: currentPrice < 1 ? 6 : 2 })}</td>
+                                <td class="${priceChangeClass}">${priceChangeIcon} ${priceChange24H.toFixed(2)}%</td>
+                                <td>$${volume24H.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            `;
                             marketDataBody.appendChild(row);
-                        });
+                            });
                     } else {
                         marketDataBody.innerHTML = `
-          <tr>
-            <td colspan="5" class="text-center text-muted py-4">No live market data available at the moment.</td>
-          </tr>
-        `;
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No live market data available at the moment.</td>
+                            </tr>
+                        `;
                     }
+                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
 
                 } catch (error) {
                     console.error("Failed to fetch live market data:", error);
                     const marketDataBody = document.getElementById('marketDataBody');
                     marketDataBody.innerHTML = `
-        <tr>
-          <td colspan="5" class="text-center text-danger py-4">Error loading market data. Please try again. ${error.message}</td>
-        </tr>
-      `;
+                        <tr>
+                            <td colspan="5" class="text-center text-danger py-4">Error loading market data: ${error.message}. Please check console for details.</td>
+                        </tr>
+                    `;
                 }
             }
 
@@ -503,6 +624,7 @@
 
             setInterval(fetchAndRenderKPIs, 30000); // Update KPIs every 30 seconds
             setInterval(fetchAndRenderLiveMarketData, 15000); // Update market data every 15 seconds
+            // setInterval(fetchAndRenderCharts, 60000); // Charts can be updated less frequently
 
         });
     </script>

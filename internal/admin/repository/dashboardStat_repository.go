@@ -26,7 +26,6 @@ func NewDashboardRepository(db *gorm.DB) IDashboardRepository {
 	return &DashboardRepository{DB: db}
 }
 
-// ✅ Count total customers
 func (r *DashboardRepository) GetCustomerCount() (int64, error) {
 	var count int64
 	err := r.DB.Model(&models.User{}).
@@ -35,11 +34,9 @@ func (r *DashboardRepository) GetCustomerCount() (int64, error) {
 	return count, err
 }
 
-// ✅ Count total traders (approved only if profile exists)
 func (r *DashboardRepository) GetApprovedTraderCount() (int64, error) {
 	var count int64
 
-	// safer for cases where table might not exist yet
 	if !r.DB.Migrator().HasTable("trader_profiles") {
 		return 0, nil
 	}
@@ -53,14 +50,12 @@ func (r *DashboardRepository) GetApprovedTraderCount() (int64, error) {
 	return count, err
 }
 
-// ✅ Total signals created
 func (r *DashboardRepository) GetTotalSignalCount() (int64, error) {
 	var count int64
 	err := r.DB.Model(&models.Signal{}).Count(&count).Error
 	return count, err
 }
 
-// ✅ Total revenue from subscriptions (all customers)
 func (r *DashboardRepository) GetMonthlyRecurringRevenue() (int64, error) {
 	var total float64
 	err := r.DB.Model(&models.WalletTransaction{}).
@@ -72,7 +67,6 @@ func (r *DashboardRepository) GetMonthlyRecurringRevenue() (int64, error) {
 	return int64(total), nil
 }
 
-// ✅ Monthly signups (for charts)
 type SignupStat struct {
 	Month time.Time
 	Count int
@@ -89,7 +83,6 @@ func (r *DashboardRepository) GetMonthlySignups(role models.UserRole) ([]SignupS
 	return stats, err
 }
 
-// Optional for table widgets
 func (r *DashboardRepository) GetLatestSignups() ([]models.User, error) {
 	var users []models.User
 	err := r.DB.Where("role = ?", models.RoleCustomer).
