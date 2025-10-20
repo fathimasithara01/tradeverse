@@ -24,4 +24,6 @@ type Signal struct {
 	DeactivatedAt  *time.Time `json:"deactivated_at"`
 	TradeStartDate time.Time  `json:"tradeStartDate"`
 	TradeEndDate   time.Time  `json:"tradeEndDate"`
+	CreatedBy      string     `json:"createdBy"`
+	CreatorID      uint       `json:"creatorId"`
 }

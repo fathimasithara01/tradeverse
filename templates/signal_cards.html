@@ -123,7 +123,6 @@
                                 const stopLoss = getSafeNumber(signal.stop_loss);
                                 const entryPrice = getSafeNumber(signal.entry_price);
                                 const targetPrice = getSafeNumber(signal.target_price);
-                                // Get the actual current_price from the API response
                                 let currentPrice = getSafeNumber(signal.current_price); 
                                 
                                 // Store the original currentPrice from signal, as we might change 'currentPrice'

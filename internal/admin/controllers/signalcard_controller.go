@@ -68,6 +68,9 @@ func (ctrl *SignalController) ShowCreateSignalCardPage(c *gin.Context) {
 	})
 }
 
+// ... (imports)
+
+// You'll need to modify this function in your controllers/signal_controller.go
 func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 	var req struct {
 		TraderName    string  `json:"traderName"`
@@ -112,6 +115,43 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		return
 	}
 
+	// --- NEW LOGIC HERE ---
+	// You'll need to get the current user's role and ID from your authentication system.
+	// This is a placeholder; replace with your actual authentication logic.
+	var createdByRole string
+	var creatorID uint
+
+	// Example: Assuming user data is stored in c.MustGet("user") after middleware
+	// This part heavily depends on how your auth middleware sets user data.
+	/*
+		if user, exists := c.Get("user"); exists {
+			if adminUser, ok := user.(*models.AdminUser); ok { // Assuming you have an AdminUser model
+				createdByRole = "Admin"
+				creatorID = adminUser.ID
+				// For admin creating a signal, the traderName might be from the form or selected admin
+				if req.TraderName == "" {
+					req.TraderName = adminUser.Username // or a default admin trader name
+				}
+			} else if traderUser, ok := user.(*models.TraderUser); ok { // Assuming you have a TraderUser model
+				createdByRole = "Trader"
+				creatorID = traderUser.ID
+				req.TraderName = traderUser.Username // Trader creating a signal, their own name is the trader name
+			}
+		} else {
+			// Handle unauthenticated request or default
+			createdByRole = "Unknown"
+			creatorID = 0
+		}
+	*/
+
+	// For demonstration, let's hardcode for the admin panel for now.
+	// In a real application, this would be dynamic.
+	// Since this is specifically for the admin/create_signal_card.html,
+	// we can assume an admin is creating it.
+	createdByRole = "Admin"
+	// You might get the admin's ID from the session or JWT
+	creatorID = 1 // Placeholder for Admin ID
+
 	signal := models.Signal{
 		TraderName:     req.TraderName,
 		Symbol:         req.Symbol,
@@ -126,8 +166,10 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		TradeStartDate: startDate,
 		TradeEndDate:   endDate,
 		PublishedAt:    time.Now(),
+		CreatedBy:      createdByRole, // Set who created it
+		CreatorID:      creatorID,     // Set the ID of the creator
 	}
-
+	
 	log.Printf(" Parsed Signal Data: %+v", signal)
 
 	createdSignal, err := ctrl.liveSignalService.CreateSignal(c, &signal)

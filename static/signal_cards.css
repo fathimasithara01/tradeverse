@@ -288,4 +288,17 @@
         .loading-message.text-danger p {
             color: #dc3545 !important;
         }
-   
+    .creator-badge {
+        font-size: 0.75em;
+        padding: 0.2em 0.5em;
+        border-radius: 0.25em;
+        color: white;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+    .creator-badge.admin {
+        background-color: #6c757d; /* Grey for admin */
+    }
+    .creator-badge.trader {
+        background-color: #0d6efd; /* Blue for trader */
+    }
