@@ -3,7 +3,7 @@ package seeder
 import (
 	"log"
 
-	"github.com/fathimasithara01/tradeverse/pkg/config"
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -33,7 +33,7 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 
 	// Seed Admin user
 	var userCount int64
-	db.Model(&models.User{}).Where("email = ?", cfg.AdminEmail).Count(&userCount)
+	db.Model(&models.User{}).Where("email = ?", cfg.Admin.Email).Count(&userCount)
 	if userCount > 0 {
 		log.Println("Admin user already exists. Seeder is skipping.")
 		return
@@ -41,8 +41,8 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 
 	log.Println("No admin user found. Seeding a new admin...")
 
-	adminEmail := cfg.AdminEmail
-	adminPassword := cfg.AdminPassword
+	adminEmail := cfg.Admin.Email
+	adminPassword := cfg.Admin.Password
 	if adminEmail == "" || adminPassword == "" {
 		log.Fatal("FATAL: Admin_Email and Admin_Password must be set in your .env file to seed the first admin.")
 	}
@@ -55,7 +55,7 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 	newAdmin := models.User{
 		Name:     "Administrator",
 		Email:    adminEmail,
-		Password: string(hashedPassword), // Store the HASHED password
+		Password: string(hashedPassword),
 		Role:     models.RoleAdmin,
 		RoleID:   &adminRole.ID,
 	}

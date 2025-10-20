@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/fathimasithara01/tradeverse/pkg/config"
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -13,7 +13,7 @@ import (
 func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort)
+		cfg.Database.Host, cfg.Database.User, cfg.Database.Password, cfg.Database.Name, cfg.Database.Port)
 
 	var err error
 

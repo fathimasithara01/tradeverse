@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/pkg/auth"
-	"github.com/fathimasithara01/tradeverse/pkg/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -71,7 +71,7 @@ func JWTMiddleware(cfg *config.Config) gin.HandlerFunc {
 			tokenString = parts[1]
 		}
 
-		secret := cfg.JWTSecret
+		secret := cfg.JWT.Secret
 		claims, err := auth.ValidateJWT(tokenString, secret)
 		if err != nil {
 			log.Printf("[AUTH-ERROR] Token validation failed: %v", err)

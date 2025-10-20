@@ -1,9 +1,9 @@
 package router
 
 import (
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/internal/customer/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/customer/middleware"
-	"github.com/fathimasithara01/tradeverse/pkg/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,7 +30,7 @@ func SetupRouter(
 	}
 
 	protected := r.Group("/api/v1")
-	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	protected.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
 	{
 
 		protected.GET("/subscription-plans", subscriptionPlanController.GetAllSubscriptionPlans)

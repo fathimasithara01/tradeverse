@@ -100,14 +100,14 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 
 	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
-		log.Printf("❌ Invalid startDate: %v", err)
+		log.Printf(" Invalid startDate: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid startDate format. Must be RFC3339 (e.g., 2025-10-15T00:00:00Z)"})
 		return
 	}
 
 	endDate, err := time.Parse(time.RFC3339, req.EndDate)
 	if err != nil {
-		log.Printf("❌ Invalid endDate: %v", err)
+		log.Printf(" Invalid endDate: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid endDate format. Must be RFC3339 (e.g., 2025-10-16T00:00:00Z)"})
 		return
 	}
@@ -128,11 +128,11 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		PublishedAt:    time.Now(),
 	}
 
-	log.Printf("✅ Parsed Signal Data: %+v", signal)
+	log.Printf(" Parsed Signal Data: %+v", signal)
 
 	createdSignal, err := ctrl.liveSignalService.CreateSignal(c, &signal)
 	if err != nil {
-		log.Printf("❌ Error creating signal: %v", err)
+		log.Printf("Error creating signal: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create signal"})
 		return
 	}

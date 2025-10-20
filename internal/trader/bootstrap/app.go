@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"log"
 
+	"github.com/fathimasithara01/tradeverse/config"
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/fathimasithara01/tradeverse/internal/trader/router"
 	"github.com/fathimasithara01/tradeverse/internal/trader/service"
 	"github.com/fathimasithara01/tradeverse/migrations"
-	"github.com/fathimasithara01/tradeverse/pkg/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,21 +34,17 @@ func InitializeApp() (*App, error) {
 
 	userRepo := adminRepo.NewUserRepository(db)
 	roleRepo := adminRepo.NewRoleRepository(db)
-	userService := adminService.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
+	userService := adminService.NewUserService(userRepo, roleRepo, cfg.JWT.Secret)
 
 	authController := controllers.NewAuthController(userService)
 
-	// tradeRepo := repository.NewGormTradeRepository(db)
 	tradeSignlRepo := repository.NewSignalRepository(db)
 	profileRepo := repository.NewTraderProfileRepository(db)
 	walletrepo := repository.NewGormWalletRepository(db)
-	// subRepo := repository.NewSubscriptionRepository(db)
 	subRepo := repository.NewSubscriberRepository(db)
 	liveRepo := repository.NewLiveTradeRepository(db)
 	traderSubsRepo := repository.NewTraderSubscriptionRepository(db)
 
-	// tradeService := service.NewTradeService(tradeRepo)
-	// subService := service.NewSubscriptionService(subRepo)
 	subService := service.NewSubscriberService(subRepo)
 	liveService := service.NewLiveTradeService(liveRepo)
 	profileService := service.NewTraderProfileService(profileRepo)
@@ -56,8 +52,6 @@ func InitializeApp() (*App, error) {
 	tradeSignlService := service.NewSignalService(tradeSignlRepo)
 	traderSubsService := service.NewTraderSubscriptionService(traderSubsRepo, db)
 
-	// tradeController := controllers.NewTradeController(tradeService)
-	// subController := controllers.NewSubscriptionController(subService)
 	subController := controllers.NewSubscriberController(subService)
 	liveController := controllers.NewLiveTradeController(liveService)
 	profileController := controllers.NewTraderProfileController(profileService)
@@ -75,7 +69,7 @@ func InitializeApp() (*App, error) {
 
 	return &App{
 		engine: r,
-		port:   cfg.TraderPort,
+		port:   cfg.Server.TraderPort,
 	}, nil
 }
 

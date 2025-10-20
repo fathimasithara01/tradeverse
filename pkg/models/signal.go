@@ -18,8 +18,8 @@ type Signal struct {
 	TargetPrice    float64 `gorm:"type:numeric(18,4);not null" json:"target_price"`
 	StopLoss       float64 `gorm:"type:numeric(18,4);not null" json:"stop_loss"`
 	Strategy       string  `gorm:"type:text" json:"strategy"`
-	Risk           string  `gorm:"size:20" json:"risk"`                     // e.g., "Low", "Medium", "High"
-	Status         string  `gorm:"size:20;default:'Pending'" json:"status"` // e.g., "Pending", "Active", "Target Hit", "Stop Loss"
+	Risk           string  `gorm:"size:20" json:"risk"`
+	Status         string  `gorm:"size:20;default:'Pending'" json:"status"`
 	PublishedAt    time.Time
 	DeactivatedAt  *time.Time `json:"deactivated_at"`
 	TradeStartDate time.Time  `json:"tradeStartDate"`

@@ -26,7 +26,6 @@ func NewLiveSignalService(signalRepo repository.ISignalRepository) ILiveSignalSe
 }
 
 func (s *liveSignalService) CreateSignal(ctx context.Context, signal *models.Signal) (*models.Signal, error) {
-	// When creating a signal, ensure its initial status is Pending or Active based on tradeStartDate
 	if signal.TradeStartDate.After(time.Now()) {
 		signal.Status = "Pending"
 	} else {
@@ -50,44 +49,41 @@ func (s *liveSignalService) GetAllSignals(ctx context.Context) ([]models.Signal,
 func (s *liveSignalService) UpdateAllSignalsCurrentPrices(ctx context.Context) error {
 	log.Println("Starting to update current prices for all signals...")
 
-	signals, err := s.signalRepo.GetAllSignals(ctx) // Get all signals, not just active/pending, to update current price for all
+	signals, err := s.signalRepo.GetAllSignals(ctx)
 	if err != nil {
-		log.Printf("ERROR: Failed to get all signals for current price update in service: %v", err)
-		return fmt.Errorf("failed to get all signals for current price update: %w", err)
+		return fmt.Errorf("failed to get all signals: %w", err)
 	}
-	log.Printf("Found %d signals to potentially update current prices.", len(signals))
 
 	for _, signal := range signals {
 		if signal.Status == "Target Hit" || signal.Status == "Stop Loss" {
-			log.Printf("Skipping current price update for signal ID %d (by %s, %s) with status '%s'", signal.ID, signal.TraderName, signal.Symbol, signal.Status)
-			continue // No need to update current price for finished signals
+			continue
 		}
-		if signal.EntryPrice == 0 && signal.TargetPrice == 0 && signal.StopLoss == 0 {
-			log.Printf("Skipping current price update for signal ID %d (by %s, %s) because all prices are zero. Signal not properly configured?", signal.ID, signal.TraderName, signal.Symbol)
+
+		if signal.Symbol == "" {
+			log.Printf("Signal ID %d has empty symbol, skipping.", signal.ID)
 			continue
 		}
 
 		marketData, err := s.signalRepo.GetMarketDataBySymbol(ctx, signal.Symbol)
 		if err != nil {
-			log.Printf("Warning: Could not fetch market data for symbol %s (from signal ID %d, trader %s): %v", signal.Symbol, signal.ID, signal.TraderName, err)
+			log.Printf("Error fetching market data for %s: %v", signal.Symbol, err)
 			continue
 		}
 		if marketData == nil {
-			log.Printf("Info: No market data found for symbol %s (from signal ID %d, trader %s) in DB, skipping current price update for this signal.", signal.Symbol, signal.ID, signal.TraderName)
+			log.Printf("No market data found for symbol %s (signal ID %d), skipping.", signal.Symbol, signal.ID)
 			continue
 		}
 
-		// Only update if the price has actually changed to avoid unnecessary DB writes
 		if signal.CurrentPrice != marketData.CurrentPrice {
-			log.Printf("Updating signal ID %d (by %s, %s) current price from %.4f to %.4f", signal.ID, signal.TraderName, signal.Symbol, signal.CurrentPrice, marketData.CurrentPrice)
 			err := s.signalRepo.UpdateSignalCurrentPrice(ctx, signal.ID, marketData.CurrentPrice)
 			if err != nil {
 				log.Printf("Error updating current price for signal ID %d: %v", signal.ID, err)
+			} else {
+				log.Printf("Updated signal ID %d current price: %.4f -> %.4f", signal.ID, signal.CurrentPrice, marketData.CurrentPrice)
 			}
-		} else {
-			log.Printf("Signal ID %d (by %s, %s) current price %.4f is already up-to-date.", signal.ID, signal.TraderName, signal.Symbol, signal.CurrentPrice)
 		}
 	}
+
 	log.Println("Finished updating current prices for all signals.")
 	return nil
 }

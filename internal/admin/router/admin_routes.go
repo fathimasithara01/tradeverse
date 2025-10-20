@@ -1,10 +1,10 @@
 package router
 
 import (
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/middleware"
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
-	"github.com/fathimasithara01/tradeverse/pkg/config"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

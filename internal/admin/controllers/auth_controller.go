@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
-	"github.com/fathimasithara01/tradeverse/pkg/config"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -43,7 +43,7 @@ func (ctrl *AuthController) LoginUser(c *gin.Context) {
 	}
 
 	log.Printf("[LOGIN SUCCESS] User '%s' logged in successfully. Role: %s\n", user.Email, user.Role)
-	c.SetCookie("admin_token", token, 86400, "/", config.AppConfig.CookieDomain, true, true)
+	c.SetCookie("admin_token", token, 86400, "/", config.AppConfig.Cookie.Domain, true, true)
 	c.Redirect(http.StatusFound, "/admin/dashboard")
 }
 

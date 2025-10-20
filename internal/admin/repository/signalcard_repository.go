@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
@@ -34,14 +35,12 @@ func (r *signalRepository) CreateSignal(ctx context.Context, signal *models.Sign
 
 func (r *signalRepository) GetAllSignals(ctx context.Context) ([]models.Signal, error) {
 	var signals []models.Signal
-	// Consider ordering by latest first, or by status
 	if err := r.db.WithContext(ctx).Find(&signals).Error; err != nil {
 		return nil, fmt.Errorf("failed to get all signals: %w", err)
 	}
 	return signals, nil
 }
 
-// GetActiveAndPendingSignals retrieves signals that are either "Active" or "Pending".
 func (r *signalRepository) GetActiveAndPendingSignals(ctx context.Context) ([]models.Signal, error) {
 	var signals []models.Signal
 	if err := r.db.WithContext(ctx).Where("status = ? OR status = ?", "Active", "Pending").Find(&signals).Error; err != nil {
@@ -52,12 +51,20 @@ func (r *signalRepository) GetActiveAndPendingSignals(ctx context.Context) ([]mo
 
 func (r *signalRepository) GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error) {
 	var marketData models.MarketData
-	if err := r.db.WithContext(ctx).Where("symbol = ?", symbol).First(&marketData).Error; err != nil {
+
+	symbol = strings.ToUpper(symbol)
+
+	err := r.db.WithContext(ctx).
+		Where("UPPER(symbol) = ?", symbol).
+		First(&marketData).Error
+
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, nil // Return nil if not found, let service handle
+			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get market data for symbol %s: %w", symbol, err)
 	}
+
 	return &marketData, nil
 }
 
@@ -67,19 +74,18 @@ func (r *signalRepository) UpdateSignalCurrentPrice(ctx context.Context, signalI
 		return fmt.Errorf("failed to update signal current price: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound // Or a custom error for no signal found
+		return gorm.ErrRecordNotFound
 	}
 	return nil
 }
 
-// NEW: UpdateSignalStatus updates the status of a signal
 func (r *signalRepository) UpdateSignalStatus(ctx context.Context, signalID uint, newStatus string) error {
 	result := r.db.WithContext(ctx).Model(&models.Signal{}).Where("id = ?", signalID).Update("status", newStatus)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update signal status: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound // Or a custom error for no signal found
+		return gorm.ErrRecordNotFound
 	}
 	return nil
 }

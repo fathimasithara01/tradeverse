@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"log"
 
+	"github.com/fathimasithara01/tradeverse/config"
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	adminSvc "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
@@ -13,7 +14,6 @@ import (
 
 	"github.com/fathimasithara01/tradeverse/internal/customer/router"
 	"github.com/fathimasithara01/tradeverse/migrations"
-	"github.com/fathimasithara01/tradeverse/pkg/config"
 	paymentgateway "github.com/fathimasithara01/tradeverse/pkg/payment_gateway.go"
 	"github.com/gin-gonic/gin"
 )
@@ -58,7 +58,7 @@ func InitializeApp() (*App, error) {
 		adminUserRepo,
 		db,
 	)
-	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWTSecret)
+	userService := adminSvc.NewUserService(userRepo, roleRepo, cfg.JWT.Secret)
 	kycService := service.NewKYCService(kycRepo)
 	paymentClient := paymentgateway.NewSimulatedPaymentClient()
 	walletService := service.NewWalletService(db, customerWalletRepo, paymentClient)
@@ -94,7 +94,7 @@ func InitializeApp() (*App, error) {
 
 	return &App{
 		engine: r,
-		port:   cfg.CustomerPort,
+		port:   cfg.Server.CustomerPort,
 	}, nil
 }
 

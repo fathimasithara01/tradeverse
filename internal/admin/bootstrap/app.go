@@ -1,4 +1,3 @@
-// internal/admin/bootstrap/app.go
 package bootstrap
 
 import (
@@ -8,27 +7,17 @@ import (
 	"runtime"
 	"text/template"
 
-	// Keep this import for the explicit cron.New()
-
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/internal/admin/router"
 	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
-	// These customer-side imports are typically not needed in admin bootstrap unless
-	// admin needs to *directly* instantiate and use customer-side services for something
-	// other than the admin cron, or if an admin controller depends on them.
-	// Based on the given admin code, they don't seem necessary for the core admin app.
-	// Leaving them commented out or removing them entirely if unused is best practice.
 	cusSvc "github.com/fathimasithara01/tradeverse/internal/customer/service"
-	// walletRepo "github.com/fathimasithara01/tradeverse/internal/customer/repository/walletrepo"
-	// customerService "github.com/fathimasithara01/tradeverse/internal/customer/service"
 
 	"github.com/fathimasithara01/tradeverse/migrations"
-	"github.com/fathimasithara01/tradeverse/pkg/config"
 
-	// paymentgateway "github.com/fathimasithara01/tradeverse/pkg/payment_gateway.go" // Not directly used in admin bootstrap
 	"github.com/fathimasithara01/tradeverse/pkg/seeder"
 
 	"github.com/gin-gonic/gin"
@@ -66,7 +55,7 @@ func InitializeApp() (*App, error) {
 	adminTransactionRepo := adminRepo.NewTransactionRepository(DB)
 
 	// Admin Services
-	adminUserService := adminService.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWTSecret)
+	adminUserService := adminService.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWT.Secret)
 	adminRoleService := adminService.NewRoleService(adminRoleRepo, adminPermissionRepo, adminUserRepo)
 	adminDashboardService := adminService.NewDashboardService(adminDashboardRepo)
 	adminPermissionService := adminService.NewPermissionService(adminPermissionRepo)
@@ -151,7 +140,7 @@ func InitializeApp() (*App, error) {
 
 	return &App{
 		engine: r,
-		port:   cfg.AdminPort,
+		port:   cfg.Server.AdminPort,
 	}, nil
 }
 
