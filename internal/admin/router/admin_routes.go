@@ -52,6 +52,7 @@ func WireAdminRoutes(
 				protected.GET("/dashboard/charts", dashCtrl.GetChartData)
 				protected.GET("/dashboard/top-traders", dashCtrl.GetTopTraders)
 				protected.GET("/dashboard/latest-signups", dashCtrl.GetLatestSignups)
+				protected.GET("/dashboard/market-data", dashCtrl.GetLiveMarketData)
 
 				protected.GET("/api/users/advanced", userCtrl.GetAllUsersAdvanced)
 

@@ -21,4 +21,5 @@ type MarketDataAPIResponse struct {
 	CurrentPrice   float64 `json:"current_price"`
 	PriceChange24H float64 `json:"price_change_24h"`
 	LogoURL        string  `json:"logo_url"`
+	Volume24H      float64 `json:"volume_24h"`
 }

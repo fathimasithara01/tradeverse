@@ -12,6 +12,7 @@ import (
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/internal/admin/router"
+	"github.com/fathimasithara01/tradeverse/internal/admin/service"
 	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
 	cusSvc "github.com/fathimasithara01/tradeverse/internal/customer/service"
@@ -65,12 +66,13 @@ func InitializeApp() (*App, error) {
 	adminSubscriptionService := adminService.NewSubscriptionService(adminSubscriptionRepo, adminSubscriptionPlanRepo, adminUserRepo, adminAdminWalletService, DB)
 	adminLiveSignalService := adminService.NewLiveSignalService(adminSignalRepo)
 	adminTransactionService := adminService.NewTransactionService(adminTransactionRepo)
+	marketDataService := service.NewMarketDataService()
 
 	// Admin Controllers
 	adminAuthController := controllers.NewAuthController(adminUserService)
 	adminUserController := controllers.NewUserController(adminUserService)
 	adminRoleController := controllers.NewRoleController(adminRoleService)
-	adminDashboardController := controllers.NewDashboardController(adminDashboardService)
+	adminDashboardController := controllers.NewDashboardController(adminDashboardService, marketDataService)
 	adminPermissionController := controllers.NewPermissionController(adminPermissionService, adminRoleService)
 	adminActivityController := controllers.NewActivityController(adminActivityService)
 	adminAdminWalletController := controllers.NewAdminWalletController(adminAdminWalletService)

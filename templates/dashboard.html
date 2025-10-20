@@ -2,179 +2,510 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Inter for clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/static/sidebar.css">
-  <link rel="stylesheet" href="/static/dashboard.css">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
-  <style>
-    canvas {
-      min-height: 300px;
-    }
-  </style>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Custom CSS for Sidebar and Dashboard (ensure these paths are correct relative to your static server) -->
+    <link rel="stylesheet" href="/static/sidebar.css">
+    <link rel="stylesheet" href="/static/dashboard.css">
+
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+
+        /* Wrapper for sidebar and content */
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Content area styling */
+        #content {
+            width: 100%;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            color: #495057;
+            padding: 1rem 1.5rem;
+            border-top-left-radius: 0.75rem;
+            border-top-right-radius: 0.75rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Stat cards */
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--bs-primary);
+            /* Default to primary, override with text-info, etc. */
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0.25rem;
+            color: #212529;
+        }
+
+        .stat-card .title {
+            font-size: 0.95rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        /* Specific colors for stat cards */
+        .stat-card.text-info .icon {
+            color: var(--bs-info);
+        }
+
+        .stat-card.text-primary .icon {
+            color: var(--bs-primary);
+        }
+
+        .stat-card.text-success .icon {
+            color: var(--bs-success);
+        }
+
+        .stat-card.text-danger .icon {
+            color: var(--bs-danger);
+        }
+
+
+        /* Chart canvases */
+        canvas {
+            width: 100% !important;
+            max-height: 300px;
+        }
+
+        /* Market Data Table Styling */
+        .market-data-card .card-body {
+            padding: 0;
+            /* Remove padding for full table width */
+        }
+
+        .market-data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .market-data-table th,
+        .market-data-table td {
+            padding: 0.75rem 1.5rem;
+            vertical-align: middle;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .market-data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            text-align: left;
+        }
+
+        .market-data-table tbody tr:first-child td {
+            border-top: none;
+        }
+
+        .market-data-table img {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            border-radius: 50%;
+            object-fit: contain;
+        }
+
+        .price-up {
+            color: var(--bs-success);
+            font-weight: 500;
+        }
+
+        .price-down {
+            color: var(--bs-danger);
+            font-weight: 500;
+        }
+
+        .price-change-icon {
+            width: 16px;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
-  <div class="wrapper">
-    {{template "admin_sidebar" .}}
+    <div class="wrapper">
+        <!-- Admin Sidebar Template Inclusion -->
+        {{template "admin_sidebar" .}}
 
-    <div id="content">
-      <h2 class="mb-4">Dashboard Overview</h2>
+        <!-- Page Content -->
+        <div id="content">
+            <h2 class="mb-4 fw-bold text-dark">Dashboard Overview</h2>
 
-      <div class="row">
-        <div class="col-lg-3 col-md-6 mb-3">
-          <div class="card stat-card text-info">
-            <div class="icon"><i class="fas fa-dollar-sign"></i></div>
-            <div class="value" id="kpi-mrr">$0</div>
-            <div class="title">Monthly Recurring Revenue</div>
-          </div>
-        </div>
+            <!-- KPI Cards Row -->
+            <div class="row">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stat-card text-info">
+                        <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="value" id="kpi-mrr">$0</div>
+                        <div class="title">Monthly Recurring Revenue</div>
+                    </div>
+                </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-          <div class="card stat-card text-primary">
-            <div class="icon"><i class="fas fa-users"></i></div>
-            <div class="value" id="kpi-followers">0</div>
-            <div class="title">Total Customers</div>
-          </div>
-        </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stat-card text-primary">
+                        <div class="icon"><i class="fas fa-users"></i></div>
+                        <div class="value" id="kpi-followers">0</div>
+                        <div class="title">Total Customers</div>
+                    </div>
+                </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-          <div class="card stat-card text-success">
-            <div class="icon"><i class="fas fa-user-tie"></i></div>
-            <div class="value" id="kpi-traders">0</div>
-            <div class="title">Approved Traders</div>
-          </div>
-        </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stat-card text-success">
+                        <div class="icon"><i class="fas fa-user-tie"></i></div>
+                        <div class="value" id="kpi-traders">0</div>
+                        <div class="title">Approved Traders</div>
+                    </div>
+                </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-          <div class="card stat-card text-danger">
-            <div class="icon"><i class="fas fa-chart-line"></i></div>
-            <div class="value" id="kpi-signals">0</div>
-            <div class="title">Total Signals</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mt-4">
-        <div class="col-lg-8 mb-3">
-          <div class="card">
-            <div class="card-header">User Growth (Last 6 Months)</div>
-            <div class="card-body">
-              <canvas id="userGrowthChart"></canvas>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stat-card text-danger">
+                        <div class="icon"><i class="fas fa-signal"></i></div>
+                        <!-- Changed from chart-line to signal icon -->
+                        <div class="value" id="kpi-signals">0</div>
+                        <div class="title">Total Signals</div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
 
-        <div class="col-lg-4 mb-3">
-          <div class="card">
-            <div class="card-header">User Distribution</div>
-            <div class="card-body">
-              <canvas id="userDistributionChart"></canvas>
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">User Growth (Last 6 Months)</div>
+                        <div class="card-body">
+                            <canvas id="userGrowthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">User Distribution</div>
+                        <div class="card-body d-flex align-items-center justify-content-center">
+                            <canvas id="userDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div class="text-end mt-2 text-muted small">
-        Last updated: <span id="lastUpdated">just now</span>
-      </div>
+            <!-- Live Market Data Table Row -->
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card market-data-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            Live Market Data
+                            <span class="badge bg-secondary text-white-50 ms-2">Real-time</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table market-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Coin</th>
+                                            <th scope="col">Symbol</th>
+                                            <th scope="col">Price (USD)</th>
+                                            <th scope="col">24h Change</th>
+                                            <th scope="col">24h Volume</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="marketDataBody">
+                                        <!-- Market data will be dynamically loaded here by JavaScript -->
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                <div class="spinner-border spinner-border-sm text-primary me-2"
+                                                    role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                Loading live market data...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    </div>
-  </div>
+            <!-- Last Updated Timestamp -->
+            <div class="text-end text-muted small mt-3">
+                Last updated: <span id="lastUpdated">just now</span>
+            </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        </div> <!-- End #content -->
+    </div> <!-- End .wrapper -->
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    <!-- Bootstrap 5 JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
 
-      async function renderKpis() {
-        try {
-          const res = await fetch('/admin/dashboard/stats');
-          if (!res.ok) throw new Error('Failed to load dashboard stats');
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-          const data = await res.json();
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Configuration for Chart.js to make it look clean
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#6c757d';
+            Chart.defaults.borderColor = '#e9ecef'; // Light border for charts
 
-          document.getElementById('kpi-mrr').textContent = `$${data.mrr.toLocaleString()}`;
-          document.getElementById('kpi-followers').textContent = data.followers.toLocaleString();
-          document.getElementById('kpi-traders').textContent = data.traders.toLocaleString();
-          document.getElementById('kpi-sessions').textContent = data.sessions?.toLocaleString() || '0';
-          document.getElementById('kpi-signals').textContent = data.signals?.toLocaleString() || '0';
+            async function fetchAndRenderKPIs() {
+                try {
+                    const response = await fetch('/admin/dashboard/stats');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
 
-          document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
-        } catch (error) {
-          console.error('Error fetching KPIs:', error);
-        }
-      }
+                    document.getElementById('kpi-mrr').textContent = `$${data.mrr.toLocaleString()}`;
+                    document.getElementById('kpi-followers').textContent = data.followers.toLocaleString();
+                    document.getElementById('kpi-traders').textContent = data.traders.toLocaleString();
+                    document.getElementById('kpi-signals').textContent = data.signals.toLocaleString();
 
-      async function renderCharts() {
-        try {
-          const res = await fetch('/admin/dashboard/charts');
-          if (!res.ok) throw new Error('Failed to load chart data');
-          const data = await res.json();
-
-          const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
-          new Chart(growthCtx, {
-            type: 'line',
-            data: {
-              labels: data.growth.labels,
-              datasets: [
-                {
-                  label: 'Followers',
-                  data: data.growth.followers,
-                  borderColor: '#1a73e8',
-                  backgroundColor: 'rgba(26, 115, 232, 0.1)',
-                  fill: true,
-                  tension: 0.4
-                },
-                {
-                  label: 'Traders',
-                  data: data.growth.traders,
-                  borderColor: '#198754',
-                  backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                  fill: true,
-                  tension: 0.4
+                    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+                } catch (error) {
+                    console.error("Failed to fetch KPIs:", error);
+                    // Optional: Display error message on dashboard
                 }
-              ]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-          });
-
-          const distCtx = document.getElementById('userDistributionChart').getContext('2d');
-          new Chart(distCtx, {
-            type: 'doughnut',
-            data: {
-              labels: data.distribution.labels,
-              datasets: [
-                {
-                  data: data.distribution.data,
-                  backgroundColor: ['#1a73e8', '#198754', '#dc3545']
-                }
-              ]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: 'bottom' } }
             }
-          });
-        } catch (error) {
-          console.error('Error fetching chart data:', error);
-        }
-      }
 
-      renderKpis();
-      renderCharts();
-      setInterval(renderKpis, 30000);
-    });
-  </script>
+            let userGrowthChart; // Declare chart variables globally or pass them around
+            let userDistributionChart;
+
+            async function fetchAndRenderCharts() {
+                try {
+                    const response = await fetch('/admin/dashboard/charts');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+
+                    // Destroy existing charts if they exist to prevent duplicates
+                    if (userGrowthChart) userGrowthChart.destroy();
+                    if (userDistributionChart) userDistributionChart.destroy();
+
+                    const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
+                    userGrowthChart = new Chart(growthCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.growth.labels,
+                            datasets: [
+                                {
+                                    label: 'Followers',
+                                    data: data.growth.followers,
+                                    borderColor: 'rgb(26, 115, 232)', // Bootstrap primary color equivalent
+                                    backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointBackgroundColor: 'rgb(26, 115, 232)',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: 'rgb(26, 115, 232)'
+                                },
+                                {
+                                    label: 'Traders',
+                                    data: data.growth.traders,
+                                    borderColor: 'rgb(25, 135, 84)', // Bootstrap success color equivalent
+                                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointBackgroundColor: 'rgb(25, 135, 84)',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: 'rgb(25, 135, 84)'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        boxWidth: 20
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: '#e9ecef'
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    const distCtx = document.getElementById('userDistributionChart').getContext('2d');
+                    userDistributionChart = new Chart(distCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.distribution.labels,
+                            datasets: [
+                                {
+                                    data: data.distribution.data,
+                                    backgroundColor: ['rgb(26, 115, 232)', 'rgb(25, 135, 84)', '#6c757d'], // Primary, Success, secondary/muted
+                                    hoverOffset: 4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 20
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (tooltipItem) {
+                                            let label = tooltipItem.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            label += tooltipItem.raw.toLocaleString();
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error("Failed to fetch chart data:", error);
+                    // Optional: Display error message on dashboard
+                }
+            }
+
+            async function fetchAndRenderLiveMarketData() {
+                try {
+                    const response = await fetch('/admin/dashboard/market-data');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+
+                    const marketDataBody = document.getElementById('marketDataBody');
+                    marketDataBody.innerHTML = ''; // Clear previous data
+
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            // --- BEGIN MODIFICATION ---
+                            // Provide default values if a property is missing or null, to prevent `undefined` errors
+                            const currentPrice = item.current_price !== undefined && item.current_price !== null ? item.current_price : 0;
+                            const priceChange24H = item.price_change_24h !== undefined && item.price_change_24h !== null ? item.price_change_24h : 0;
+                            const volume24H = item.volume24H !== undefined && item.volume24H !== null ? item.volume24H : 0;
+                            const name = item.name || 'N/A';
+                            const symbol = item.symbol || 'N/A';
+                            const logoURL = item.logo_url || '/static/default-coin.png';
+                            // --- END MODIFICATION ---
+
+                            const row = document.createElement('tr');
+                            const priceChangeClass = priceChange24H >= 0 ? 'price-up' : 'price-down';
+                            const priceChangeIcon = priceChange24H >= 0 ? '<i class="fas fa-caret-up price-change-icon"></i>' : '<i class="fas fa-caret-down price-change-icon"></i>';
+
+                            row.innerHTML = `
+            <td><img src="${logoURL}" alt="${name}" class="me-2">${name}</td>
+            <td>${symbol.replace('-USDT', '')}</td>
+            <td>$${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: currentPrice < 1 ? 6 : 2 })}</td>
+            <td class="${priceChangeClass}">${priceChangeIcon} ${priceChange24H.toFixed(2)}%</td>
+            <td>$${volume24H.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+          `;
+                            marketDataBody.appendChild(row);
+                        });
+                    } else {
+                        marketDataBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">No live market data available at the moment.</td>
+          </tr>
+        `;
+                    }
+
+                } catch (error) {
+                    console.error("Failed to fetch live market data:", error);
+                    const marketDataBody = document.getElementById('marketDataBody');
+                    marketDataBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-danger py-4">Error loading market data. Please try again. ${error.message}</td>
+        </tr>
+      `;
+                }
+            }
+
+            // Initial data load
+            fetchAndRenderKPIs();
+            fetchAndRenderCharts();
+            fetchAndRenderLiveMarketData();
+
+            setInterval(fetchAndRenderKPIs, 30000); // Update KPIs every 30 seconds
+            setInterval(fetchAndRenderLiveMarketData, 15000); // Update market data every 15 seconds
+
+        });
+    </script>
 </body>
 
 </html>

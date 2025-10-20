@@ -8,11 +8,15 @@ import (
 )
 
 type DashboardController struct {
-	DashboardSvc service.IDashboardService
+	DashboardSvc  service.IDashboardService
+	MarketDataSvc service.IMarketDataService
 }
 
-func NewDashboardController(dashboardSvc service.IDashboardService) *DashboardController {
-	return &DashboardController{DashboardSvc: dashboardSvc}
+func NewDashboardController(dashboardSvc service.IDashboardService, marketDataSvc service.IMarketDataService) *DashboardController {
+	return &DashboardController{
+		DashboardSvc:  dashboardSvc,
+		MarketDataSvc: marketDataSvc,
+	}
 }
 
 func (ctrl *DashboardController) ShowDashboardPage(c *gin.Context) {
@@ -57,4 +61,13 @@ func (ctrl *DashboardController) GetLatestSignups(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, users)
+}
+
+func (ctrl *DashboardController) GetLiveMarketData(c *gin.Context) {
+	marketData, err := ctrl.MarketDataSvc.GetLiveMarketData()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get live market data"})
+		return
+	}
+	c.JSON(http.StatusOK, marketData)
 }
