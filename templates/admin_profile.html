@@ -2,55 +2,20 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Profile - Your Application Name</title>
-    <!-- Favicon -->
-    <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Add User</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <!-- Font Awesome CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- Google Fonts - Inter -->
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Custom CSS (Order matters: more specific styles later) -->
     <link rel="stylesheet" href="/static/sidebar.css">
-    <link rel="stylesheet" href="/static/add_trader.css">
     <link rel="stylesheet" href="/static/admin_profile.css">
-
-    <!-- Inline CSS for loading overlay - could be in admin_profile.css -->
-    <style>
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-    </style>
 </head>
 
 <body>
     <div class="wrapper">
-        <!-- Admin Sidebar Template -->
         {{template "admin_sidebar" .}}
 
         <main class="content-area">
@@ -59,34 +24,43 @@
                     <div class="col-md-8">
                         <div class="card shadow-sm position-relative">
                             <!-- Loading Overlay -->
-                            <div class="loading-overlay" id="cardLoadingOverlay" role="status" aria-label="Loading profile data">
+                            <div class="loading-overlay" id="cardLoadingOverlay" role="status"
+                                aria-label="Loading profile data">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
                             </div>
 
-                            <div class="card-header bg-primary text-white">
+                            <div
+                                class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                 <h1 class="mb-0 fs-4">Admin Profile</h1>
-                            </div>
+                                <!-- Optional: Add an edit/save toggle here if you want distinct view/edit modes --> -->
+                                 <!-- <button id="editProfileToggle" class="btn btn-outline-light btn-sm"> 
+                                    <i class="fas fa-edit"></i> Edit
+                                </button> -->
+                            </div> 
                             <div class="card-body">
                                 <!-- Profile Update Message -->
                                 <div id="profile-message" class="alert d-none" role="status" aria-live="polite">
                                     <!-- Messages like "Profile updated successfully" will appear here -->
                                 </div>
 
-                                <form id="profileUpdateForm" enctype="multipart/form-data">
+                                <form id="profileUpdateForm" enctype="multipart/form-data" novalidate>
                                     <fieldset>
                                         <legend class="visually-hidden">Update Profile Information</legend>
                                         <div class="text-center mb-4">
                                             <div class="profile-pic-wrapper">
                                                 <img id="profilePicPreview" src="/static/images/default_profile_pic.png"
-                                                    alt="Current Profile Picture" class="profile-pic-preview img-thumbnail rounded-circle">
-                                                <label for="profilePicInput" class="profile-pic-label btn btn-sm btn-light position-absolute bottom-0 end-0 rounded-circle p-2" title="Change Profile Picture">
+                                                    alt="Current Profile Picture"
+                                                    class="profile-pic-preview img-thumbnail rounded-circle">
+                                                <label for="profilePicInput"
+                                                    class="profile-pic-label btn btn-sm btn-light position-absolute bottom-0 end-0 rounded-circle p-2"
+                                                    title="Change Profile Picture">
                                                     <i class="fas fa-camera"></i>
                                                     <span class="visually-hidden">Change Profile Picture</span>
                                                 </label>
-                                                <input type="file" id="profilePicInput" name="profile_pic" accept="image/*"
-                                                    class="form-control-file d-none">
+                                                <input type="file" id="profilePicInput" name="profile_pic"
+                                                    accept="image/*" class="form-control-file d-none">
                                             </div>
                                             <small class="form-text text-muted">Max file size: 2MB</small>
                                         </div>
@@ -102,7 +76,8 @@
                                             <label for="email" class="form-label">Email</label>
                                             <input type="email" class="form-control" id="email" name="email" required
                                                 aria-describedby="emailHelp" placeholder="Enter your email address">
-                                            <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+                                            <div id="emailHelp" class="form-text">We'll never share your email with
+                                                anyone else.</div>
                                             <div class="invalid-feedback">Please enter a valid email address.</div>
                                         </div>
                                         <div class="mb-3">
@@ -111,45 +86,55 @@
                                                 aria-describedby="phoneHelp" placeholder="e.g., +15551234567"
                                                 pattern="^\+?[1-9]\d{1,14}$"> <!-- E.164 format suggestion -->
                                             <div id="phoneHelp" class="form-text">Optional phone number.</div>
-                                            <div class="invalid-feedback">Please enter a valid phone number (e.g., +15551234567).</div>
+                                            <div class="invalid-feedback">Please enter a valid phone number (e.g.,
+                                                +15551234567).</div>
                                         </div>
-                                        <button type="submit" class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
+                                        <button type="submit" class="btn btn-primary" id="updateProfileBtn">Update
+                                            Profile</button>
                                     </fieldset>
                                 </form>
 
                                 <hr class="my-4">
 
                                 <h2 class="mb-3 fs-5">Change Password</h2>
-                                <form id="passwordChangeForm">
+                                <form id="passwordChangeForm" novalidate>
                                     <fieldset>
                                         <legend class="visually-hidden">Change Account Password</legend>
                                         <!-- Password Change Message -->
-                                        <div id="password-message" class="alert d-none" role="status" aria-live="polite">
+                                        <div id="password-message" class="alert d-none" role="status"
+                                            aria-live="polite">
                                             <!-- Messages like "Password changed successfully" will appear here -->
                                         </div>
                                         <div class="mb-3">
                                             <label for="oldPassword" class="form-label">Current Password</label>
-                                            <input type="password" class="form-control" id="oldPassword" name="old_password"
-                                                required autocomplete="current-password">
+                                            <input type="password" class="form-control" id="oldPassword"
+                                                name="old_password" required autocomplete="current-password">
                                             <div class="invalid-feedback">Please enter your current password.</div>
                                         </div>
                                         <div class="mb-3">
                                             <label for="newPassword" class="form-label">New Password</label>
-                                            <input type="password" class="form-control" id="newPassword" name="new_password"
-                                                required minlength="8" pattern="^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+]).{8,}$"
+                                            <input type="password" class="form-control" id="newPassword"
+                                                name="new_password" required minlength="8"
+                                                pattern="^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+]).{8,}$"
                                                 aria-describedby="newPasswordHelp" autocomplete="new-password">
                                             <div id="newPasswordHelp" class="form-text">
-                                                Must be at least 8 characters long, contain an uppercase letter, a lowercase letter, a number, and a special character.
+                                                Must be at least 8 characters long, contain an uppercase letter, a
+                                                lowercase letter, a number, and a special character.
                                             </div>
-                                            <div class="invalid-feedback">New password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character.</div>
+                                            <div class="invalid-feedback">New password must be at least 8 characters
+                                                long and include uppercase, lowercase, a number, and a special
+                                                character.</div>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                                            <label for="confirmNewPassword" class="form-label">Confirm New
+                                                Password</label>
                                             <input type="password" class="form-control" id="confirmNewPassword"
-                                                name="confirm_new_password" required minlength="8" autocomplete="new-password">
+                                                name="confirm_new_password" required minlength="8"
+                                                autocomplete="new-password">
                                             <div class="invalid-feedback">New passwords do not match.</div>
                                         </div>
-                                        <button type="submit" class="btn btn-warning" id="changePasswordBtn">Change Password</button>
+                                        <button type="submit" class="btn btn-warning" id="changePasswordBtn">Change
+                                            Password</button>
                                     </fieldset>
                                 </form>
                             </div>
@@ -162,12 +147,13 @@
 
     <!-- Bootstrap JS (bundle includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
+        integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+        crossorigin="anonymous"></script>
 
     <!-- Your custom JavaScript -->
     <script>
         // Use an IIFE (Immediately Invoked Function Expression) for scope encapsulation
-        (function() {
+        (function () {
             // --- Constants and DOM Element References ---
             const DOM = {
                 cardLoadingOverlay: document.getElementById('cardLoadingOverlay'),
@@ -313,7 +299,8 @@
                     DOM.nameInput.value = data.name || '';
                     DOM.emailInput.value = data.email || '';
                     DOM.phoneInput.value = data.phone || '';
-                    DOM.profilePicPreview.src = data.profile_pic || DEFAULT_PROFILE_PIC;
+                    // Ensure the profile picture path is correctly handled
+                    DOM.profilePicPreview.src = data.profile_pic ? data.profile_pic : DEFAULT_PROFILE_PIC;
                     clearAlert(DOM.profileMessageDiv); // Clear any stale alerts on load
                 } catch (error) {
                     console.error('Error fetching admin profile:', error);
@@ -339,6 +326,11 @@
                     const reader = new FileReader();
                     reader.onload = (e) => DOM.profilePicPreview.src = e.target.result;
                     reader.readAsDataURL(file);
+                } else {
+                    // If no file is selected (e.g., user cancels dialog), revert to current or default
+                    // This might require storing the original image URL or re-fetching
+                    // For simplicity, we'll revert to default here.
+                    DOM.profilePicPreview.src = DEFAULT_PROFILE_PIC;
                 }
             }
 
@@ -361,7 +353,7 @@
 
                 try {
                     const result = await fetchJson(API_ENDPOINTS.PROFILE, {
-                        method: 'POST', // or 'PUT'
+                        method: 'PUT', // Use PUT for updates, more RESTful
                         body: formData,
                     }, DOM.updateProfileBtn);
                     showAlert(DOM.profileMessageDiv, 'success', result.message || 'Profile updated successfully!');
@@ -381,7 +373,8 @@
             function validatePasswordFields() {
                 const newPassword = DOM.newPasswordInput.value;
                 const confirmNewPassword = DOM.confirmNewPasswordInput.value;
-                const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+]).{8,}$/;
+                // Updated pattern: at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
+                const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+={}\[\]:;<>,.?~\\-]).{8,}$/;
 
                 let isValid = true;
 
@@ -389,19 +382,25 @@
                 DOM.newPasswordInput.setCustomValidity('');
                 DOM.confirmNewPasswordInput.setCustomValidity('');
 
-                if (newPassword !== confirmNewPassword) {
-                    DOM.confirmNewPasswordInput.setCustomValidity('Passwords do not match.');
-                    isValid = false;
-                }
+                // Check new password strength
                 if (!passwordPattern.test(newPassword)) {
                     DOM.newPasswordInput.setCustomValidity('New password does not meet requirements.');
                     isValid = false;
                 }
 
-                // Trigger Bootstrap validation display
-                handleValidationFeedback(DOM.passwordChangeForm, isValid);
+                // Check if passwords match
+                if (newPassword !== confirmNewPassword) {
+                    DOM.confirmNewPasswordInput.setCustomValidity('Passwords do not match.');
+                    isValid = false;
+                }
 
-                return isValid;
+
+                // Trigger Bootstrap validation display
+                // Note: checkValidity() here will apply native validation,
+                // but we manually setCustomValidity for more specific feedback.
+                DOM.passwordChangeForm.classList.toggle('was-validated', !isValid);
+
+                return isValid && DOM.passwordChangeForm.checkValidity(); // Also check native HTML5 validity
             }
 
             /**
@@ -412,7 +411,8 @@
                 e.preventDefault();
                 clearAlert(DOM.passwordMessageDiv);
 
-                if (!DOM.passwordChangeForm.checkValidity() || !validatePasswordFields()) {
+                // Re-run validation just before submission
+                if (!validatePasswordFields()) {
                     showAlert(DOM.passwordMessageDiv, 'danger', 'Please correct the errors in the password fields.');
                     return;
                 }
@@ -428,7 +428,7 @@
                     }, DOM.changePasswordBtn);
                     showAlert(DOM.passwordMessageDiv, 'success', result.message || 'Password changed successfully!');
                     DOM.passwordChangeForm.reset(); // Clear form
-                    handleValidationFeedback(DOM.passwordChangeForm, true); // Clear any validation states
+                    handleValidationFeedback(DOM.passwordChangeForm, false); // Reset validation states
                 } catch (error) {
                     console.error('Error changing password:', error);
                     showAlert(DOM.passwordMessageDiv, 'danger', `Failed to change password: ${error.message}`);
@@ -445,6 +445,7 @@
                 DOM.profileUpdateForm.addEventListener('submit', handleProfileUpdate);
 
                 // Add real-time validation for password fields
+                DOM.oldPasswordInput.addEventListener('input', () => DOM.passwordChangeForm.checkValidity()); // Simple check
                 DOM.newPasswordInput.addEventListener('input', validatePasswordFields);
                 DOM.confirmNewPasswordInput.addEventListener('input', validatePasswordFields);
                 DOM.passwordChangeForm.addEventListener('submit', handlePasswordChange);

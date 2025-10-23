@@ -43,7 +43,6 @@ func (ctrl *UserController) ShowTraderApprovalPage(c *gin.Context) {
 func (ctrl *UserController) ShowAssignRolePage(c *gin.Context) {
 	c.HTML(http.StatusOK, "assign_role.html", nil)
 }
-
 func (ctrl *UserController) ShowEditUserPage(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -338,13 +337,20 @@ func (ctrl *UserController) GetAdminProfileAPI(c *gin.Context) {
 		return
 	}
 
-	adminID := userID.(uint) // Assert type to uint
+	adminID, ok := userID.(uint)
+	if !ok || adminID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
+
 	user, err := ctrl.UserSvc.GetAdminProfile(adminID)
 	if err != nil {
-		log.Printf("[ERROR] GetAdminProfileAPI: %v", err)
+		log.Printf("[ERROR] GetAdminProfileAPI for ID %d: %v", adminID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch admin profile: %v", err.Error())})
 		return
 	}
+
+	user.Password = ""
 
 	c.JSON(http.StatusOK, user)
 }
@@ -356,7 +362,11 @@ func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 		return
 	}
 
-	adminID := userID.(uint)
+	adminID, ok := userID.(uint)
+	if !ok || adminID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
 
 	var req service.AdminUpdateProfileRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -364,16 +374,9 @@ func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 		return
 	}
 
-	file, err := c.FormFile("profile_pic")
-	if err == nil { // file is present
-		req.ProfilePic = file
-	} else if err != http.ErrMissingFile { // other error than file not present
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Failed to get profile picture: %v", err.Error())})
-		return
-	}
-
 	if err := ctrl.UserSvc.UpdateAdminProfile(adminID, req); err != nil {
-		log.Printf("[ERROR] UpdateAdminProfileAPI: %v", err)
+		log.Printf("[ERROR] UpdateAdminProfileAPI for ID %d: %v", adminID, err)
+		// Propagate the specific error message from the service
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update admin profile: %v", err.Error())})
 		return
 	}
@@ -388,11 +391,15 @@ func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
 		return
 	}
 
-	adminID := userID.(uint)
+	adminID, ok := userID.(uint)
+	if !ok || adminID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
 
 	var req struct {
 		OldPassword string `json:"old_password" binding:"required"`
-		NewPassword string `json:"new_password" binding:"required,min=6"`
+		NewPassword string `json:"new_password" binding:"required"` // Remove min=8 binding here, let service validate
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -401,6 +408,8 @@ func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
 	}
 
 	if err := ctrl.UserSvc.ChangeAdminPassword(adminID, req.OldPassword, req.NewPassword); err != nil {
+		log.Printf("[ERROR] ChangeAdminPasswordAPI for ID %d: %v", adminID, err)
+		// Return the error message directly from the service validation
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

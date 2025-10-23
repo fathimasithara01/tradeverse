@@ -3,14 +3,51 @@ package service
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"mime/multipart"
+	"os"
+	"path/filepath"
+	"time"
+	"unicode"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/auth"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
+
+func IsValidPassword(password string) bool {
+	var (
+		hasUpper   bool
+		hasLower   bool
+		hasNumber  bool
+		hasSpecial bool
+	)
+
+	if len(password) < 8 {
+		return false
+	}
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsNumber(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char): // Check for punctuation or symbol
+			hasSpecial = true
+		}
+	}
+
+	// You can adjust these conditions based on your exact requirements.
+	// This currently requires ALL conditions to be true.
+	return hasUpper && hasLower && hasNumber && hasSpecial
+}
+
 type CreateUserRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
@@ -20,12 +57,12 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Phone    string `json:"phone"`
-	IsBlocked bool `json:"is_blocked"`
-	IsVerified bool `json:"is_verified"`
-	RoleID   uint `json:"role_id"`
+	Name       string `json:"name" binding:"required"`
+	Email      string `json:"email" binding:"required,email"`
+	Phone      string `json:"phone"`
+	IsBlocked  bool   `json:"is_blocked"`
+	IsVerified bool   `json:"is_verified"`
+	RoleID     uint   `json:"role_id"`
 }
 
 type AssignRoleRequest struct {
@@ -34,11 +71,10 @@ type AssignRoleRequest struct {
 }
 
 type AdminUpdateProfileRequest struct {
-	Name       string                `form:"name" binding:"required"`
-	Email      string                `form:"email" binding:"required,email"`
+	Name       string                `form:"name"`
+	Email      string                `form:"email"`
 	Phone      string                `form:"phone"`
-	ProfilePic *multipart.FileHeader `form:"profile_pic"` // For file upload
-	Password   string                `form:"password"`    // Optional: for password change
+	ProfilePic *multipart.FileHeader `form:"profile_pic"` // This is crucial for multipart forms
 }
 
 type IUserService interface {
@@ -86,52 +122,102 @@ func (s *UserService) GetAdminProfile(userID uint) (models.User, error) {
 		return models.User{}, err
 	}
 
-	user.Password = "" // Don't send password hash to frontend
+	user.Password = ""
 	return user, nil
 }
 
-// UpdateAdminProfile updates the admin's profile information.
 func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequest) error {
+	const uploadDir = "./static/images/profile_pics"
+
+	log.Printf("[INFO] UpdateAdminProfile: Initiating update for admin user ID %d", userID)
+
 	user, err := s.UserRepo.GetUserByID(userID)
 	if err != nil {
-		return errors.New("admin user not found")
+		return fmt.Errorf("admin user not found: %w", err)
 	}
 
 	if user.Role != models.RoleAdmin {
 		return errors.New("access denied: user is not an admin")
 	}
 
-	// Check for duplicate email if changing
-	if user.Email != req.Email {
+	// Email duplication check
+	if req.Email != "" && user.Email != req.Email { // Only check if email is provided and changed
 		existingUserByEmail, err := s.UserRepo.FindByEmail(req.Email)
-		if err == nil && existingUserByEmail.ID != userID { // Email found and belongs to a different user
-			return errors.New("email already in use by another account")
-		}
-		if err != nil && err.Error() != "user not found" { // Some other DB error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to check email availability: %w", err)
 		}
-	}
-
-	user.Name = req.Name
-	user.Email = req.Email
-	user.Phone = req.Phone
-
-	// Handle profile picture upload
-	if req.ProfilePic != nil {
-		user.ProfilePic = "/static/images/profile_pics/" + req.ProfilePic.Filename // Placeholder
-	}
-
-	// Password update is handled by a separate method, or only if password field is provided
-	if req.Password != "" {
-		if err := user.SetPassword(req.Password); err != nil {
-			return fmt.Errorf("failed to hash new password: %w", err)
+		if existingUserByEmail != nil && existingUserByEmail.ID != userID {
+			return errors.New("email already in use by another account")
 		}
+		user.Email = req.Email // Update email only if unique and valid
+	}
+
+	// Update other user fields if provided
+	if req.Name != "" {
+		user.Name = req.Name
+	}
+	if req.Phone != "" {
+		user.Phone = req.Phone
+	}
+
+	// Handle profile picture upload ONLY IF a file was actually provided AND has a filename
+	if req.ProfilePic != nil && req.ProfilePic.Filename != "" { // Explicit check for filename
+		absUploadDir, err := filepath.Abs(uploadDir)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path for upload directory: %w", err)
+		}
+
+		if err := os.MkdirAll(absUploadDir, 0755); err != nil {
+			return fmt.Errorf("failed to create upload directory '%s': %w", absUploadDir, err)
+		}
+
+		safeFilename := filepath.Base(req.ProfilePic.Filename)
+		// Generate a unique filename to prevent clashes
+		filename := fmt.Sprintf("%d-%s%s", userID, time.Now().Format("20060102150405"), filepath.Ext(safeFilename))
+		filePath := filepath.Join(absUploadDir, filename)
+
+		// Call the now more robust SaveUploadedFile
+		if err := SaveUploadedFile(req.ProfilePic, filePath); err != nil {
+			// The specific error from SaveUploadedFile will now propagate
+			return fmt.Errorf("failed to save profile picture: %w", err)
+		}
+
+		user.ProfilePic = "/static/images/profile_pics/" + filename
+		log.Printf("[INFO] UpdateAdminProfile: Updated profile picture for admin user ID %d to %s", userID, user.ProfilePic)
+	} else {
+		log.Printf("[INFO] UpdateAdminProfile: No valid profile picture provided for admin user ID %d. Skipping file upload.", userID)
 	}
 
 	return s.UserRepo.UpdateUser(user)
 }
 
-// ChangeAdminPassword allows an admin to change their password.
+func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
+	if file == nil {
+		return errors.New("cannot save: file header is nil")
+	}
+	if file.Filename == "" {
+		return errors.New("cannot save: file has an empty filename")
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return fmt.Errorf("failed to open uploaded file '%s': %w", file.Filename, err)
+	}
+	defer src.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file '%s': %w", dst, err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, src); err != nil {
+		return fmt.Errorf("failed to copy file to '%s': %w", dst, err)
+	}
+
+	return nil
+}
+
 func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword string) error {
 	user, err := s.UserRepo.GetUserByID(userID)
 	if err != nil {
@@ -142,8 +228,14 @@ func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword 
 		return errors.New("access denied: user is not an admin")
 	}
 
+	// Verify old password
 	if !user.CheckPassword(oldPassword) {
 		return errors.New("current password is incorrect")
+	}
+
+	// Validate new password strength
+	if !IsValidPassword(newPassword) {
+		return errors.New("new password does not meet strength requirements (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)")
 	}
 
 	if err := user.SetPassword(newPassword); err != nil {
@@ -153,6 +245,7 @@ func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword 
 	return s.UserRepo.UpdateUser(user)
 }
 
+// hashPassword and checkPasswordHash remain unchanged
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
@@ -186,7 +279,7 @@ func (s *UserService) Login(email, password string) (string, models.User, error)
 			return "", models.User{}, fmt.Errorf("failed to get role for user %s: %w", email, err)
 		}
 		user.RoleID = &role.ID
-		if err := s.UserRepo.UpdateUser(&user); err != nil {
+		if err := s.UserRepo.UpdateUser(user); err != nil {
 			return "", models.User{}, fmt.Errorf("failed to update user role info")
 		}
 	}
@@ -195,7 +288,7 @@ func (s *UserService) Login(email, password string) (string, models.User, error)
 	if err != nil {
 		return "", models.User{}, fmt.Errorf("failed to generate JWT: %w", err)
 	}
-	return token, user, nil
+	return token, *user, nil
 
 }
 func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error {

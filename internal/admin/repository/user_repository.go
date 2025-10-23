@@ -17,7 +17,8 @@ type IUserRepository interface {
 	CreateTraderWithProfile(user *models.User, profile *models.TraderProfile) error
 
 	FindByID(id uint) (models.User, error)
-	FindByEmail(email string) (models.User, error)
+	// FindByEmail(email string) (models.User, error)
+	FindByEmail(email string) (*models.User, error)
 	FindByRole(role models.UserRole) ([]models.User, error)
 	FindAllNonAdmins() ([]models.User, error)
 	FindAllAdvanced(options UserQueryOptions) (PaginatedUsers, error)
@@ -55,6 +56,7 @@ func NewUserRepository(db *gorm.DB) IUserRepository {
 
 func (r *UserRepository) GetAdminProfile(userID uint) (models.User, error) {
 	var user models.User
+	// Preload RoleModel to get role details if needed
 	err := r.DB.Preload("RoleModel").First(&user, userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -62,6 +64,7 @@ func (r *UserRepository) GetAdminProfile(userID uint) (models.User, error) {
 		}
 		return models.User{}, fmt.Errorf("failed to retrieve admin user: %w", err)
 	}
+	// Defensive check, though ideally the middleware ensures this
 	if user.Role != models.RoleAdmin {
 		return models.User{}, errors.New("user is not an admin")
 	}
@@ -262,20 +265,27 @@ func (r *UserRepository) Create(user *models.User) error {
 	return r.DB.Create(user).Error
 }
 
-func (r *UserRepository) FindByEmail(email string) (models.User, error) {
+func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	var user models.User
 
-	err := r.DB.Preload("CustomerProfile").Preload("TraderProfile").Preload("RoleModel").Where("LOWER(email) = LOWER(?)", email).First(&user).Error
+	err := r.DB.
+		Preload("CustomerProfile").
+		Preload("TraderProfile").
+		Preload("RoleModel").
+		Where("LOWER(email) = LOWER(?)", email).
+		First(&user).Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Printf("[DEBUG Repo] FindByEmail: User email '%s' not found.", email)
-			return models.User{}, errors.New("user not found")
+			return nil, gorm.ErrRecordNotFound
 		}
 		log.Printf("[ERROR Repo] FindByEmail: Failed to find user by email '%s': %v", email, err)
-		return models.User{}, fmt.Errorf("database error finding user by email: %w", err)
+		return nil, fmt.Errorf("database error finding user by email: %w", err)
 	}
+
 	log.Printf("[DEBUG Repo] FindByEmail: Found user with email '%s', ID %d.", email, user.ID)
-	return user, nil
+	return &user, nil
 }
 
 func (r *UserRepository) FindByRole(role models.UserRole) ([]models.User, error) {

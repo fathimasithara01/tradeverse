@@ -1,161 +1,27 @@
 /* General Layout */
-body {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column; /* Ensure body itself is a flex container for full height */
-}
+
 
 .wrapper {
     display: flex;
     width: 100%;
-    flex: 1; /* Allow wrapper to grow and take available space */
+    flex: 1;
+    /* Allow wrapper to grow and take available space */
 }
 
-#sidebar {
-    min-width: 250px;
-    max-width: 250px;
-    background: #343a40; /* Dark background for sidebar */
-    color: #fff;
-    transition: all 0.3s;
-    display: flex;
-    flex-direction: column; /* For proper internal scrolling */
-    height: 100vh; /* Make sidebar take full viewport height */
-    position: sticky; /* Keep sidebar in place */
-    top: 0;
-    overflow-y: auto; /* Enable scrolling for sidebar content */
-}
 
-#sidebar.active {
-    margin-left: -250px;
-}
 
 .content-area {
     width: 100%;
     padding: 20px;
-    min-height: 100vh; /* Ensure content area takes full height */
-    overflow-y: auto; /* Allow content area to scroll independently */
-    flex-grow: 1; /* Allow content area to take remaining width */
-    background-color: #f8f9fa; /* Light background for content */
+    min-height: 100vh;
+    /* Ensure content area takes full height */
+    overflow-y: auto;
+    /* Allow content area to scroll independently */
+    flex-grow: 1;
+    /* Allow content area to take remaining width */
+    background-color: #f8f9fa;
+    /* Light background for content */
 }
-
-@media (max-width: 768px) {
-    #sidebar {
-        margin-left: -250px;
-    }
-    #sidebar.active {
-        margin-left: 0;
-    }
-    .content-area {
-        width: 100%;
-    }
-}
-
-/* Sidebar Specific Styles */
-.sidebar-header {
-    padding: 20px;
-    background: #212529; /* Slightly darker header */
-    text-align: center;
-}
-
-.sidebar-header h3 {
-    color: #fff;
-    margin-bottom: 0;
-    font-weight: 600;
-}
-
-#sidebar-nav {
-    padding: 20px 0;
-    flex-grow: 1; /* Allow nav items to take space and enable internal scrolling */
-    list-style: none; /* Remove default list bullets */
-}
-
-#sidebar-nav .nav-heading {
-    font-size: 0.85em;
-    color: #adb5bd;
-    padding: 10px 20px 5px 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-#sidebar-nav .nav-item {
-    margin-bottom: 5px;
-}
-
-#sidebar-nav .nav-link {
-    padding: 10px 20px;
-    color: #adb5bd;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    transition: all 0.2s;
-    font-size: 0.95em;
-}
-
-#sidebar-nav .nav-link:hover,
-#sidebar-nav .nav-item.active > .nav-link {
-    color: #fff;
-    background: #495057; /* Highlight on hover/active */
-    border-radius: 5px;
-    margin: 0 10px; /* Give some spacing */
-}
-
-#sidebar-nav .nav-link i {
-    margin-right: 10px;
-    font-size: 1.1em;
-}
-
-/* Collapse arrow for submenus */
-#sidebar-nav .nav-link .collapse-arrow {
-    margin-left: auto;
-    transition: transform 0.2s ease-in-out;
-}
-
-#sidebar-nav .nav-link[aria-expanded="true"] .collapse-arrow {
-    transform: rotate(90deg);
-}
-
-#sidebar-nav ul.collapse.list-unstyled {
-    padding-left: 15px; /* Indent sub-menu items */
-    background: #3a4046; /* Slightly different background for submenus */
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
-#sidebar-nav ul.collapse.list-unstyled .nav-item .nav-link {
-    padding: 8px 20px 8px 35px; /* Further indent for sub-sub-items */
-    font-size: 0.9em;
-}
-
-#sidebar-nav ul.collapse.list-unstyled .nav-item .nav-link:hover,
-#sidebar-nav ul.collapse.list-unstyled .nav-item.active .nav-link {
-    background: #5a6268;
-    border-radius: 3px;
-    margin: 0 5px;
-    color: #fff;
-}
-
-/* Specific overrides for the profile, settings, logout links that are not part of the main collapse structure */
-#sidebar .list-group-item {
-    border: none;
-    padding: 10px 20px;
-    transition: all 0.2s;
-    font-size: 0.95em;
-    display: flex;
-    align-items: center;
-}
-
-#sidebar .list-group-item:hover {
-    background: #495057;
-    color: #fff !important; /* Ensure text color changes on hover */
-    border-radius: 5px;
-    margin: 0 10px;
-}
-
-#sidebar .list-group-item.text-danger:hover {
-    color: #dc3545 !important; /* Keep danger color on hover for logout */
-}
-
-/* Admin Profile Page Styles */
 .profile-pic-wrapper {
     position: relative;
     width: 150px;
@@ -163,18 +29,21 @@ body {
     margin: 0 auto 15px auto;
     border-radius: 50%;
     overflow: hidden;
-    background-color: #e9ecef; /* Light background for default/loading state */
+    background-color: #e9ecef;
+    /* Light background for default/loading state */
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25); /* Subtle blue ring */
+    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25);
+    /* Subtle blue ring */
 }
 
 .profile-pic-preview {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border: none; /* img-thumbnail adds border, remove it if wrapper already has one */
+    border: none;
+    /* img-thumbnail adds border, remove it if wrapper already has one */
 }
 
 .profile-pic-label {
@@ -216,7 +85,8 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-    border-radius: var(--bs-card-border-radius); /* Inherit card border-radius */
+    border-radius: var(--bs-card-border-radius);
+    /* Inherit card border-radius */
 }
 
 .loading-overlay.active {
@@ -231,4 +101,52 @@ body {
 
 .alert.fade:not(.show) {
     opacity: 0;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Profile picture styling */
+.profile-pic-wrapper {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 1rem auto;
+    /* Center the wrapper */
+}
+
+.profile-pic-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 3px solid var(--bs-primary);
+}
+
+.profile-pic-label {
+    cursor: pointer;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    transition: background-color 0.2s ease;
+}
+
+.profile-pic-label:hover {
+    background-color: #e2e6ea;
 }
