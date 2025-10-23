@@ -5,64 +5,125 @@ import (
 
 	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
-	// Ensure Admin role
-	var adminRole models.Role
-	if err := db.Where(models.Role{Name: string(models.RoleAdmin)}).FirstOrCreate(&adminRole).Error; err != nil {
-		log.Fatalf("FATAL: Failed to create or find admin role during seeding: %v", err)
+	// Check if admin user exists
+	var adminUser models.User
+	if db.Where("email = ?", cfg.Admin.Email).First(&adminUser).Error == gorm.ErrRecordNotFound {
+		log.Println("Admin user not found. Seeding admin data...")
+
+		// Create default admin role
+		adminRole := models.Role{Name: string(models.RoleAdmin), Description: "Super administrator with all permissions."}
+		db.FirstOrCreate(&adminRole, models.Role{Name: string(models.RoleAdmin)})
+
+		// Define all permissions
+		permissions := []models.Permission{
+			{Name: "view_dashboard", Description: "View the admin dashboard"},
+			{Name: "manage_users", Description: "Create, view, update, and delete users (customers and internal staff)"},
+			{Name: "manage_roles", Description: "Create, view, update, and delete roles and assign permissions"},
+			{Name: "manage_traders", Description: "Approve/reject trader applications and manage trader profiles"},
+			{Name: "manage_signals", Description: "Create, update, and delete trading signals"},
+			{Name: "view_activity_logs", Description: "View live copying sessions and trade error logs"},
+			{Name: "manage_subscriptions", Description: "Manage subscription plans and user subscriptions"},
+			{Name: "manage_wallet", Description: "Manage admin wallet, deposits, and withdrawals"},
+			{Name: "view_transactions", Description: "View all platform transactions"},
+			{Name: "delete_users", Description: "Permanently delete user accounts"}, // Specific permission for deletion
+
+			// NEW ADMIN PROFILE PERMISSIONS
+			{Name: "view_admin_profile", Description: "View own admin profile details"},
+			{Name: "edit_admin_profile", Description: "Edit own admin profile details, including password"},
+			{Name: "view_admin_settings", Description: "View global admin settings"},
+			// Add any other new permissions here
+		}
+
+		for _, perm := range permissions {
+			db.FirstOrCreate(&perm, models.Permission{Name: perm.Name})
+		}
+
+		// Assign all permissions to the admin role
+		var createdPermissions []models.Permission
+		db.Find(&createdPermissions)
+
+		db.Model(&adminRole).Association("Permissions").Replace(createdPermissions)
+		log.Printf("Admin role '%s' created and all permissions assigned.", adminRole.Name)
+
+		// Create admin user
+		admin := models.User{
+			Name:      "Super Admin",
+			Email:     cfg.Admin.Email,
+			Password:  cfg.Admin.Password,
+			Role:      models.RoleAdmin,
+			RoleID:    &adminRole.ID,
+			IsBlocked: false,
+			IsVerified: true,
+		}
+
+		if err := admin.SetPassword(cfg.Admin.Password); err != nil {
+			log.Fatalf("Failed to hash admin password: %v", err)
+		}
+
+		if err := db.Create(&admin).Error; err != nil {
+			log.Fatalf("Failed to create admin user: %v", err)
+		}
+		log.Printf("Admin user '%s' created successfully.", admin.Email)
+
+	} else if adminUser.ID != 0 {
+		log.Printf("Admin user '%s' already exists. Skipping seeding.", cfg.Admin.Email)
+
+		// Ensure all permissions exist and are assigned to admin if it's already there
+		permissions := []models.Permission{
+			{Name: "view_dashboard", Description: "View the admin dashboard"},
+			{Name: "manage_users", Description: "Create, view, update, and delete users (customers and internal staff)"},
+			{Name: "manage_roles", Description: "Create, view, update, and delete roles and assign permissions"},
+			{Name: "manage_traders", Description: "Approve/reject trader applications and manage trader profiles"},
+			{Name: "manage_signals", Description: "Create, update, and delete trading signals"},
+			{Name: "view_activity_logs", Description: "View live copying sessions and trade error logs"},
+			{Name: "manage_subscriptions", Description: "Manage subscription plans and user subscriptions"},
+			{Name: "manage_wallet", Description: "Manage admin wallet, deposits, and withdrawals"},
+			{Name: "view_transactions", Description: "View all platform transactions"},
+			{Name: "delete_users", Description: "Permanently delete user accounts"},
+
+			// NEW ADMIN PROFILE PERMISSIONS
+			{Name: "view_admin_profile", Description: "View own admin profile details"},
+			{Name: "edit_admin_profile", Description: "Edit own admin profile details, including password"},
+			{Name: "view_admin_settings", Description: "View global admin settings"},
+		}
+
+		for _, perm := range permissions {
+			db.FirstOrCreate(&perm, models.Permission{Name: perm.Name})
+		}
+
+		// Ensure admin role has all permissions
+		var adminRole models.Role
+		db.Where("name = ?", models.RoleAdmin).First(&adminRole)
+		if adminRole.ID != 0 {
+			var existingPermissions []models.Permission
+			db.Model(&adminRole).Association("Permissions").Find(&existingPermissions)
+
+			existingPermNames := make(map[string]bool)
+			for _, p := range existingPermissions {
+				existingPermNames[p.Name] = true
+			}
+
+			var permissionsToAdd []models.Permission
+			for _, p := range permissions {
+				if !existingPermNames[p.Name] {
+					var newPerm models.Permission
+					db.Where("name = ?", p.Name).First(&newPerm)
+					if newPerm.ID != 0 {
+						permissionsToAdd = append(permissionsToAdd, newPerm)
+					}
+				}
+			}
+
+			if len(permissionsToAdd) > 0 {
+				db.Model(&adminRole).Association("Permissions").Append(permissionsToAdd)
+				log.Printf("Added %d new permissions to admin role.", len(permissionsToAdd))
+			} else {
+				log.Println("Admin role already has all necessary permissions.")
+			}
+		}
 	}
-	log.Printf("Admin role ensured in database. Role ID is: %d", adminRole.ID)
-
-	// Ensure Customer role
-	var customerRole models.Role
-	if err := db.Where(models.Role{Name: string(models.RoleCustomer)}).FirstOrCreate(&customerRole).Error; err != nil {
-		log.Fatalf("FATAL: Failed to create or find customer role during seeding: %v", err)
-	}
-	log.Printf("Customer role ensured in database. Role ID is: %d", customerRole.ID)
-
-	// Ensure Trader role
-	var traderRole models.Role
-	if err := db.Where(models.Role{Name: string(models.RoleTrader)}).FirstOrCreate(&traderRole).Error; err != nil {
-		log.Fatalf("FATAL: Failed to create or find trader role during seeding: %v", err)
-	}
-	log.Printf("Trader role ensured in database. Role ID is: %d", traderRole.ID)
-
-	// Seed Admin user
-	var userCount int64
-	db.Model(&models.User{}).Where("email = ?", cfg.Admin.Email).Count(&userCount)
-	if userCount > 0 {
-		log.Println("Admin user already exists. Seeder is skipping.")
-		return
-	}
-
-	log.Println("No admin user found. Seeding a new admin...")
-
-	adminEmail := cfg.Admin.Email
-	adminPassword := cfg.Admin.Password
-	if adminEmail == "" || adminPassword == "" {
-		log.Fatal("FATAL: Admin_Email and Admin_Password must be set in your .env file to seed the first admin.")
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
-	if err != nil {
-		log.Fatalf("FATAL: Failed to hash admin password: %v", err)
-	}
-
-	newAdmin := models.User{
-		Name:     "Administrator",
-		Email:    adminEmail,
-		Password: string(hashedPassword),
-		Role:     models.RoleAdmin,
-		RoleID:   &adminRole.ID,
-	}
-
-	if err := db.Create(&newAdmin).Error; err != nil {
-		log.Fatalf("FATAL: Failed to seed admin user: %v", err)
-	}
-
-	log.Printf("Successfully seeded admin user with email: %s and assigned RoleID: %d\n", adminEmail, adminRole.ID)
 }

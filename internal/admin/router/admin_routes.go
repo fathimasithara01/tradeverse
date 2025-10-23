@@ -54,6 +54,14 @@ func WireAdminRoutes(
 				protected.GET("/dashboard/latest-signups", dashCtrl.GetLatestSignups)
 				protected.GET("/dashboard/market-data", dashCtrl.GetLiveMarketData)
 
+				protected.GET("/profile", authz.RequirePermission("view_admin_profile"), userCtrl.ShowAdminProfilePage)
+				protected.GET("/api/profile", authz.RequirePermission("view_admin_profile"), userCtrl.GetAdminProfileAPI)
+				protected.POST("/api/profile", authz.RequirePermission("edit_admin_profile"), userCtrl.UpdateAdminProfileAPI)
+				protected.PUT("/api/profile/password", authz.RequirePermission("edit_admin_profile"), userCtrl.ChangeAdminPasswordAPI)
+
+				// Admin Settings (placeholder for other admin-specific settings)
+				protected.GET("/settings", authz.RequirePermission("view_admin_settings"), userCtrl.ShowAdminSettingsPage)
+
 				protected.GET("/api/users/advanced", userCtrl.GetAllUsersAdvanced)
 
 				protected.GET("/signals", signalCtrl.ShowLiveSignalsPage)

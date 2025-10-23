@@ -4,12 +4,42 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"mime/multipart"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/auth"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"golang.org/x/crypto/bcrypt"
 )
+type CreateUserRequest struct {
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+	Phone    string `json:"phone"`
+	RoleID   uint   `json:"role_id" binding:"required"`
+}
+
+type UpdateUserRequest struct {
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Phone    string `json:"phone"`
+	IsBlocked bool `json:"is_blocked"`
+	IsVerified bool `json:"is_verified"`
+	RoleID   uint `json:"role_id"`
+}
+
+type AssignRoleRequest struct {
+	UserID uint `json:"user_id" binding:"required"`
+	RoleID uint `json:"role_id" binding:"required"`
+}
+
+type AdminUpdateProfileRequest struct {
+	Name       string                `form:"name" binding:"required"`
+	Email      string                `form:"email" binding:"required,email"`
+	Phone      string                `form:"phone"`
+	ProfilePic *multipart.FileHeader `form:"profile_pic"` // For file upload
+	Password   string                `form:"password"`    // Optional: for password change
+}
 
 type IUserService interface {
 	Login(email, password string) (string, models.User, error)
@@ -30,6 +60,10 @@ type IUserService interface {
 	AssignRoleToUser(userID, roleID uint) error
 
 	UpdateCustomerProfile(userID uint, user models.User, profile models.CustomerProfile) error
+
+	GetAdminProfile(userID uint) (models.User, error)
+	UpdateAdminProfile(userID uint, req AdminUpdateProfileRequest) error
+	ChangeAdminPassword(userID uint, oldPassword, newPassword string) error
 }
 
 type UserService struct {
@@ -46,6 +80,79 @@ func NewUserService(userRepo repository.IUserRepository, roleRepo repository.IRo
 	}
 }
 
+func (s *UserService) GetAdminProfile(userID uint) (models.User, error) {
+	user, err := s.UserRepo.GetAdminProfile(userID)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	user.Password = "" // Don't send password hash to frontend
+	return user, nil
+}
+
+// UpdateAdminProfile updates the admin's profile information.
+func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequest) error {
+	user, err := s.UserRepo.GetUserByID(userID)
+	if err != nil {
+		return errors.New("admin user not found")
+	}
+
+	if user.Role != models.RoleAdmin {
+		return errors.New("access denied: user is not an admin")
+	}
+
+	// Check for duplicate email if changing
+	if user.Email != req.Email {
+		existingUserByEmail, err := s.UserRepo.FindByEmail(req.Email)
+		if err == nil && existingUserByEmail.ID != userID { // Email found and belongs to a different user
+			return errors.New("email already in use by another account")
+		}
+		if err != nil && err.Error() != "user not found" { // Some other DB error
+			return fmt.Errorf("failed to check email availability: %w", err)
+		}
+	}
+
+	user.Name = req.Name
+	user.Email = req.Email
+	user.Phone = req.Phone
+
+	// Handle profile picture upload
+	if req.ProfilePic != nil {
+		user.ProfilePic = "/static/images/profile_pics/" + req.ProfilePic.Filename // Placeholder
+	}
+
+	// Password update is handled by a separate method, or only if password field is provided
+	if req.Password != "" {
+		if err := user.SetPassword(req.Password); err != nil {
+			return fmt.Errorf("failed to hash new password: %w", err)
+		}
+	}
+
+	return s.UserRepo.UpdateUser(user)
+}
+
+// ChangeAdminPassword allows an admin to change their password.
+func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword string) error {
+	user, err := s.UserRepo.GetUserByID(userID)
+	if err != nil {
+		return errors.New("admin user not found")
+	}
+
+	if user.Role != models.RoleAdmin {
+		return errors.New("access denied: user is not an admin")
+	}
+
+	if !user.CheckPassword(oldPassword) {
+		return errors.New("current password is incorrect")
+	}
+
+	if err := user.SetPassword(newPassword); err != nil {
+		return fmt.Errorf("failed to hash new password: %w", err)
+	}
+
+	return s.UserRepo.UpdateUser(user)
+}
+
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
@@ -57,7 +164,7 @@ func checkPasswordHash(password, hash string) bool {
 }
 
 func (s *UserService) Login(email, password string) (string, models.User, error) {
-	user, err := s.UserRepo.FindByEmail(email) 
+	user, err := s.UserRepo.FindByEmail(email)
 	if err != nil {
 		log.Printf("[LOGIN SERVICE] User '%s' not found or other error: %v", email, err)
 		return "", models.User{}, errors.New("invalid credentials")

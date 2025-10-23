@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -323,4 +325,90 @@ func (ctrl *UserController) GetUsersForRoleAssignment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, users)
+}
+
+func (ctrl *UserController) ShowAdminProfilePage(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_profile.html", gin.H{"Title": "Admin Profile"})
+}
+
+func (ctrl *UserController) GetAdminProfileAPI(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	adminID := userID.(uint) // Assert type to uint
+	user, err := ctrl.UserSvc.GetAdminProfile(adminID)
+	if err != nil {
+		log.Printf("[ERROR] GetAdminProfileAPI: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to fetch admin profile: %v", err.Error())})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	adminID := userID.(uint)
+
+	var req service.AdminUpdateProfileRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request data: %v", err.Error())})
+		return
+	}
+
+	file, err := c.FormFile("profile_pic")
+	if err == nil { // file is present
+		req.ProfilePic = file
+	} else if err != http.ErrMissingFile { // other error than file not present
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Failed to get profile picture: %v", err.Error())})
+		return
+	}
+
+	if err := ctrl.UserSvc.UpdateAdminProfile(adminID, req); err != nil {
+		log.Printf("[ERROR] UpdateAdminProfileAPI: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update admin profile: %v", err.Error())})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Admin profile updated successfully"})
+}
+
+func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	adminID := userID.(uint)
+
+	var req struct {
+		OldPassword string `json:"old_password" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := ctrl.UserSvc.ChangeAdminPassword(adminID, req.OldPassword, req.NewPassword); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+}
+
+// ShowAdminSettingsPage renders a placeholder for admin settings.
+func (ctrl *UserController) ShowAdminSettingsPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_settings.html", gin.H{"Title": "Admin Settings"})
 }

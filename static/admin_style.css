@@ -1,0 +1,98 @@
+/* Add to your existing admin_styles.css or create it */
+
+/* Basic styling for sidebar (if not already present) */
+#sidebar-wrapper {
+    min-height: 100vh;
+    margin-left: -15rem;
+    -webkit-transition: margin .25s ease-out;
+    -moz-transition: margin .25s ease-out;
+    -o-transition: margin .25s ease-out;
+    transition: margin .25s ease-out;
+}
+
+#sidebar-wrapper .sidebar-heading {
+    padding: 0.875rem 1.25rem;
+    font-size: 1.2rem;
+}
+
+#sidebar-wrapper .list-group {
+    width: 15rem;
+}
+
+#page-content-wrapper {
+    min-width: 100vw;
+}
+
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: 0;
+}
+
+#menu-toggle {
+    cursor: pointer;
+}
+
+.primary-text {
+    color: #0d6efd; /* Bootstrap primary blue */
+}
+.second-text {
+    color: #ced4da; /* Light gray for inactive sidebar items */
+}
+
+.list-group-item.active {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+}
+
+/* Specific styles for profile page */
+.profile-pic-preview {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #0d6efd; /* Accent border */
+    margin-bottom: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.form-control-file {
+    display: block;
+    width: 100%;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+.form-control-file::-webkit-file-upload-button {
+    visibility: hidden;
+}
+.form-control-file::before {
+    content: 'Choose File';
+    display: inline-block;
+    background: #0d6efd;
+    color: white;
+    border: 1px solid #0d6efd;
+    border-radius: .25rem;
+    padding: .375rem .75rem;
+    outline: none;
+    white-space: nowrap;
+    -webkit-user-select: none;
+    cursor: pointer;
+    margin-right: .5rem;
+    font-weight: 500;
+    transition: background-color .15s ease-in-out, border-color .15s ease-in-out;
+}
+.form-control-file:hover::before {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+/* Ensure the input itself is styled correctly */
+.form-control-file {
+    height: calc(2.25rem + 2px); /* Adjust height to match other inputs */
+    line-height: 1.5; /* Align text vertically */
+}

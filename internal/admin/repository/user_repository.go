@@ -41,6 +41,8 @@ type IUserRepository interface {
 	GetUserByEmail(email string) (*models.User, error)
 
 	GetUsersByRole(role models.UserRole) ([]models.User, error)
+
+	GetAdminProfile(userID uint) (models.User, error)
 }
 
 type UserRepository struct {
@@ -51,9 +53,23 @@ func NewUserRepository(db *gorm.DB) IUserRepository {
 	return &UserRepository{DB: db}
 }
 
+func (r *UserRepository) GetAdminProfile(userID uint) (models.User, error) {
+	var user models.User
+	err := r.DB.Preload("RoleModel").First(&user, userID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.User{}, errors.New("admin user not found")
+		}
+		return models.User{}, fmt.Errorf("failed to retrieve admin user: %w", err)
+	}
+	if user.Role != models.RoleAdmin {
+		return models.User{}, errors.New("user is not an admin")
+	}
+	return user, nil
+}
+
 func (r *UserRepository) GetUsersByRole(role models.UserRole) ([]models.User, error) {
 	var users []models.User
-	// Make sure the query correctly targets the 'role' field
 	err := r.DB.Where("role = ?", role).Find(&users).Error
 	if err != nil {
 		return nil, fmt.Errorf("repo: failed to find users by role: %w", err)
