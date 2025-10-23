@@ -104,20 +104,14 @@
     </li>
 
     <li class="nav-item">
-      <a href="/admin/profile" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+      <a href="/admin/profile/view" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
         <i class="fas fa-user-circle me-2"></i> Admin Profile
-      </a>
-      <a href="/admin/settings" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-        <i class="fas fa-cogs me-2"></i> Admin Settings
-      </a>
-      <a href="/admin/logout" class="list-group-item list-group-item-action bg-transparent text-danger fw-bold">
-        <i class="fas fa-power-off me-2"></i> Logout
       </a>
     </li>
 
     <li class="nav-heading">Settings</li>
     <li class="nav-item {{if eq .ActiveTab "system_settings"}}active{{end}}">
-      <a href="/admin/settings" class="nav-link"><i class="fas fa-cogs"></i> System Settings</a>
+      <a href="/admin/settings" class="nav-link"><i class="fas fa-cogs"></i> Web Configuration</a>
     </li>
 
   </ul>

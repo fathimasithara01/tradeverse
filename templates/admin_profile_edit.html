@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Add User</title>
-
+    <title>Admin - Edit Profile</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -33,12 +32,11 @@
 
                             <div
                                 class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                <h1 class="mb-0 fs-4">Admin Profile</h1>
-                                <!-- Optional: Add an edit/save toggle here if you want distinct view/edit modes --> -->
-                                 <!-- <button id="editProfileToggle" class="btn btn-outline-light btn-sm"> 
-                                    <i class="fas fa-edit"></i> Edit
-                                </button> -->
-                            </div> 
+                                <h1 class="mb-0 fs-4">Edit Admin Profile</h1>
+                                <a href="/admin/profile/view" class="btn btn-outline-light btn-sm">
+                                    <i class="fas fa-eye"></i> View Profile
+                                </a>
+                            </div>
                             <div class="card-body">
                                 <!-- Profile Update Message -->
                                 <div id="profile-message" class="alert d-none" role="status" aria-live="polite">
@@ -84,7 +82,7 @@
                                             <label for="phone" class="form-label">Phone</label>
                                             <input type="tel" class="form-control" id="phone" name="phone"
                                                 aria-describedby="phoneHelp" placeholder="e.g., +15551234567"
-                                                pattern="^\+?[1-9]\d{1,14}$"> <!-- E.164 format suggestion -->
+                                                pattern="^\+?[1-9]\d{1,14}$">
                                             <div id="phoneHelp" class="form-text">Optional phone number.</div>
                                             <div class="invalid-feedback">Please enter a valid phone number (e.g.,
                                                 +15551234567).</div>
@@ -115,7 +113,7 @@
                                             <label for="newPassword" class="form-label">New Password</label>
                                             <input type="password" class="form-control" id="newPassword"
                                                 name="new_password" required minlength="8"
-                                                pattern="^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+]).{8,}$"
+                                                pattern="^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+=\-{}\[\]:;<>,.?~\\|]).{8,}$"
                                                 aria-describedby="newPasswordHelp" autocomplete="new-password">
                                             <div id="newPasswordHelp" class="form-text">
                                                 Must be at least 8 characters long, contain an uppercase letter, a
@@ -150,11 +148,9 @@
         integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
         crossorigin="anonymous"></script>
 
-    <!-- Your custom JavaScript -->
+    <!-- Your custom JavaScript for edit page -->
     <script>
-        // Use an IIFE (Immediately Invoked Function Expression) for scope encapsulation
         (function () {
-            // --- Constants and DOM Element References ---
             const DOM = {
                 cardLoadingOverlay: document.getElementById('cardLoadingOverlay'),
                 profilePicInput: document.getElementById('profilePicInput'),
@@ -180,21 +176,14 @@
             };
 
             const DEFAULT_PROFILE_PIC = '/static/images/default_profile_pic.png';
-            const MESSAGE_TIMEOUT_MS = 5000; // 5 seconds
+            const MESSAGE_TIMEOUT_MS = 5000;
 
-            // --- Utility Functions ---
-
-            /**
-             * Toggles a loading state on a given button and the main card overlay.
-             * @param {HTMLButtonElement} button - The button to disable/enable and show spinner on.
-             * @param {boolean} show - True to show loading, false to hide.
-             */
             const toggleLoadingState = (button, show) => {
                 if (button) {
                     button.disabled = show;
                     button.innerHTML = show
                         ? `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`
-                        : button.dataset.originalText || button.textContent; // Restore original text
+                        : button.dataset.originalText || button.textContent;
                     if (!button.dataset.originalText) {
                         button.dataset.originalText = button.textContent;
                     }
@@ -204,45 +193,28 @@
                 }
             };
 
-            /**
-             * Displays an alert message.
-             * @param {HTMLElement} alertDiv - The div element to show the alert in.
-             * @param {'success'|'danger'|'warning'|'info'} type - Bootstrap alert type.
-             * @param {string} message - The message to display.
-             */
             const showAlert = (alertDiv, type, message) => {
                 if (!alertDiv) return;
-
-                // Clear previous classes and content
                 alertDiv.className = 'alert';
                 alertDiv.classList.add(`alert-${type}`);
-                alertDiv.textContent = message; // Use textContent to prevent XSS
-                alertDiv.setAttribute('role', 'alert'); // Announce to screen readers
-
-                alertDiv.classList.remove('d-none', 'fade', 'show'); // Ensure it's not hidden
-                // Force reflow for fade-in animation
+                alertDiv.textContent = message;
+                alertDiv.setAttribute('role', 'alert');
+                alertDiv.classList.remove('d-none', 'fade', 'show');
                 void alertDiv.offsetWidth;
-                alertDiv.classList.add('show'); // Trigger Bootstrap fade-in
-
-                clearTimeout(alertDiv.dataset.hideTimeout); // Clear any existing timeout
-
+                alertDiv.classList.add('show');
+                clearTimeout(alertDiv.dataset.hideTimeout);
                 alertDiv.dataset.hideTimeout = setTimeout(() => {
-                    alertDiv.classList.remove('show'); // Trigger fade-out
-                    alertDiv.classList.add('fade'); // Ensure fade class for transition
-
+                    alertDiv.classList.remove('show');
+                    alertDiv.classList.add('fade');
                     const handleTransitionEnd = () => {
-                        alertDiv.classList.add('d-none'); // Hide completely after fade
-                        alertDiv.classList.remove('fade'); // Clean up
+                        alertDiv.classList.add('d-none');
+                        alertDiv.classList.remove('fade');
                         alertDiv.removeEventListener('transitionend', handleTransitionEnd);
                     };
                     alertDiv.addEventListener('transitionend', handleTransitionEnd, { once: true });
                 }, MESSAGE_TIMEOUT_MS);
             };
 
-            /**
-             * Clears an alert message.
-             * @param {HTMLElement} alertDiv - The div element of the alert.
-             */
             const clearAlert = (alertDiv) => {
                 if (alertDiv) {
                     clearTimeout(alertDiv.dataset.hideTimeout);
@@ -253,73 +225,52 @@
                 }
             };
 
-            /**
-             * Handles form validation feedback using Bootstrap's built-in styles.
-             * @param {HTMLFormElement} form - The form to validate.
-             * @param {boolean} isValid - Whether the form is currently valid.
-             */
             const handleValidationFeedback = (form, isValid) => {
                 form.classList.toggle('was-validated', !isValid);
             };
 
-            // --- API Interaction ---
-
-            /**
-             * Generic function to fetch JSON data from an API endpoint.
-             * @param {string} url - The API endpoint URL.
-             * @param {object} options - Fetch options (method, headers, body, etc.).
-             * @param {HTMLButtonElement} [button] - Optional button to apply loading state.
-             * @returns {Promise<object>} - The JSON response data.
-             * @throws {Error} - If the network request fails or the server returns an error.
-             */
             async function fetchJson(url, options = {}, button = null) {
-                toggleLoadingState(button, true); // Show loading
+                toggleLoadingState(button, true);
                 try {
                     const response = await fetch(url, options);
                     const data = await response.json();
-
                     if (!response.ok) {
                         const errorMessage = data.error || data.message || `HTTP error! Status: ${response.status}`;
                         throw new Error(errorMessage);
                     }
                     return data;
                 } finally {
-                    toggleLoadingState(button, false); // Hide loading
+                    toggleLoadingState(button, false);
                 }
             }
 
-            // --- Profile Management ---
-
-            /**
-             * Fetches and displays the admin profile data.
-             */
-            async function fetchAdminProfile() {
+            async function fetchAdminProfileForEdit() {
                 try {
-                    const data = await fetchJson(API_ENDPOINTS.PROFILE);
+                    const data = await fetchJson(API_ENDPOINTS.PROFILE + '/view'); // Fetch using the view API
                     DOM.nameInput.value = data.name || '';
                     DOM.emailInput.value = data.email || '';
                     DOM.phoneInput.value = data.phone || '';
-                    // Ensure the profile picture path is correctly handled
                     DOM.profilePicPreview.src = data.profile_pic ? data.profile_pic : DEFAULT_PROFILE_PIC;
-                    clearAlert(DOM.profileMessageDiv); // Clear any stale alerts on load
+                    clearAlert(DOM.profileMessageDiv);
                 } catch (error) {
                     console.error('Error fetching admin profile:', error);
-                    showAlert(DOM.profileMessageDiv, 'danger', `Failed to load profile: ${error.message}`);
+                    showAlert(DOM.profileMessageDiv, 'danger', `Failed to load profile for editing: ${error.message}`);
+                    // Disable forms if loading fails
+                    DOM.profileUpdateForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
+                    DOM.passwordChangeForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
                 }
             }
 
-            /**
-             * Handles the change event for the profile picture input.
-             */
             function handleProfilePicChange() {
                 if (this.files && this.files[0]) {
                     const file = this.files[0];
-                    const maxFileSize = 2 * 1024 * 1024; // 2MB
+                    const maxFileSize = 2 * 1024 * 1024;
 
                     if (file.size > maxFileSize) {
                         showAlert(DOM.profileMessageDiv, 'danger', 'Profile picture size exceeds 2MB limit.');
-                        this.value = ''; // Clear the input
-                        DOM.profilePicPreview.src = DEFAULT_PROFILE_PIC; // Reset preview
+                        this.value = '';
+                        // Do not reset to default here, keep current pic if it was valid, or default if none
+                        // For simplicity, we might re-fetch profile data or keep the old preview
                         return;
                     }
 
@@ -327,17 +278,14 @@
                     reader.onload = (e) => DOM.profilePicPreview.src = e.target.result;
                     reader.readAsDataURL(file);
                 } else {
-                    // If no file is selected (e.g., user cancels dialog), revert to current or default
-                    // This might require storing the original image URL or re-fetching
-                    // For simplicity, we'll revert to default here.
-                    DOM.profilePicPreview.src = DEFAULT_PROFILE_PIC;
+                    // If no new file is selected, the existing one should remain.
+                    // To truly revert to the _original_ picture if user cancels, you'd need to store it.
+                    // For now, if user selects then cancels, the preview might stay as the last valid selection.
+                    // A re-fetch would ensure it goes back to the server's version.
+                    fetchAdminProfileForEdit(); // Re-fetch to reset the preview to the server's current pic
                 }
             }
 
-            /**
-             * Handles the submission of the profile update form.
-             * @param {Event} e - The submit event.
-             */
             async function handleProfileUpdate(e) {
                 e.preventDefault();
                 clearAlert(DOM.profileMessageDiv);
@@ -347,71 +295,52 @@
                     showAlert(DOM.profileMessageDiv, 'danger', 'Please fill in all required fields correctly.');
                     return;
                 }
-                handleValidationFeedback(this, true); // Clear previous invalid states
+                handleValidationFeedback(this, true);
 
                 const formData = new FormData(this);
 
                 try {
-                    const result = await fetchJson(API_ENDPOINTS.PROFILE, {
-                        method: 'PUT', // Use PUT for updates, more RESTful
+                    const result = await fetchJson(API_ENDPOINTS.PROFILE + '/edit', { // Note: using specific edit API
+                        method: 'PUT',
                         body: formData,
                     }, DOM.updateProfileBtn);
                     showAlert(DOM.profileMessageDiv, 'success', result.message || 'Profile updated successfully!');
-                    await fetchAdminProfile(); // Reload profile to reflect changes, especially new pic
+                    await fetchAdminProfileForEdit(); // Reload profile to reflect changes, especially new pic
                 } catch (error) {
                     console.error('Error updating profile:', error);
                     showAlert(DOM.profileMessageDiv, 'danger', `Failed to update profile: ${error.message}`);
                 }
             }
 
-            // --- Password Change ---
-
-            /**
-             * Validates the new password fields (match and strength).
-             * @returns {boolean} - True if passwords are valid, false otherwise.
-             */
             function validatePasswordFields() {
                 const newPassword = DOM.newPasswordInput.value;
                 const confirmNewPassword = DOM.confirmNewPasswordInput.value;
-                // Updated pattern: at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
-                const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+={}\[\]:;<>,.?~\\-]).{8,}$/;
+                const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+=\-{}\[\]:;<>,.?~\\|]).{8,}$/;
 
                 let isValid = true;
 
-                // Reset custom validity states
                 DOM.newPasswordInput.setCustomValidity('');
                 DOM.confirmNewPasswordInput.setCustomValidity('');
 
-                // Check new password strength
                 if (!passwordPattern.test(newPassword)) {
                     DOM.newPasswordInput.setCustomValidity('New password does not meet requirements.');
                     isValid = false;
                 }
 
-                // Check if passwords match
                 if (newPassword !== confirmNewPassword) {
                     DOM.confirmNewPasswordInput.setCustomValidity('Passwords do not match.');
                     isValid = false;
                 }
 
-
-                // Trigger Bootstrap validation display
-                // Note: checkValidity() here will apply native validation,
-                // but we manually setCustomValidity for more specific feedback.
                 DOM.passwordChangeForm.classList.toggle('was-validated', !isValid);
 
-                return isValid && DOM.passwordChangeForm.checkValidity(); // Also check native HTML5 validity
+                return isValid && DOM.passwordChangeForm.checkValidity();
             }
 
-            /**
-             * Handles the submission of the password change form.
-             * @param {Event} e - The submit event.
-             */
             async function handlePasswordChange(e) {
                 e.preventDefault();
                 clearAlert(DOM.passwordMessageDiv);
 
-                // Re-run validation just before submission
                 if (!validatePasswordFields()) {
                     showAlert(DOM.passwordMessageDiv, 'danger', 'Please correct the errors in the password fields.');
                     return;
@@ -427,37 +356,30 @@
                         body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
                     }, DOM.changePasswordBtn);
                     showAlert(DOM.passwordMessageDiv, 'success', result.message || 'Password changed successfully!');
-                    DOM.passwordChangeForm.reset(); // Clear form
-                    handleValidationFeedback(DOM.passwordChangeForm, false); // Reset validation states
+                    DOM.passwordChangeForm.reset();
+                    handleValidationFeedback(DOM.passwordChangeForm, false);
                 } catch (error) {
                     console.error('Error changing password:', error);
                     showAlert(DOM.passwordMessageDiv, 'danger', `Failed to change password: ${error.message}`);
                 }
             }
 
-            // --- Event Listeners and Initialization ---
-
-            /**
-             * Initializes all event listeners for the page.
-             */
             function initializeEventListeners() {
                 DOM.profilePicInput.addEventListener('change', handleProfilePicChange);
                 DOM.profileUpdateForm.addEventListener('submit', handleProfileUpdate);
 
-                // Add real-time validation for password fields
-                DOM.oldPasswordInput.addEventListener('input', () => DOM.passwordChangeForm.checkValidity()); // Simple check
+                DOM.oldPasswordInput.addEventListener('input', () => DOM.passwordChangeForm.checkValidity());
                 DOM.newPasswordInput.addEventListener('input', validatePasswordFields);
                 DOM.confirmNewPasswordInput.addEventListener('input', validatePasswordFields);
                 DOM.passwordChangeForm.addEventListener('submit', handlePasswordChange);
             }
 
-            // Entry point for the script
             document.addEventListener('DOMContentLoaded', () => {
                 initializeEventListeners();
-                fetchAdminProfile(); // Initial data fetch
+                fetchAdminProfileForEdit();
             });
 
-        })(); // End of IIFE
+        })();
     </script>
 </body>
 

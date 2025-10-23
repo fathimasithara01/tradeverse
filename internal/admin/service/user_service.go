@@ -8,8 +8,8 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
-	"unicode"
 
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/auth"
@@ -17,36 +17,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
-
-func IsValidPassword(password string) bool {
-	var (
-		hasUpper   bool
-		hasLower   bool
-		hasNumber  bool
-		hasSpecial bool
-	)
-
-	if len(password) < 8 {
-		return false
-	}
-
-	for _, char := range password {
-		switch {
-		case unicode.IsUpper(char):
-			hasUpper = true
-		case unicode.IsLower(char):
-			hasLower = true
-		case unicode.IsNumber(char):
-			hasNumber = true
-		case unicode.IsPunct(char) || unicode.IsSymbol(char): // Check for punctuation or symbol
-			hasSpecial = true
-		}
-	}
-
-	// You can adjust these conditions based on your exact requirements.
-	// This currently requires ALL conditions to be true.
-	return hasUpper && hasLower && hasNumber && hasSpecial
-}
 
 type CreateUserRequest struct {
 	Name     string `json:"name" binding:"required"`
@@ -74,7 +44,7 @@ type AdminUpdateProfileRequest struct {
 	Name       string                `form:"name"`
 	Email      string                `form:"email"`
 	Phone      string                `form:"phone"`
-	ProfilePic *multipart.FileHeader `form:"profile_pic"` // This is crucial for multipart forms
+	ProfilePic *multipart.FileHeader `form:"profile_pic"`
 }
 
 type IUserService interface {
@@ -115,17 +85,15 @@ func NewUserService(userRepo repository.IUserRepository, roleRepo repository.IRo
 		JWTSecret: jwtSecret,
 	}
 }
-
 func (s *UserService) GetAdminProfile(userID uint) (models.User, error) {
 	user, err := s.UserRepo.GetAdminProfile(userID)
 	if err != nil {
 		return models.User{}, err
 	}
-
+	// Important: Do not send password hash to the client
 	user.Password = ""
 	return user, nil
 }
-
 func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequest) error {
 	const uploadDir = "./static/images/profile_pics"
 
@@ -188,9 +156,86 @@ func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequ
 		log.Printf("[INFO] UpdateAdminProfile: No valid profile picture provided for admin user ID %d. Skipping file upload.", userID)
 	}
 
-	return s.UserRepo.UpdateUser(user)
+	return s.UserRepo.UpdateUser(user) // Pass pointer to UpdateUser
 }
 
+// ChangeAdminPassword changes the password for an admin user.
+func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword string) error {
+	user, err := s.UserRepo.GetUserByID(userID)
+	if err != nil {
+		return errors.New("admin user not found")
+	}
+
+	if user.Role != models.RoleAdmin {
+		return errors.New("access denied: user is not an admin")
+	}
+
+	// Verify old password
+	if !checkPasswordHash(oldPassword, user.Password) { // Use checkPasswordHash
+		return errors.New("current password is incorrect")
+	}
+
+	// Validate new password strength
+	if !IsValidPassword(newPassword) {
+		return errors.New("new password does not meet strength requirements (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)")
+	}
+
+	hashedPassword, err := hashPassword(newPassword) // Use hashPassword
+	if err != nil {
+		return fmt.Errorf("failed to hash new password: %w", err)
+	}
+	user.Password = hashedPassword
+
+	return s.UserRepo.UpdateUser(user) // Pass pointer to UpdateUser
+}
+
+// IsValidPassword checks if a password meets the strength requirements.
+func IsValidPassword(password string) bool {
+	// Minimum 8 characters
+	// At least one uppercase letter
+	// At least one lowercase letter
+	// At least one digit
+	// At least one special character (from common set)
+	var (
+		minLen     = 8
+		hasUpper   = regexp.MustCompile(`[A-Z]`)
+		hasLower   = regexp.MustCompile(`[a-z]`)
+		hasNumber  = regexp.MustCompile(`[0-9]`)
+		hasSpecial = regexp.MustCompile(`[!@#$%^&*()_+=\-{}\[\]:;<>,.?~\\|]`) // Added - and |
+	)
+
+	if len(password) < minLen {
+		return false
+	}
+	if !hasUpper.MatchString(password) {
+		return false
+	}
+	if !hasLower.MatchString(password) {
+		return false
+	}
+	if !hasNumber.MatchString(password) {
+		return false
+	}
+	if !hasSpecial.MatchString(password) {
+		return false
+	}
+
+	return true
+}
+
+// hashPassword hashes a password using bcrypt.
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+// checkPasswordHash compares a plaintext password with a bcrypt hash.
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+// SaveUploadedFile saves a multipart.FileHeader to the specified destination.
 func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
 	if file == nil {
 		return errors.New("cannot save: file header is nil")
@@ -217,45 +262,6 @@ func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
 
 	return nil
 }
-
-func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword string) error {
-	user, err := s.UserRepo.GetUserByID(userID)
-	if err != nil {
-		return errors.New("admin user not found")
-	}
-
-	if user.Role != models.RoleAdmin {
-		return errors.New("access denied: user is not an admin")
-	}
-
-	// Verify old password
-	if !user.CheckPassword(oldPassword) {
-		return errors.New("current password is incorrect")
-	}
-
-	// Validate new password strength
-	if !IsValidPassword(newPassword) {
-		return errors.New("new password does not meet strength requirements (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)")
-	}
-
-	if err := user.SetPassword(newPassword); err != nil {
-		return fmt.Errorf("failed to hash new password: %w", err)
-	}
-
-	return s.UserRepo.UpdateUser(user)
-}
-
-// hashPassword and checkPasswordHash remain unchanged
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
 func (s *UserService) Login(email, password string) (string, models.User, error) {
 	user, err := s.UserRepo.FindByEmail(email)
 	if err != nil {

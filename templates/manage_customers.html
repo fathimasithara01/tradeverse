@@ -11,15 +11,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-      <link rel="stylesheet" href="/static/sidebar.css">
+    <link rel="stylesheet" href="/static/sidebar.css">
 
-      <link rel="stylesheet" href="/static/manage_customers.css">
+    <link rel="stylesheet" href="/static/manage_customers.css">
 
 </head>
 
 <body>
     <div class="wrapper">
-                {{template "admin_sidebar" .}}
+        {{template "admin_sidebar" .}}
 
         </nav>
 
@@ -71,7 +71,7 @@
                             const status = user.is_blocked ? '<span class="badge bg-danger">Blocked</span>' : '<span class="badge bg-success">Active</span>';
                             const row = document.createElement('tr');
 
-                            
+
                             row.innerHTML = `
                         <td>${user.ID}</td>
                         <td>${user.name}</td>

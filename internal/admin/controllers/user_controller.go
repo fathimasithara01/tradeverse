@@ -326,10 +326,13 @@ func (ctrl *UserController) GetUsersForRoleAssignment(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-func (ctrl *UserController) ShowAdminProfilePage(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin_profile.html", gin.H{"Title": "Admin Profile"})
+func (ctrl *UserController) ShowAdminProfileViewPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_profile_view.html", gin.H{"Title": "Admin Profile"})
 }
 
+func (ctrl *UserController) ShowAdminProfileEditPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_profile_edit.html", gin.H{"Title": "Edit Admin Profile"})
+}
 func (ctrl *UserController) GetAdminProfileAPI(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -350,11 +353,13 @@ func (ctrl *UserController) GetAdminProfileAPI(c *gin.Context) {
 		return
 	}
 
+	// Ensure password is never sent in the API response
 	user.Password = ""
 
 	c.JSON(http.StatusOK, user)
 }
 
+// UpdateAdminProfileAPI handles updating the admin profile via API.
 func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -369,6 +374,7 @@ func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 	}
 
 	var req service.AdminUpdateProfileRequest
+	// For multipart/form-data (which includes file uploads), ShouldBind handles it
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request data: %v", err.Error())})
 		return
@@ -376,7 +382,6 @@ func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 
 	if err := ctrl.UserSvc.UpdateAdminProfile(adminID, req); err != nil {
 		log.Printf("[ERROR] UpdateAdminProfileAPI for ID %d: %v", adminID, err)
-		// Propagate the specific error message from the service
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update admin profile: %v", err.Error())})
 		return
 	}
@@ -384,6 +389,7 @@ func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Admin profile updated successfully"})
 }
 
+// ChangeAdminPasswordAPI handles changing the admin password via API.
 func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -399,7 +405,7 @@ func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
 
 	var req struct {
 		OldPassword string `json:"old_password" binding:"required"`
-		NewPassword string `json:"new_password" binding:"required"` // Remove min=8 binding here, let service validate
+		NewPassword string `json:"new_password" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -409,8 +415,7 @@ func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
 
 	if err := ctrl.UserSvc.ChangeAdminPassword(adminID, req.OldPassword, req.NewPassword); err != nil {
 		log.Printf("[ERROR] ChangeAdminPasswordAPI for ID %d: %v", adminID, err)
-		// Return the error message directly from the service validation
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()}) // Use 401 for incorrect password, 500 for other issues
 		return
 	}
 

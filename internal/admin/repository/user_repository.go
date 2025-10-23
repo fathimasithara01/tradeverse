@@ -56,16 +56,14 @@ func NewUserRepository(db *gorm.DB) IUserRepository {
 
 func (r *UserRepository) GetAdminProfile(userID uint) (models.User, error) {
 	var user models.User
-	// Preload RoleModel to get role details if needed
-	err := r.DB.Preload("RoleModel").First(&user, userID).Error
+	err := r.DB.Preload("RoleModel").First(&user, userID).Error // Assuming RoleModel exists and is relevant
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err == gorm.ErrRecordNotFound {
 			return models.User{}, errors.New("admin user not found")
 		}
 		return models.User{}, fmt.Errorf("failed to retrieve admin user: %w", err)
 	}
-	// Defensive check, though ideally the middleware ensures this
-	if user.Role != models.RoleAdmin {
+	if user.Role != models.RoleAdmin { // Assuming RoleAdmin is a constant or enum value
 		return models.User{}, errors.New("user is not an admin")
 	}
 	return user, nil
