@@ -19,6 +19,7 @@ type TraderProfile struct {
 	CompanyName string       `gorm:"size:100" json:"company_name"`
 	Bio         string       `json:"bio"`
 	Status      TraderStatus `gorm:"type:varchar(20);default:'pending';index" json:"status"`
+	Phone       string       `gorm:"size:12" json:"phone"`
 	TotalPnL    float64      `json:"total_pnl"`
 	IsVerified  bool         `gorm:"default:false" json:"is_verified"`
 }

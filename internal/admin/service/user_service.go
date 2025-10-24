@@ -318,8 +318,8 @@ func (s *UserService) UpdateCustomerProfile(userID uint, user models.User, profi
 		existingUser.Email = user.Email
 	}
 
-	if profile.PhoneNumber != "" {
-		existingUser.CustomerProfile.PhoneNumber = profile.PhoneNumber
+	if profile.Phone != "" {
+		existingUser.CustomerProfile.Phone = profile.Phone
 	}
 
 	return s.UserRepo.UpdateUserAndProfile(existingUser)

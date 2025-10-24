@@ -66,6 +66,7 @@ func (ctrl *UserController) CreateTrader(c *gin.Context) {
 	user.Name = c.PostForm("Name")
 	user.Email = c.PostForm("Email")
 	rawPassword := c.PostForm("Password")
+	user.Phone = c.PostForm("Phone")
 
 	if err := user.SetPassword(rawPassword); err != nil {
 		c.HTML(http.StatusInternalServerError, "add_trader.html", gin.H{"error": "Failed to process password."})
@@ -74,6 +75,7 @@ func (ctrl *UserController) CreateTrader(c *gin.Context) {
 
 	profile.CompanyName = c.PostForm("CompanyName")
 	profile.Bio = c.PostForm("Bio")
+	profile.Phone = c.PostForm("Phone")
 
 	if err := ctrl.UserSvc.CreateTraderByAdmin(user, profile); err != nil {
 		c.HTML(http.StatusBadRequest, "add_trader.html", gin.H{"error": err.Error()})
@@ -86,7 +88,7 @@ func (ctrl *UserController) CreateTrader(c *gin.Context) {
 func (ctrl *UserController) CreateCustomer(c *gin.Context) {
 	var user models.User
 	var profile models.CustomerProfile
-	user.Name, user.Email = c.PostForm("Name"), c.PostForm("Email")
+	user.Name, user.Email, user.Phone = c.PostForm("Name"), c.PostForm("Email"), c.PostForm("Phone")
 	rawPassword := c.PostForm("Password")
 
 	if err := user.SetPassword(rawPassword); err != nil {
@@ -94,7 +96,7 @@ func (ctrl *UserController) CreateCustomer(c *gin.Context) {
 		return
 	}
 
-	profile.PhoneNumber = c.PostForm("PhoneNumber")
+	profile.Phone = c.PostForm("Phone")
 
 	if err := ctrl.UserSvc.RegisterCustomer(user, profile); err != nil {
 		c.HTML(http.StatusBadRequest, "add_customer.html", gin.H{"error": err.Error()})
@@ -108,6 +110,7 @@ func (ctrl *UserController) CreateInternalUser(c *gin.Context) {
 	user.Name = c.PostForm("Name")
 	user.Email = c.PostForm("Email")
 	rawPassword := c.PostForm("Password")
+	user.Phone = c.PostForm("Phone")
 
 	if err := user.SetPassword(rawPassword); err != nil {
 		c.HTML(http.StatusInternalServerError, "add_internal_user.html", gin.H{"error": "Failed to process password."})
@@ -138,6 +141,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 	userToUpdate.Name = c.PostForm("Name")
 	userToUpdate.Email = c.PostForm("Email")
 	newPassword := c.PostForm("Password")
+	userToUpdate.Phone = c.PostForm("Phone")
 
 	if newPassword != "" {
 		if err := userToUpdate.SetPassword(newPassword); err != nil {
@@ -154,7 +158,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 
 		}
 		userToUpdate.CustomerProfile.Name = c.PostForm("Name")
-		userToUpdate.CustomerProfile.PhoneNumber = c.PostForm("PhoneNumber")
+		userToUpdate.CustomerProfile.Phone = c.PostForm("PhoneNumber")
 		userToUpdate.CustomerProfile.ShippingAddress = c.PostForm("ShippingAddress")
 	} else if userToUpdate.Role == models.RoleTrader {
 		if userToUpdate.TraderProfile.ID == 0 {

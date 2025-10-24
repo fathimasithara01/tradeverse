@@ -67,7 +67,7 @@ func (ctrl *ProfileController) UpdateProfile(c *gin.Context) {
 		updatedUser.Email = *req.Email
 	}
 	if req.PhoneNumber != nil {
-		updatedProfile.PhoneNumber = *req.PhoneNumber
+		updatedProfile.Phone = *req.PhoneNumber
 	}
 
 	err = ctrl.UserSvc.UpdateCustomerProfile(existingUser.ID, updatedUser, updatedProfile)

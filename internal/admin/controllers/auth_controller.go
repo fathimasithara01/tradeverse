@@ -54,7 +54,7 @@ func (ctrl *AuthController) RegisterCustomer(c *gin.Context) {
 	user.Email = c.PostForm("Email")
 	rawPassword := c.PostForm("Password")
 	confirmPassword := c.PostForm("ConfirmPassword")
-	profile.PhoneNumber = c.PostForm("PhoneNumber")
+	profile.Phone = c.PostForm("PhoneNumber")
 
 	if rawPassword != confirmPassword {
 		c.HTML(http.StatusBadRequest, "register_customer.html", gin.H{"error": "Passwords do not match."})

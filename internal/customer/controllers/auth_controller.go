@@ -41,7 +41,7 @@ func (ctrl *AuthController) Signup(c *gin.Context) {
 	}
 
 	profile := models.CustomerProfile{
-		PhoneNumber: req.PhoneNumber,
+		Phone: req.PhoneNumber,
 	}
 
 	if err := ctrl.UserSvc.RegisterCustomer(user, profile); err != nil {

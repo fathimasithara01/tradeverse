@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/sidebar.css">
+    <link rel="stylesheet" href="/static/sidebar.css">
     <link rel="stylesheet" href="/static/manage_roles.css">
 
 </head>
@@ -36,7 +36,7 @@
                                 <tr>
                                     <th class="ps-4">ID</th>
                                     <th>Name</th>
-                                    <th>Created By</th>
+                                    <th>joined On</th>
                                     <th class="text-end pe-4">Actions</th>
                                 </tr>
                             </thead>
@@ -75,15 +75,19 @@
                         }
 
                         roles.forEach(role => {
+
+                            const startDate = role.CreatedAt
+                                ? new Date(role.CreatedAt).toLocaleDateString('en-IN')
+                                : 'N/A';
                             const row = document.createElement('tr');
 
-                            // Use the 'createdByName' field from our corrected API response.
                             const createdByName = role.createdByName || '<span class="text-muted fst-italic">N/A</span>';
 
                             row.innerHTML = `
                                 <td class="ps-4">${role.ID}</td>
                                 <td><strong>${role.name}</strong></td>
-                                <td>${createdByName}</td>
+                                <td>${startDate}</td>
+
                                 <td class="text-end pe-4">
                                     <a href="/admin/roles/edit/${role.ID}" class="btn btn-sm btn-outline-primary me-2" title="Edit Role">
                                         <i class="fas fa-pencil-alt"></i>
