@@ -35,6 +35,8 @@
                                     <th>ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Start Date</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -67,6 +69,10 @@
                         }
                         traders.forEach(user => {
                             const status = user.is_blocked ? '<span class="badge bg-danger">Blocked</span>' : '<span class="badge bg-success">Active</span>';
+                            const startDate = user.CreatedAt
+                                ? new Date(user.CreatedAt).toLocaleDateString('en-IN')
+                                : 'N/A';
+                           
                             const row = document.createElement('tr');
 
                             // --- THIS IS THE FIX ---
@@ -74,6 +80,9 @@
                         <td>${user.ID}</td>
                         <td>${user.name}</td>
                         <td>${user.email}</td>
+                                                <td>${user.phone}</td>
+                        <td>${startDate}</td>
+
                         <td>${status}</td>
                         <td>
                             <a href="/admin/users/edit/${user.ID}" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-pencil-alt"></i></a>

@@ -38,8 +38,11 @@
                                     <th>ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
+                                    <th>Phone Number</th>
+                                    <th>Start Date</th>
                                     <th>Status</th>
                                     <th>Actions</th>
+
                                 </tr>
                             </thead>
                             <tbody id="customer-table-body">
@@ -69,19 +72,29 @@
                         }
                         customers.forEach(user => {
                             const status = user.is_blocked ? '<span class="badge bg-danger">Blocked</span>' : '<span class="badge bg-success">Active</span>';
+                            const startDate = user.CreatedAt
+                                ? new Date(user.CreatedAt).toLocaleDateString('en-IN')
+                                : 'N/A';
+
                             const row = document.createElement('tr');
 
 
-                            row.innerHTML = `
-                        <td>${user.ID}</td>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${status}</td>
-                        <td>
-                            <a href="/admin/users/edit/${user.ID}" class="btn btn-sm btn-info" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                            <button class="btn btn-sm btn-danger delete-btn" data-id="${user.ID}" title="Delete"><i class="fas fa-trash"></i></button>
-                        </td>
-                    `;
+                             row.innerHTML = `
+                    <td>${user.ID}</td>
+                    <td>${user.name || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>${user.phone || 'N/A'}</td>
+                    <td>${startDate}</td>
+                    <td>${status}</td>
+                    <td>
+                        <a href="/admin/users/edit/${user.ID}" class="btn btn-sm btn-info" title="Edit">
+                            <i class="fas fa-pencil-alt"></i>
+                        </a>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="${user.ID}" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                        `;
                             tableBody.appendChild(row);
                         });
                     });
