@@ -150,3 +150,35 @@
 .profile-pic-label:hover {
     background-color: #e2e6ea;
 }
+
+ /* Optional: Add specific styles for the view page if needed */
+        .profile-info-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .profile-info-value {
+            color: #333;
+            margin-bottom: 1rem;
+            word-wrap: break-word; /* For long emails/names */
+        }
+        .loading-overlay {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            border-radius: .375rem;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
