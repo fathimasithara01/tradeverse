@@ -98,7 +98,7 @@
 
     async function fetchSubscriptions() {
       try {
-        const res = await fetch('/admin/financials/api/subscriptions');
+        const res = await fetch('/admin/api/subscriptions');
         if (!res.ok) {
           const errorText = await res.text();
           throw new Error(`Failed to fetch data: ${res.status} - ${errorText}`);
@@ -189,7 +189,7 @@
 
       try {
         // Corrected endpoint for admin trader status update
-        const res = await fetch(`/admin/financials/api/traders/${userId}/status`, {
+        const res = await fetch(`/admin/api/traders/${userId}/status`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: status })

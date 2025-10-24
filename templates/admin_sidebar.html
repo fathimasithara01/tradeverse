@@ -1,10 +1,11 @@
 {{define "admin_sidebar"}}
+
 <nav id="sidebar">
   <div class="sidebar-header">
     <h3>TradeVerse</h3>
   </div>
 
-  <ul id="sidebar-nav" class="list-unstyled">
+  <ul id="sidebar-nav" class="list-unstyled components">
 
     <li class="nav-heading">Main</li>
     <li class="nav-item {{if eq .ActiveTab "dashboard"}}active{{end}}">
@@ -18,15 +19,14 @@
     <li class="nav-item">
       <a href="#permissionsSubmenu"
          data-bs-toggle="collapse"
-         class="nav-link {{if eq .ActiveTab "permissions"}}active{{end}}"
+         class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "permissions"}}active{{end}}"
          aria-expanded="{{if eq .ActiveTab "permissions"}}true{{else}}false{{end}}">
-        <i class="fas fa-shield-alt"></i>
-        <span>Users & Permissions</span>
+        <div><i class="fas fa-shield-alt"></i> <span>Users & Permissions</span></div>
         <i class="fas fa-chevron-right collapse-arrow"></i>
       </a>
 
       <ul class="collapse list-unstyled {{if eq .ActiveTab "permissions"}}show{{end}}" id="permissionsSubmenu">
-        <li class="nav-item"><a href="/admin/users/all" class="nav-link {{if eq .ActiveSubTab "manage_users"}}active{{end}}">Manage User</a></li>
+        <li class="nav-item"><a href="/admin/users/all" class="nav-link {{if eq .ActiveSubTab "manage_users"}}active{{end}}">Manage Users</a></li>
         <li class="nav-item"><a href="/admin/roles" class="nav-link {{if eq .ActiveSubTab "manage_roles"}}active{{end}}">Manage Roles</a></li>
         <li class="nav-item"><a href="/admin/roles/permissions" class="nav-link {{if eq .ActiveSubTab "assign_permissions"}}active{{end}}">Assign Permissions</a></li>
         <li class="nav-item"><a href="/admin/users/assign-role" class="nav-link {{if eq .ActiveSubTab "assign_role_to_users"}}active{{end}}">Assign Role to Users</a></li>
@@ -36,10 +36,9 @@
     <li class="nav-item">
       <a href="#customerSubmenu"
          data-bs-toggle="collapse"
-         class="nav-link {{if eq .ActiveTab "customer"}}active{{end}}"
+         class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "customer"}}active{{end}}"
          aria-expanded="{{if eq .ActiveTab "customer"}}true{{else}}false{{end}}">
-        <i class="fas fa-users"></i>
-        <span>Customer Management</span>
+        <div><i class="fas fa-users"></i> <span>Customer Management</span></div>
         <i class="fas fa-chevron-right collapse-arrow"></i>
       </a>
 
@@ -51,10 +50,9 @@
     <li class="nav-item">
       <a href="#traderSubmenu"
          data-bs-toggle="collapse"
-         class="nav-link {{if eq .ActiveTab "trader"}}active{{end}}"
+         class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "trader"}}active{{end}}"
          aria-expanded="{{if eq .ActiveTab "trader"}}true{{else}}false{{end}}">
-        <i class="fas fa-user-tie"></i>
-        <span>Trader Management</span>
+        <div><i class="fas fa-user-tie"></i> <span>Trader Management</span></div>
         <i class="fas fa-chevron-right collapse-arrow"></i>
       </a>
 
@@ -71,29 +69,61 @@
       </a>
     </li>
 
+    <li class="nav-heading">Subscriptions</li>
+
     <li class="nav-item">
       <a href="#subscriptionSubmenu"
          data-bs-toggle="collapse"
-         class="nav-link {{if eq .ActiveTab "subscription"}}active{{end}}"
+         class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "subscription"}}active{{end}}"
          aria-expanded="{{if eq .ActiveTab "subscription"}}true{{else}}false{{end}}">
-        <i class="fas fa-wallet"></i>
-        <span>Upgrade Subscription</span>
+        <div><i class="fas fa-dollar-sign"></i>
+           <span>Upgrade Subscription</span>
+          </div>
         <i class="fas fa-chevron-right collapse-arrow"></i>
       </a>
-
       <ul class="collapse list-unstyled {{if eq .ActiveTab "subscription"}}show{{end}}" id="subscriptionSubmenu">
-        <li class="nav-item {{if eq .ActiveSubTab "subscriptions"}}active{{end}}"><a href="/admin/financials/subscriptions" class="nav-link">Subscriptions</a></li>
-        <li class="nav-item {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}"><a href="/admin/financials/subscription-plans" class="nav-link">Subscription Plans</a></li>
+        <li class="nav-item"><a href="/admin/subscriptions" class="nav-link {{if eq .ActiveSubTab "subscriptions"}}active{{end}}">Subscriptions</a></li>
+        <li class="nav-item"><a href="/admin/subscription-plans" class="nav-link {{if eq .ActiveSubTab "subscription_plans"}}active{{end}}">Subscription Plans</a></li>
       </ul>
     </li>
 
     <li class="nav-item">
+      <a href="#signalSubscriptionSubmenu"
+         data-bs-toggle="collapse"
+         class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "signal_subscription"}}active{{end}}"
+         aria-expanded="{{if eq .ActiveTab "signal_subscription"}}true{{else}}false{{end}}">
+        <div><i class="fas fa-wifi"></i> <span>signal-cards Subscription</span></div>
+        <i class="fas fa-chevron-right collapse-arrow"></i>
+      </a>
+      <ul class="collapse list-unstyled {{if eq .ActiveTab "signal_subscription"}}show{{end}}" id="signalSubscriptionSubmenu">
+        <li class="nav-item"><a href="/admin/signal-subscriptions/customers" class="nav-link {{if eq .ActiveSubTab "signal_customers_list"}}active{{end}}">Customer Signal Subscriptions</a></li>
+         <li class="nav-item"><a href="/admin/signal-subscriptions/plans" class="nav-link {{if eq .ActiveSubTab "signal_subscription_plans"}}active{{end}}">Signal Subscription Plans</a></li>
+      </ul>
+    </li>
+
+    <li class="nav-item">
+      <a href="#traderSignalPriceSubmenu"
+         data-bs-toggle="collapse"
+         class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "trader_signal_price_role"}}active{{end}}"
+         aria-expanded="{{if eq .ActiveTab "trader_signal_price_role"}}true{{else}}false{{end}}">
+        <div><i class="fas fa-tags"></i> <span>Trader Price-Role</span></div>
+        <i class="fas fa-chevron-right collapse-arrow"></i>
+      </a>
+
+      <ul class="collapse list-unstyled {{if eq .ActiveTab "trader_signal_price_role"}}show{{end}}" id="traderSignalPriceSubmenu">
+        <li class="nav-item"><a href="/admin/traders/signal-price-roles" class="nav-link {{if eq .ActiveSubTab "manage_signal_price_roles"}}active{{end}}">Manage Price Roles</a></li>
+        <li class="nav-item"><a href="/admin/traders/assign-signal-price-role" class="nav-link {{if eq .ActiveSubTab "assign_signal_price_role"}}active{{end}}">Assign Role to Traders</a></li>
+      </ul>
+    </li>
+
+    <li class="nav-heading">Financials</li>
+
+    <li class="nav-item">
       <a href="#financialsSubmenu"
          data-bs-toggle="collapse"
-         class="nav-link {{if eq .ActiveTab "financials"}}active{{end}}"
+         class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "financials"}}active{{end}}"
          aria-expanded="{{if eq .ActiveTab "financials"}}true{{else}}false{{end}}">
-        <i class="fas fa-wallet"></i>
-        <span>Financials</span>
+        <div><i class="fas fa-wallet"></i> <span>Financials</span></div>
         <i class="fas fa-chevron-right collapse-arrow"></i>
       </a>
 
@@ -103,9 +133,9 @@
       </ul>
     </li>
 
-    <li class="nav-item">
-      <a href="/admin/profile/view" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-        <i class="fas fa-user-circle me-2"></i> Admin Profile
+    <li class="nav-item {{if eq .ActiveTab "admin_profile"}}active{{end}}">
+      <a href="/admin/profile/view" class="nav-link">
+        <i class="fas fa-user-circle"></i> Admin Profile
       </a>
     </li>
 
@@ -116,4 +146,6 @@
 
   </ul>
 </nav>
+
+
 {{end}}

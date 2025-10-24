@@ -82,7 +82,7 @@
         // Load existing plan data
         async function loadPlan() {
             try {
-                const res = await fetch(`/admin/financials/api/subscription-plans/${planId}`);
+                const res = await fetch(`/admin/api/subscription-plans/${planId}`);
                 if (!res.ok) throw new Error("Failed to load plan");
                 const plan = await res.json();
 
@@ -123,7 +123,7 @@
             };
 
             try {
-                const res = await fetch(`/admin/financials/api/subscription-plans/${planId}`, {
+                const res = await fetch(`/admin/api/subscription-plans/${planId}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(updatedPlan)
@@ -131,7 +131,7 @@
                 if (!res.ok) throw new Error("Failed to update plan");
 
                 alert("Plan updated successfully!");
-                window.location.href = "/admin/financials/subscription-plans";
+                window.location.href = "/admin/subscription-plans";
             } catch (err) {
                 alert(err.message);
             }
