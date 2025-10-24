@@ -62,17 +62,6 @@ func (r *TraderSubscriptionRepository) CreateTraderSubscriptionPlan(ctx context.
 	return plan, nil
 }
 
-// func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSubscriptionPlan, error) {
-// 	var plan models.TraderSubscriptionPlan
-// 	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {
-// 		if err == gorm.ErrRecordNotFound {
-// 			return nil, fmt.Errorf("trader subscription plan not found")
-// 		}
-// 		return nil, fmt.Errorf("failed to get trader subscription plan: %w", err)
-// 	}
-// 	return &plan, nil
-// }
-
 func (r *TraderSubscriptionRepository) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error) {
 	var plan models.TraderSignalSubscriptionPlan
 	if err := r.db.WithContext(ctx).First(&plan, planID).Error; err != nil {

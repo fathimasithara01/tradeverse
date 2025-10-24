@@ -49,7 +49,7 @@ func SetupRouter(
 		protected.GET("/trader/live", liveCtrl.GetActiveTrades)
 
 		protected.POST("/signals", tradeSignlCntrl.CreateSignal)
-		protected.GET("/signals", tradeSignlCntrl.GetAllSignals) // Or GetSignalsByTraderID
+		protected.GET("/signals", tradeSignlCntrl.GetAllSignals)
 		protected.GET("/signals/:id", tradeSignlCntrl.GetSignalByID)
 		protected.PUT("/signals/:id", tradeSignlCntrl.UpdateSignal)
 		protected.DELETE("/signals/:id", tradeSignlCntrl.DeleteSignal)

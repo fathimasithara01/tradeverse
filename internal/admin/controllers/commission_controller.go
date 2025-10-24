@@ -55,8 +55,6 @@ func (ctrl *CommissionController) UpdateCommissionSettings(c *gin.Context) {
 		return
 	}
 
-	// Assuming admin user ID is available in context after authentication
-	// For now, let's hardcode or get from a placeholder until auth is integrated
 	adminID := c.MustGet("userID").(uint) // Assuming your auth middleware sets userID
 
 	response, err := ctrl.CommissionService.SetPlatformCommissionPercentage(adminID, payload.CommissionPercentage)

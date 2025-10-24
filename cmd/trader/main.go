@@ -2,29 +2,31 @@ package main
 
 import (
 	"log"
-	"time"
+	"strings"
 
+	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/internal/admin/bootstrap"
-	"github.com/gin-contrib/cors"
 )
 
 func main() {
+	// Initialize the application
 	app, err := bootstrap.InitializeApp()
 	if err != nil {
-		log.Fatalf("failed to initialize application: %v", err)
+		log.Fatalf("❌ Failed to initialize application: %v", err)
 	}
 
-	// Apply CORS middleware to the Gin engine
-	app.Engine().Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // or list specific origins like {"https://example.com"}
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	// Get trader port from config
+	port := config.AppConfig.Server.TraderPort
 
-	if err := app.Run(); err != nil {
-		log.Fatalf("server stopped with error: %v", err)
+	// Ensure port starts with ":" (required by Gin)
+	if !strings.HasPrefix(port, ":") {
+		port = ":" + port
+	}
+
+	log.Printf("🚀 Trader service running on %s", port)
+
+	// Start the server
+	if err := app.Engine().Run(port); err != nil {
+		log.Fatalf("💥 Server stopped with error: %v", err)
 	}
 }

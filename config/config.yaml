@@ -7,7 +7,7 @@ admin:
   user_id: 1
   email: admin@gmail.com
   password: admin
-  commission: 10
+  # commission: 10
 
 server:
   admin_port: 8080

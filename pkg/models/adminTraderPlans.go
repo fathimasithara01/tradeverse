@@ -27,3 +27,14 @@ type AdminTraderSubscriptionPlan struct {
 
 	IsUpgradeToTrader bool `gorm:"default:false" json:"is_upgrade_to_trader"`
 }
+
+// type AdminTraderSubscriptionPlan struct {
+// 	gorm.Model
+// 	Name              string  `gorm:"size:255;not null" json:"name"`
+// 	Description       string  `gorm:"type:text" json:"description"`
+// 	Price             float64 `gorm:"type:numeric(18,4);not null" json:"price"`
+// 	Currency          string  `gorm:"size:10;not null" json:"currency"`
+// 	Duration          uint    `gorm:"not null" json:"duration_days"` // Duration in days
+// 	IsActive          bool    `gorm:"default:true" json:"is_active"`
+// 	IsUpgradeToTrader bool    `gorm:"default:false" json:"is_upgrade_to_trader"`
+// }

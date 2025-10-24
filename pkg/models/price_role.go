@@ -9,7 +9,7 @@ import (
 type CommissionSetting struct {
 	gorm.Model
 	Key         string    `gorm:"uniqueIndex;not null;size:50" json:"key"`
-	Value       float64   `gorm:"type:numeric(5,2);not null" json:"value"` // e.g., 10.50 for 10.50%
+	Value       float64   `gorm:"type:numeric(5,2);not null" json:"value"`
 	Description string    `gorm:"type:text" json:"description,omitempty"`
 	LastUpdated time.Time `gorm:"autoUpdateTime" json:"last_updated"`
 	UpdatedBy   uint      `json:"updated_by,omitempty"`

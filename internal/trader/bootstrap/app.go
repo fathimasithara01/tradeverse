@@ -34,7 +34,10 @@ func InitializeApp() (*App, error) {
 
 	userRepo := adminRepo.NewUserRepository(db)
 	roleRepo := adminRepo.NewRoleRepository(db)
+	commissionRepo := adminRepo.NewCommissionRepository(db)
+
 	userService := adminService.NewUserService(userRepo, roleRepo, cfg.JWT.Secret)
+	commissionService := adminService.NewCommissionService(commissionRepo, db)
 
 	authController := controllers.NewAuthController(userService)
 
@@ -50,7 +53,7 @@ func InitializeApp() (*App, error) {
 	profileService := service.NewTraderProfileService(profileRepo)
 	walletService := service.NewWalletService(walletrepo)
 	tradeSignlService := service.NewSignalService(tradeSignlRepo)
-	traderSubsService := service.NewTraderSubscriptionService(traderSubsRepo, db)
+	traderSubsService := service.NewTraderSubscriptionService(traderSubsRepo, db, commissionService)
 
 	subController := controllers.NewSubscriberController(subService)
 	liveController := controllers.NewLiveTradeController(liveService)

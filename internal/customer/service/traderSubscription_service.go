@@ -23,7 +23,7 @@ type ICustomerTraderSignalSubscriptionService interface {
 
 type CustomerTraderSignalSubscriptionService struct {
 	repo customerrepo.ICustomerTraderSignalSubscriptionRepository
-	db   *gorm.DB // Pass the DB instance for transactions
+	db   *gorm.DB 
 }
 
 func NewCustomerTraderSignalSubscriptionService(repo customerrepo.ICustomerTraderSignalSubscriptionRepository, db *gorm.DB) ICustomerTraderSignalSubscriptionService {
@@ -51,7 +51,6 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		return fmt.Errorf("trader subscription plan is not active")
 	}
 
-	// Check if customer is already subscribed to this plan
 	isSubscribed, err := s.repo.IsCustomerSubscribedToPlan(ctx, customerID, plan.ID)
 	if err != nil {
 		return fmt.Errorf("failed to check existing subscription: %w", err)
@@ -60,7 +59,6 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		return fmt.Errorf("you are already subscribed to this plan")
 	}
 
-	// Start a database transaction
 	tx := s.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return fmt.Errorf("failed to begin transaction: %w", tx.Error)

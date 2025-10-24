@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service" // Import the admin service
 	"github.com/fathimasithara01/tradeverse/internal/trader/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
@@ -24,12 +25,19 @@ type ITraderSubscriptionService interface {
 }
 
 type TraderSubscriptionService struct {
-	repo repository.ITraderSubscriptionRepository
-	db   *gorm.DB // For transactions
+	repo              repository.ITraderSubscriptionRepository
+	db                *gorm.DB
+	commissionService adminService.ICommissionService // Added commission service
 }
 
-func NewTraderSubscriptionService(repo repository.ITraderSubscriptionRepository, db *gorm.DB) ITraderSubscriptionService {
-	return &TraderSubscriptionService{repo: repo, db: db}
+// NewTraderSubscriptionService creates a new instance of TraderSubscriptionService.
+// It now accepts the ICommissionService.
+func NewTraderSubscriptionService(repo repository.ITraderSubscriptionRepository, db *gorm.DB, cs adminService.ICommissionService) ITraderSubscriptionService {
+	return &TraderSubscriptionService{
+		repo:              repo,
+		db:                db,
+		commissionService: cs, // Inject the commission service
+	}
 }
 
 func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Context, traderID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSignalSubscriptionPlan, error) {
@@ -42,9 +50,17 @@ func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Con
 		return nil, fmt.Errorf("user is not a trader and cannot create subscription plans")
 	}
 
-	traderShareAmount := input.Price * (1 - (input.AdminCommissionPercentage / 100.0))
+	// --- FETCH GLOBAL ADMIN COMMISSION ---
+	commissionSetting, err := s.commissionService.GetPlatformCommissionPercentage()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get platform commission percentage: %w", err)
+	}
+	adminCommissionPercentage := commissionSetting.CommissionPercentage
+	// --- END FETCH ---
+
+	traderShareAmount := input.Price * (1 - (adminCommissionPercentage / 100.0))
 	if traderShareAmount < 0 {
-		traderShareAmount = 0 // Ensure it doesn't go negative
+		traderShareAmount = 0
 	}
 
 	plan := &models.TraderSignalSubscriptionPlan{
@@ -54,28 +70,26 @@ func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Con
 		Price:           input.Price,
 		Currency:        input.Currency,
 		DurationDays:    input.DurationDays,
-		IsActive:        true, // Default to active upon creation
-		AdminCommission: input.AdminCommissionPercentage,
-		// --- SET THE NEW FIELD ---
-		TraderShare: traderShareAmount,
-		// --- END SET ---
+		IsActive:        true,                      // Default to active upon creation
+		AdminCommission: adminCommissionPercentage, // Use fetched global commission
+		TraderShare:     traderShareAmount,
 	}
 
 	return s.repo.CreateTraderSubscriptionPlan(ctx, plan)
 }
+
 func (s *TraderSubscriptionService) GetTraderSubscriptionPlanByID(ctx context.Context, planID uint) (*models.TraderSignalSubscriptionPlan, error) {
 	return s.repo.GetTraderSubscriptionPlanByID(ctx, planID)
 }
 
 func (s *TraderSubscriptionService) GetMyTraderSubscriptionPlans(ctx context.Context, traderID uint) ([]models.TraderSignalSubscriptionPlan, error) {
-	// This method needs to query the repository for plans belonging to this traderID
-	// For example:
-	plans, err := s.repo.GetTraderSubscriptionPlansByTraderID(ctx, traderID) // <--- This repository method is key
+	plans, err := s.repo.GetTraderSubscriptionPlansByTraderID(ctx, traderID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trader subscription plans for trader %d: %w", traderID, err)
 	}
 	return plans, nil
 }
+
 func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Context, traderID uint, planID uint, input models.CreateTraderSubscriptionPlanInput) (*models.TraderSignalSubscriptionPlan, error) {
 	existingPlan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, planID)
 	if err != nil {
@@ -86,13 +100,28 @@ func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Con
 		return nil, fmt.Errorf("unauthorized: plan does not belong to this trader")
 	}
 
+	// --- RECALCULATE ADMIN COMMISSION AND TRADER SHARE FOR UPDATED PLANS ---
+	// If you want the admin commission to always reflect the current global setting
+	// when a plan is updated, even if it was created with a different setting previously.
+	commissionSetting, err := s.commissionService.GetPlatformCommissionPercentage()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get platform commission percentage for update: %w", err)
+	}
+	adminCommissionPercentage := commissionSetting.CommissionPercentage
+
+	traderShareAmount := input.Price * (1 - (adminCommissionPercentage / 100.0))
+	if traderShareAmount < 0 {
+		traderShareAmount = 0
+	}
+	// --- END RECALCULATION ---
+
 	existingPlan.Name = input.Name
 	existingPlan.Description = input.Description
 	existingPlan.Price = input.Price
 	existingPlan.Currency = input.Currency
 	existingPlan.DurationDays = input.DurationDays
-	existingPlan.AdminCommission = input.AdminCommissionPercentage
-	// Optionally update IsActive, but generally controlled by a separate endpoint
+	existingPlan.AdminCommission = adminCommissionPercentage // Update to current global commission
+	existingPlan.TraderShare = traderShareAmount             // Update trader share based on new price and commission
 
 	if err := s.repo.UpdateTraderSubscriptionPlan(ctx, existingPlan); err != nil {
 		return nil, err
@@ -159,7 +188,8 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 	}
 	customerBalanceAfter := customerWallet.Balance - plan.Price
 
-	// Calculate commission and actual amount for trader
+	// Use the commission rate stored WITH THE PLAN at the time of its creation/last update
+	// This ensures historical accuracy and stability even if admin changes global commission later
 	adminCommissionAmount := plan.Price * (plan.AdminCommission / 100.0)
 	traderReceiveAmount := plan.Price - adminCommissionAmount
 
@@ -260,7 +290,12 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		StartDate:                startDate,
 		EndDate:                  endDate,
 		IsActive:                 true,
-		TransactionID:            customerTx.ID,
+		WalletTransactionID:      &customerTx.ID, // Link to the customer's wallet transaction
+		// PaymentStatus:            models.TxStatusSuccess,
+		AmountPaid:             plan.Price,
+		TraderShare:            traderReceiveAmount,
+		AdminCommission:        plan.AdminCommission, // Store the actual commission used
+		TransactionReferenceID: customerTx.TransactionID,
 	}
 
 	if err := s.repo.CreateCustomerTraderSubscription(ctx, customerTraderSubscription); err != nil {
