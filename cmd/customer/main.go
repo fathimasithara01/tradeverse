@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/config"
-	"github.com/fathimasithara01/tradeverse/internal/admin/bootstrap"
+	"github.com/fathimasithara01/tradeverse/internal/customer/bootstrap"
 	"github.com/gin-contrib/cors"
 )
 

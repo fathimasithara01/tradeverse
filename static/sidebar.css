@@ -171,9 +171,7 @@ body {
     letter-spacing: .5px;
     margin-top: var(--spacing-md);
     margin-bottom: var(--spacing-xs);
-        color: #dc3545;
-
-
+        color:#1a7f37;
 }
 
 #sidebar-nav .nav-item a {

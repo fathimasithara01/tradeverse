@@ -73,6 +73,6 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("unable to decode config: %w", err)
 	}
 
-	log.Printf("Loaded configuration for environment: %s", AppConfig.App.Env)
+	log.Printf("✅ Loaded configuration for environment: %s", AppConfig.App.Env)
 	return &AppConfig, nil
 }
