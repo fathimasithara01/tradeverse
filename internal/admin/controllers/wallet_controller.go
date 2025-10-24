@@ -34,6 +34,14 @@ func (ctrl *AdminWalletController) ShowAdminWalletPage(c *gin.Context) {
 	})
 	fmt.Println("Finished rendering admin_wallet.html (if no error occurred)")
 }
+func (ctrl *AdminWalletController) ShowAdminWalletTransactionPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin_wallet_transactions.html", gin.H{
+		"Title":        "Admin Wallet Transaction",
+		"ActiveTab":    "financials",
+		"ActiveSubTab": "admin_wallet_transactions",
+	})
+	fmt.Println("Finished rendering admin_wallet.html (if no error occurred)")
+}
 
 func (ctrl *AdminWalletController) AdminGetAllPlatformTransactions(c *gin.Context) {
 	var pagination models.PaginationParams

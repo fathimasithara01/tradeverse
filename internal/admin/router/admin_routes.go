@@ -133,6 +133,8 @@ func WireAdminRoutes(
 				protected.POST("/api/settings/commission", commissionCtrl.UpdateCommissionSettings)
 
 				protected.GET("/financials/wallet", adminWalletController.ShowAdminWalletPage)
+				protected.GET("/financials/wallet/transactions", adminWalletController.ShowAdminWalletTransactionPage)
+
 				protected.GET("/financials/api/wallet/summary", adminWalletController.GetAdminWalletSummary)
 				protected.POST("/financials/api/wallet/deposit", adminWalletController.AdminInitiateDeposit)
 				protected.POST("/financials/api/wallet/deposit/:deposit_id/verify", adminWalletController.AdminVerifyDeposit)
