@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/sidebar.css">
-      <link rel="stylesheet" href="/static/admin_subscriptions.css">
+  <link rel="stylesheet" href="/static/admin_subscriptions.css">
 
 </head>
 
@@ -28,7 +28,7 @@
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover text-center align-middle mb-0">
-              <thead class="text-white"> 
+              <thead class="text-white">
                 <tr>
                   <th>ID</th>
                   <th>Customer Name</th>
@@ -38,7 +38,6 @@
                   <th>Subscription Status</th>
                   <th>Start Date</th>
                   <th>End Date</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="subscriptions-table">
@@ -115,12 +114,13 @@
 
         subscriptions.forEach(sub => {
           const customerName = sub.user?.name || 'N/A';
+          const traderName = sub.user?.name || 'N/A';
           const planName = sub.subscription_plan?.name || 'N/A';
           // Determine subscription status more robustly
           const subscriptionStatus = sub.is_active ? 'active' : (sub.payment_status || 'inactive');
 
           const isTrader = sub.user?.trader_profile && sub.user.trader_profile.user_id !== 0;
-          const traderName = isTrader ? (sub.user.trader_profile.trader_name || 'N/A') : 'N/A';
+          // const traderName = isTrader ? (sub.user.trader_profile.trader_name || 'N/A') : 'N/A';
           const traderProfileStatus = isTrader ? sub.user.trader_profile.status : null;
           const traderStatusDisplay = isTrader
             ? getStatusBadge(traderProfileStatus)
@@ -173,8 +173,7 @@
               <td>${getStatusBadge(subscriptionStatus)}</td>
               <td>${new Date(sub.start_date).toLocaleDateString()}</td>
               <td>${new Date(sub.end_date).toLocaleDateString()}</td>
-              <td>${actionsHtml}</td>
-            </tr>`;
+          </tr>`;
           tableBody.innerHTML += row;
         });
       } catch (err) {
