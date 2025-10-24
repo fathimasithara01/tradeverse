@@ -10,6 +10,7 @@ import (
 	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
+	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/internal/admin/router"
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
@@ -54,6 +55,7 @@ func InitializeApp() (*App, error) {
 	adminAdminWalletRepo := adminRepo.NewAdminWalletRepository(DB)
 	adminSignalRepo := adminRepo.NewSignalRepository(DB)
 	adminTransactionRepo := adminRepo.NewTransactionRepository(DB)
+	commissionRepo := repository.NewCommissionRepository(DB)
 
 	// Admin Services
 	adminUserService := adminService.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWT.Secret)
@@ -67,6 +69,7 @@ func InitializeApp() (*App, error) {
 	adminLiveSignalService := adminService.NewLiveSignalService(adminSignalRepo)
 	adminTransactionService := adminService.NewTransactionService(adminTransactionRepo)
 	marketDataService := service.NewMarketDataService()
+	commissionService := service.NewCommissionService(commissionRepo, DB)
 
 	// Admin Controllers
 	adminAuthController := controllers.NewAuthController(adminUserService)
@@ -79,6 +82,7 @@ func InitializeApp() (*App, error) {
 	adminSubscriptionController := controllers.NewSubscriptionController(adminSubscriptionService, adminSubscriptionPlanService)
 	adminSignalController := controllers.NewSignalController(adminLiveSignalService)
 	adminTransactionController := controllers.NewTransactionController(adminTransactionService)
+	commissionController := controllers.NewCommissionController(commissionService)
 
 	var customerAdminUpgradeSubscriptionService cusSvc.CustomerSubscriptionService
 	_ = customerAdminUpgradeSubscriptionService
@@ -136,6 +140,7 @@ func InitializeApp() (*App, error) {
 		adminTransactionController,
 		DB,
 		adminSignalController,
+		commissionController,
 	)
 
 	cron.StartCronJobs(adminSubscriptionService, customerAdminUpgradeSubscriptionService, adminLiveSignalService, DB)

@@ -24,6 +24,7 @@ func WireAdminRoutes(
 	tranasactionController *controllers.TransactionController,
 	db *gorm.DB,
 	signalCtrl *controllers.SignalController,
+	commissionCtrl *controllers.CommissionController,
 
 ) {
 	authz := middleware.NewAuthzMiddleware(roleService)
@@ -126,6 +127,10 @@ func WireAdminRoutes(
 				protected.DELETE("/api/subscription-plans/:id", subscriptionController.DeleteSubscriptionPlan)
 				protected.GET("/api/subscription-plans/:id", subscriptionController.GetSubscriptionPlanByID)
 				protected.PUT("/api/traders/:id/status", subscriptionController.UpdateTraderStatus)
+
+				protected.GET("/settings/commission", commissionCtrl.ShowCommissionSettingsPage)
+				protected.GET("/api/settings/commission", commissionCtrl.GetCommissionSettings)
+				protected.POST("/api/settings/commission", commissionCtrl.UpdateCommissionSettings)
 
 				protected.GET("/financials/wallet", adminWalletController.ShowAdminWalletPage)
 				protected.GET("/financials/api/wallet/summary", adminWalletController.GetAdminWalletSummary)

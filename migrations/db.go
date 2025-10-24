@@ -53,9 +53,8 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		&models.KYCDocument{},
 		&models.UserKYCStatus{},
 
-		&models.TraderPerformance{}, // Depends on User (TraderID)
-		// &models.Notification{},      // Depends on User
-		// &models.Referral{},          // Depends on User (ReferrerID, RefereeID)
+		&models.TraderPerformance{},
+		&models.CommissionSetting{},
 	)
 	if err != nil {
 		log.Printf("DATABASE MIGRATION ERROR (Step 1): %v", err)
