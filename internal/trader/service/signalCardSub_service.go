@@ -42,8 +42,6 @@ func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Con
 		return nil, fmt.Errorf("user is not a trader and cannot create subscription plans")
 	}
 
-	// Calculate trader_share based on price and commission
-	// TraderShare = Price - (Price * AdminCommissionPercentage / 100)
 	traderShareAmount := input.Price * (1 - (input.AdminCommissionPercentage / 100.0))
 	if traderShareAmount < 0 {
 		traderShareAmount = 0 // Ensure it doesn't go negative

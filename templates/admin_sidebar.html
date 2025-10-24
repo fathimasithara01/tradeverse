@@ -5,7 +5,7 @@
     <h3>TradeVerse</h3>
   </div>
 
-  <ul id="sidebar-nav" class="list-unstyled components">
+  <ul id="sidebar-nav" class="list-unstyled components">  
 
     <li class="nav-heading">Main</li>
     <li class="nav-item {{if eq .ActiveTab "dashboard"}}active{{end}}">
@@ -95,13 +95,13 @@
         <div><i class="fas fa-wifi"></i> <span>signal-cards Subscription</span></div>
         <i class="fas fa-chevron-right collapse-arrow"></i>
       </a>
-      <ul class="collapse list-unstyled {{if eq .ActiveTab "signal_subscription"}}show{{end}}" id="signalSubscriptionSubmenu">
-        <li class="nav-item"><a href="/admin/signal-subscriptions/customers" class="nav-link {{if eq .ActiveSubTab "signal_customers_list"}}active{{end}}">Customer Signal Subscriptions</a></li>
-         <li class="nav-item"><a href="/admin/signal-subscriptions/plans" class="nav-link {{if eq .ActiveSubTab "signal_subscription_plans"}}active{{end}}">Signal Subscription Plans</a></li>
-      </ul>
+     
     </li>
 
-    <li class="nav-item">
+    <li class="nav-heading">Financials</li>
+
+    
+     <li class="nav-item">
       <a href="#traderSignalPriceSubmenu"
          data-bs-toggle="collapse"
          class="nav-link d-flex justify-content-between align-items-center {{if eq .ActiveTab "trader_signal_price_role"}}active{{end}}"
@@ -109,14 +109,10 @@
         <div><i class="fas fa-tags"></i> <span>Trader Price-Role</span></div>
         <i class="fas fa-chevron-right collapse-arrow"></i>
       </a>
-
       <ul class="collapse list-unstyled {{if eq .ActiveTab "trader_signal_price_role"}}show{{end}}" id="traderSignalPriceSubmenu">
         <li class="nav-item"><a href="/admin/traders/signal-price-roles" class="nav-link {{if eq .ActiveSubTab "manage_signal_price_roles"}}active{{end}}">Manage Price Roles</a></li>
-        <li class="nav-item"><a href="/admin/traders/assign-signal-price-role" class="nav-link {{if eq .ActiveSubTab "assign_signal_price_role"}}active{{end}}">Assign Role to Traders</a></li>
       </ul>
     </li>
-
-    <li class="nav-heading">Financials</li>
 
     <li class="nav-item">
       <a href="#financialsSubmenu"
@@ -132,6 +128,7 @@
         <li class="nav-item {{if eq .ActiveSubTab "transactions"}}active{{end}}"><a href="/admin/transactions" class="nav-link">Transactions</a></li>
       </ul>
     </li>
+
 
     <li class="nav-item {{if eq .ActiveTab "admin_profile"}}active{{end}}">
       <a href="/admin/profile/view" class="nav-link">
