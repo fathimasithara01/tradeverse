@@ -56,7 +56,6 @@ func (s *walletService) DebitUserWallet(userID uint, amount float64, currency, d
 	// ✅ Find wallet
 	err := s.db.Where("user_id = ?", userID).First(&wallet).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		// ✅ Create wallet automatically if missing
 		wallet = models.Wallet{
 			UserID:   userID,
 			Balance:  0,
