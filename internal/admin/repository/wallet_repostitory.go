@@ -46,47 +46,45 @@ func (r *AdminWalletRepository) GetAllCustomerTransactions(pagination models.Pag
 	var totalCount int64
 	var displayTransactions []models.AdminTransactionDisplayDTO
 
-	// Use Preload("User") assuming the User relation is correctly defined in WalletTransaction model
-	query := r.DB.Preload("User").
+	query := r.DB.
+		Preload("User").
 		Joins("LEFT JOIN users ON wallet_transactions.user_id = users.id").
 		Where("users.role = ?", models.RoleCustomer).
 		Order("wallet_transactions.created_at DESC")
 
-	if pagination.SearchQuery != "" {
-		searchLike := "%" + pagination.SearchQuery + "%"
-		query = query.Where(
-			"wallet_transactions.transaction_type ILIKE ? OR wallet_transactions.description ILIKE ? OR wallet_transactions.reference_id ILIKE ? OR users.email ILIKE ? OR users.first_name ILIKE ? OR users.last_name ILIKE ? OR users.phone ILIKE ?",
-			searchLike, searchLike, searchLike, searchLike, searchLike, searchLike, searchLike,
+	// ✅ Handle Search Query
+	if pagination.Search != "" {
+		searchLike := "%" + pagination.Search + "%"
+		query = query.Where(`
+			wallet_transactions.transaction_type ILIKE ? OR 
+			wallet_transactions.description ILIKE ? OR 
+			wallet_transactions.reference_id ILIKE ? OR 
+			users.email ILIKE ? OR 
+			users.name ILIKE ? OR 
+			users.phone ILIKE ?`,
+			searchLike, searchLike, searchLike, searchLike, searchLike, searchLike,
 		)
 	}
 
-	// Count total records
-	err := query.Model(&models.WalletTransaction{}).Count(&totalCount).Error
-	if err != nil {
+	// ✅ Count total before pagination
+	if err := query.Model(&models.WalletTransaction{}).Count(&totalCount).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count all customer transactions: %w", err)
 	}
 
-	// Apply pagination and fetch records
+	// ✅ Pagination logic
 	offset := (pagination.Page - 1) * pagination.Limit
-	err = query.Offset(offset).Limit(pagination.Limit).Find(&transactions).Error
-	if err != nil {
+	if err := query.Offset(offset).Limit(pagination.Limit).Find(&transactions).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to retrieve all customer transactions: %w", err)
 	}
 
-	// Map to DTO
+	// ✅ Map transactions to DTOs
 	for _, tx := range transactions {
 		userName := "N/A"
 		userEmail := "N/A"
 		userPhone := "N/A"
 
-		// Check if the user was successfully preloaded
-		// GORM will populate a zero-value struct if no user is found for the user_id
-		// or if the preload fails. Check for a valid ID from the preloaded user.
 		if tx.User.ID != 0 {
-			userName = fmt.Sprintf("%s %s", tx.User.Name, tx.User.Name) // Assuming FirstName, LastName
-			if tx.User.Name == "" && tx.User.Name == "" {
-				userName = tx.User.Name // Fallback if you have a single Name field
-			}
+			userName = tx.User.Name
 			userEmail = tx.User.Email
 			userPhone = tx.User.Phone
 		}
@@ -135,8 +133,8 @@ func (r *AdminWalletRepository) AdminGetWalletTransactions(pagination models.Pag
 	query := r.DB.Where("user_id = ?", adminUser.ID).Order("created_at DESC")
 
 	// Add search filter if SearchQuery is provided
-	if pagination.SearchQuery != "" {
-		searchLike := "%" + pagination.SearchQuery + "%"
+	if pagination.Search != "" {
+		searchLike := "%" + pagination.Search + "%"
 		query = query.Where(
 			"transaction_type ILIKE ? OR description ILIKE ? OR reference_id ILIKE ? OR payment_gateway_tx_id ILIKE ?",
 			searchLike, searchLike, searchLike, searchLike,

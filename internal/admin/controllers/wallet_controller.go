@@ -26,49 +26,56 @@ type PaginationParams struct {
 	SearchQuery string `form:"search"`
 }
 
-	func (ctrl *AdminWalletController) ShowAllCustomerTransactionsPage(c *gin.Context) {
-		c.HTML(http.StatusOK, "all_customer_transactions.html", gin.H{
-			"Title":        "All Customer Transactions",
-			"ActiveTab":    "financials",
-			"ActiveSubTab": "all_transactions",
+// ✅ 1. HTML Page Renderer
+func (ctrl *AdminWalletController) ShowAllCustomerTransactionsPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "all_customer_transactions.html", gin.H{
+		"Title":        "All Customer Transactions",
+		"ActiveTab":    "financials",
+		"ActiveSubTab": "all_transactions",
+	})
+	fmt.Println("✅ Finished rendering all_customer_transactions.html")
+}
+
+// ✅ 2. API Endpoint (AJAX)
+func (ctrl *AdminWalletController) AdminGetAllCustomerTransactions(c *gin.Context) {
+	var pagination models.PaginationParams
+	if err := c.ShouldBindQuery(&pagination); err != nil {
+		fmt.Printf("❌ Error binding query params: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid pagination parameters",
+			"details": err.Error(),
 		})
-		fmt.Println("Finished rendering all_customer_transactions.html")
+		return
 	}
 
-	func (ctrl *AdminWalletController) AdminGetAllCustomerTransactions(c *gin.Context) {
-		var pagination models.PaginationParams
-		if err := c.ShouldBindQuery(&pagination); err != nil {
-			// Log the error for better debugging
-			fmt.Printf("Error binding query params: %v\n", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pagination parameters", "details": err.Error()})
-			return
-		}
-
-		if pagination.Page == 0 {
-			pagination.Page = 1
-		}
-		if pagination.Limit == 0 {
-			pagination.Limit = 10
-		}
-
-		// Logging pagination parameters for debugging
-		fmt.Printf("Fetching transactions with page: %d, limit: %d, search_query: %s\n", pagination.Page, pagination.Limit, pagination.SearchQuery)
-
-		transactions, total, err := ctrl.AdminWalletService.GetAllCustomerTransactionsWithUserDetails(pagination)
-		if err != nil {
-			// Log the error for better debugging
-			fmt.Printf("Error retrieving all customer wallet transactions: %v\n", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve all customer wallet transactions", "details": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, models.AllTransactionsListResponse{
-			Transactions: transactions,
-			Total:        total,
-			Page:         pagination.Page,
-			Limit:        pagination.Limit,
-		})
+	// Default values
+	if pagination.Page == 0 {
+		pagination.Page = 1
 	}
+	if pagination.Limit == 0 {
+		pagination.Limit = 10
+	}
+
+	fmt.Printf("📄 Fetching transactions | Page: %d | Limit: %d | Search: %s\n",
+		pagination.Page, pagination.Limit, pagination.Search)
+
+	transactions, total, err := ctrl.AdminWalletService.GetAllCustomerTransactionsWithUserDetails(pagination)
+	if err != nil {
+		fmt.Printf("❌ Error retrieving customer transactions: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to retrieve all customer transactions",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"transactions": transactions,
+		"total":        total,
+		"page":         pagination.Page,
+		"limit":        pagination.Limit,
+	})
+}
 
 func (ctrl *AdminWalletController) ShowAdminWalletPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin_wallet.html", gin.H{

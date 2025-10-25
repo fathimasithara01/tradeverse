@@ -197,10 +197,16 @@ type TransactionListResponse struct {
 }
 
 type PaginationParams struct {
-	Page        int    `form:"page,default=1"`
-	Limit       int    `form:"limit,default=10"`
-	SearchQuery string `form:"search"`
+	Page   int    `form:"page"`
+	Limit  int    `form:"limit"`
+	Search string `form:"search"`
 }
+
+// type PaginationParams struct {
+// 	Page        int    `form:"page,default=1"`
+// 	Limit       int    `form:"limit,default=10"`
+// 	SearchQuery string `form:"search"`
+// }
 
 type AdminTransactionDisplayDTO struct {
 	ID              uint              `json:"id"`
