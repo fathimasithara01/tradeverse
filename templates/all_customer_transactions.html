@@ -74,7 +74,8 @@
         {{ template "admin_sidebar" . }}
 
         <div id="content">
-      
+            <!-- Navbar (if you have one) -->
+            {{/* template "admin_navbar" . */}}
 
             <div class="container-fluid">
                 <h2 class="mt-4">{{ .Title }}</h2>
@@ -143,7 +144,7 @@
         let currentSearchQuery = '';
 
         function fetchTransactions(page, query) {
-            const apiUrl = `/admin/api/customer/transactions?page=${page}&limit=${limit}&search=${query}`;
+            const apiUrl = `/admin/api/customer/transactions?page=${page}&limit=${limit}&search=${encodeURIComponent(query)}`;
             console.log("Fetching from:", apiUrl); // Debugging line
 
             $.ajax({
@@ -197,10 +198,18 @@
 
             const totalPages = Math.ceil(total / limit);
 
+            // Hide pagination if there's only one page
+            if (totalPages <= 1) {
+                paginationUl.hide();
+                return;
+            } else {
+                paginationUl.show();
+            }
+
             // Previous button
             paginationUl.append(`
                 <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+                    <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">Previous</a>
                 </li>
             `);
 
@@ -213,6 +222,12 @@
                 startPage = Math.max(1, endPage - maxPagesToShow + 1);
             }
 
+            if (startPage > 1) {
+                paginationUl.append(`<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`);
+                if (startPage > 2) {
+                    paginationUl.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                }
+            }
 
             for (let i = startPage; i <= endPage; i++) {
                 paginationUl.append(`
@@ -222,10 +237,18 @@
                 `);
             }
 
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationUl.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                }
+                paginationUl.append(`<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`);
+            }
+
+
             // Next button
             paginationUl.append(`
                 <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+                    <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">Next</a>
                 </li>
             `);
 
@@ -233,7 +256,7 @@
             paginationUl.find('.page-link').on('click', function(e) {
                 e.preventDefault();
                 const newPage = parseInt($(this).data('page'));
-                if (newPage > 0 && newPage <= totalPages && newPage !== currentPage) {
+                if (!$(this).parent().hasClass('disabled') && newPage > 0 && newPage <= totalPages) {
                     currentPage = newPage;
                     fetchTransactions(currentPage, currentSearchQuery);
                 }
@@ -245,10 +268,17 @@
             fetchTransactions(currentPage, currentSearchQuery);
 
             $('#searchButton').on('click', function() {
-                currentSearchQuery = $('#searchQuery').val();
+                currentSearchQuery = $('#searchQuery').val().trim(); // Trim whitespace
                 currentPage = 1; // Reset to first page on new search
                 fetchTransactions(currentPage, currentSearchQuery);
             });
+
+            $('#searchQuery').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key pressed
+                    $('#searchButton').click();
+                }
+            });
+
 
             $('#resetButton').on('click', function() {
                 $('#searchQuery').val(''); // Clear search input

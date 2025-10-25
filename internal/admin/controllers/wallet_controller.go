@@ -36,7 +36,6 @@ func (ctrl *AdminWalletController) ShowAllCustomerTransactionsPage(c *gin.Contex
 	fmt.Println("✅ Finished rendering all_customer_transactions.html")
 }
 
-// ✅ 2. API Endpoint (AJAX)
 func (ctrl *AdminWalletController) AdminGetAllCustomerTransactions(c *gin.Context) {
 	var pagination models.PaginationParams
 	if err := c.ShouldBindQuery(&pagination); err != nil {
