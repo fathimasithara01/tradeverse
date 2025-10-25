@@ -140,10 +140,11 @@ type WithdrawalResponse struct {
 
 type WalletTransaction struct {
 	gorm.Model
-	WalletID uint            `gorm:"index;not null" json:"wallet_id"`
-	Type     TransactionType `gorm:"type:varchar(20);not null" json:"type"`
-	UserID   uint            `gorm:"not null;index" json:"user_id"`
-	Name     string          `gorm:"size:100;not null" json:"name"`
+	WalletID uint `gorm:"index;not null" json:"wallet_id"`
+
+	Type   TransactionType `gorm:"type:varchar(20);not null" json:"type"`
+	UserID uint            `gorm:"not null;index" json:"user_id"`
+	Name   string          `gorm:"size:100;not null" json:"name"`
 
 	User User `gorm:"foreignKey:UserID"`
 
@@ -199,4 +200,28 @@ type PaginationParams struct {
 	Page        int    `form:"page,default=1"`
 	Limit       int    `form:"limit,default=10"`
 	SearchQuery string `form:"search"`
+}
+
+type AdminTransactionDisplayDTO struct {
+	ID              uint              `json:"id"`
+	UserID          uint              `json:"user_id"`
+	UserName        string            `json:"user_name"`
+	UserEmail       string            `json:"user_email"`
+	UserPhone       string            `json:"user_phone"`
+	TransactionType TransactionType   `json:"transaction_type"`
+	Amount          float64           `json:"amount"`
+	Currency        string            `json:"currency"`
+	Status          TransactionStatus `json:"status"`
+	ReferenceID     string            `json:"reference_id"`
+	Description     string            `json:"description"`
+	CreatedAt       time.Time         `json:"created_at"`
+	BalanceBefore   float64           `json:"balance_before"`
+	BalanceAfter    float64           `json:"balance_after"`
+}
+
+type AllTransactionsListResponse struct {
+	Transactions []AdminTransactionDisplayDTO `json:"transactions"`
+	Total        int64                        `json:"total"`
+	Page         int                          `json:"page"`
+	Limit        int                          `json:"limit"`
 }

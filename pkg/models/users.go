@@ -21,7 +21,7 @@ type User struct {
 	Phone    string `gorm:"size:12;not null" json:"phone"`
 
 	Role UserRole `gorm:"type:varchar(20);not null;default:'customer'" json:"role"`
-
+	// Role      string `gorm:"type:varchar(20);default:'customer'" json:"role"`
 	RoleID    *uint `json:"role_id"`
 	RoleModel Role  `gorm:"foreignKey:RoleID" json:"role_model,omitempty"`
 

@@ -142,6 +142,11 @@ func WireAdminRoutes(
 				protected.GET("/financials/api/wallet/transactions", adminWalletController.AdminGetWalletTransactions)
 				protected.GET("/financials/api/transactions/all", adminWalletController.AdminGetAllPlatformTransactions)
 
+				// ADD THIS LINE
+				protected.GET("/api/financials/customer-transactions", adminWalletController.AdminGetAllCustomerTransactions)
+
+				protected.GET("/financials/customer-transactions", adminWalletController.ShowAllCustomerTransactionsPage)
+
 				protected.GET("/financials/api/withdrawals/pending", adminWalletController.GetPendingWithdrawals)
 				protected.POST("/financials/api/withdrawals/:id/action", adminWalletController.AdminApproveOrRejectWithdrawal)
 

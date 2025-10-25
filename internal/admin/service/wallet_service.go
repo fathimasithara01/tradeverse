@@ -24,6 +24,8 @@ type IAdminWalletService interface {
 	RejectWithdrawalRequest(withdrawalID uint) error
 
 	GetAllWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
+
+	GetAllCustomerTransactionsWithUserDetails(pagination models.PaginationParams) ([]models.AdminTransactionDisplayDTO, int64, error)
 }
 
 type AdminWalletService struct {
@@ -38,8 +40,12 @@ func NewAdminWalletService(repo repository.IAdminWalletRepository, db *gorm.DB) 
 	}
 }
 
+func (s *AdminWalletService) GetAllCustomerTransactionsWithUserDetails(pagination models.PaginationParams) ([]models.AdminTransactionDisplayDTO, int64, error) {
+	return s.Repo.GetAllCustomerTransactions(pagination)
+}
+
 func (s *AdminWalletService) GetAllWalletTransactions(pagination models.PaginationParams) ([]models.WalletTransaction, int64, error) {
-	return s.Repo.GetAllWalletTransactions(pagination)
+	return s.Repo.GetAllWalletTransactions(pagination) // This needs to be implemented in repository
 }
 
 func (s *AdminWalletService) GetAdminWalletSummary() (*models.WalletSummaryResponse, error) {

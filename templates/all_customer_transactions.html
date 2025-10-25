@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <!-- Include your admin CSS framework here (e.g., Bootstrap, Tailwind, AdminLTE) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { height: 100vh; background-color: #343a40; color: white; padding-top: 20px; }
+        .sidebar a { color: #adb5bd; text-decoration: none; display: block; padding: 10px 15px; }
+        .sidebar a:hover, .sidebar a.active { background-color: #495057; color: white; }
+        .content { padding: 20px; }
+        .card-header { background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5em 0.8em;
+            margin-left: 0.2em;
+            border-radius: 0.25em;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background-color: #007bff;
+            color: white !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar (replace with your actual admin sidebar component) -->
+        <div class="sidebar">
+            <h4 class="text-center mb-4">Admin Panel</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link" href="/admin/dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="/admin/users">Users</a></li>
+                <li class="nav-item">
+                    <a class="nav-link {{if eq .ActiveTab "financials"}}active{{end}}" data-bs-toggle="collapse" href="#financialsCollapse" role="button" aria-expanded="true" aria-controls="financialsCollapse">
+                        Financials
+                    </a>
+                    <div class="collapse show" id="financialsCollapse">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item"><a class="nav-link {{if eq .ActiveSubTab "admin_wallet"}}active{{end}}" href="/admin/wallet">Admin Wallet</a></li>
+                            <li class="nav-item"><a class="nav-link {{if eq .ActiveSubTab "admin_wallet_transactions"}}active{{end}}" href="/admin/wallet/transactions">Admin Transactions</a></li>
+                            <li class="nav-item"><a class="nav-link {{if eq .ActiveSubTab "pending_withdrawals"}}active{{end}}" href="/admin/withdrawals/pending">Pending Withdrawals</a></li>
+                            <li class="nav-item"><a class="nav-link {{if eq .ActiveSubTab "all_transactions"}}active{{end}}" href="/admin/financials/customer-transactions">All Customer Transactions</a></li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <!-- Main content -->
+        <div class="content flex-grow-1">
+            <nav class="navbar navbar-light bg-light">
+                <div class="container-fluid">
+                    <span class="navbar-brand mb-0 h1">{{.Title}}</span>
+                    <!-- Admin user info/logout here -->
+                    <div>
+                        Welcome, Admin! <a href="/admin/logout" class="btn btn-sm btn-outline-secondary">Logout</a>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Customer Transaction History</h4>
+                    </div>
+                    <div class="card-body">
+                        <table id="customerTransactionsTable" class="display responsive nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User Name</th>
+                                    <th>User Email</th>
+                                    <th>User Phone</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Currency</th>
+                                    <th>Status</th>
+                                    <th>Reference ID</th>
+                                    <th>Description</th>
+                                    <th>Date</th>
+                                    <th>Bal. Before</th>
+                                    <th>Bal. After</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be loaded here by DataTables -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (bundle includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+
+    <script>
+    $(document).ready(function() {
+            $('#customerTransactionsTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "/admin/api/financials/customer-transactions", // <--- CHANGE THIS LINE
+                    "type": "GET",
+                    "data": function (d) {
+                        // Map DataTables parameters to your backend's pagination/search parameters
+                        d.page = (d.start / d.length) + 1;
+                        d.limit = d.length;
+                        // DataTables sends search.value for global search, map it to your backend's search_query
+                        d.search_query = d.search.value;
+                    },
+                    "dataSrc": function (json) {
+                        // DataTables expects an array of data and total records
+                        json.recordsTotal = json.total;
+                        json.recordsFiltered = json.total; // Assuming total count is filtered count
+                        return json.transactions;
+                    }
+                },
+                "columns": [
+                    { "data": "id" },
+                    { "data": "user_name" },
+                    { "data": "user_email" },
+                    { "data": "user_phone" },
+                    { "data": "transaction_type" },
+                    { "data": "amount", "render": $.fn.dataTable.render.number(',', '.', 2, '₹') }, // Example for INR
+                    { "data": "currency" },
+                    { "data": "status" },
+                    { "data": "reference_id" },
+                    { "data": "description" },
+                    { "data": "created_at",
+                      "render": function (data, type, row) {
+                          if (type === 'display' || type === 'filter') {
+                              return new Date(data).toLocaleString(); // Format date nicely
+                          }
+                          return data;
+                      }
+                    },
+                    { "data": "balance_before", "render": $.fn.dataTable.render.number(',', '.', 2, '₹') },
+                    { "data": "balance_after", "render": $.fn.dataTable.render.number(',', '.', 2, '₹') }
+                ],
+                "order": [[10, "desc"]] // Order by CreatedAt (11th column, index 10) initially
+            });
+        });
+    </script>
+</body>
+</html>
