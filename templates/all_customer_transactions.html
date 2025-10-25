@@ -108,7 +108,7 @@
                 "processing": true,
                 "serverSide": true,
                 "ajax": {
-                    "url": "/admin/api/financials/customer-transactions", // <--- CHANGE THIS LINE
+                    "url": "/admin/api/financials/customer-transactions",
                     "type": "GET",
                     "data": function (d) {
                         // Map DataTables parameters to your backend's pagination/search parameters
@@ -130,7 +130,7 @@
                     { "data": "user_email" },
                     { "data": "user_phone" },
                     { "data": "transaction_type" },
-                    { "data": "amount", "render": $.fn.dataTable.render.number(',', '.', 2, '₹') }, // Example for INR
+                    { "data": "amount", "render": $.fn.dataTable.render.number(',', '.', 2, '₹') },
                     { "data": "currency" },
                     { "data": "status" },
                     { "data": "reference_id" },
