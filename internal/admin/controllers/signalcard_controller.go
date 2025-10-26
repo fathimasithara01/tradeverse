@@ -75,7 +75,7 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		StopLoss      float64 `json:"stopLoss"`
 		EntryPrice    float64 `json:"entryPrice"`
 		TargetPrice   float64 `json:"targetPrice"`
-		CurrentPrice  float64 `json:"currentPrice"`
+		CurrentPrice  float64 `json:"currentPrice"` // This will be client-provided, but we'll override it if market data is available
 		Risk          string  `json:"risk"`
 		Strategy      string  `json:"strategy"`
 		Status        string  `json:"status"`
@@ -92,6 +92,7 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 	reqJSON, _ := json.MarshalIndent(req, "", "  ")
 	log.Printf("Received Signal Request:\n%s", string(reqJSON))
 
+	// Normalize symbol: ensure it ends with USDT and is uppercase
 	if !strings.HasSuffix(strings.ToUpper(req.Symbol), "USDT") {
 		req.Symbol = strings.ToUpper(req.Symbol) + "USDT"
 	} else {
@@ -112,6 +113,19 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		return
 	}
 
+	// --- NEW: Fetch actual current price from market data ---
+	marketData, err := ctrl.liveSignalService.GetMarketDataBySymbol(c, req.Symbol)
+	if err != nil {
+		log.Printf("Warning: Could not fetch market data for symbol %s during signal creation: %v", req.Symbol, err)
+		// If market data fetch fails, we'll proceed with req.CurrentPrice (which might be 0)
+	} else if marketData != nil {
+		req.CurrentPrice = marketData.CurrentPrice // Override client-provided current price with live data
+		log.Printf("Fetched live current price for %s: %.4f", req.Symbol, req.CurrentPrice)
+	} else {
+		log.Printf("No market data found for %s during signal creation. CurrentPrice will be 0 or client-provided.", req.Symbol)
+	}
+	// --- END NEW ---
+
 	var createdByRole string
 	var creatorID uint
 
@@ -124,7 +138,7 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		StopLoss:       req.StopLoss,
 		EntryPrice:     req.EntryPrice,
 		TargetPrice:    req.TargetPrice,
-		CurrentPrice:   req.CurrentPrice,
+		CurrentPrice:   req.CurrentPrice, // Now potentially updated from market data
 		Risk:           req.Risk,
 		Strategy:       req.Strategy,
 		Status:         req.Status,
@@ -182,6 +196,7 @@ func GetMarketDataAPI(c *gin.Context) {
 			CurrentPrice:   md.CurrentPrice,
 			PriceChange24H: md.PriceChange24H,
 			LogoURL:        md.LogoURL,
+			Volume24H:      md.Volume24H, // Make sure Volume24H is included
 		})
 	}
 

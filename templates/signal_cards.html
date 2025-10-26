@@ -52,7 +52,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <script>
+   <script>
         $(document).ready(function () {
             // Sidebar collapse functionality
             $('#sidebarCollapse').on('click', function () {
@@ -82,7 +82,7 @@
                 return (value !== undefined && value !== null) ? parseFloat(value) : 0;
             }
 
-               function fetchSignals() {
+            function fetchSignals() {
                 const container = $('#signal-cards-container');
                 container.empty(); // Clear existing cards
                 container.append('<div class="col-12 loading-message"><p><i class="fas fa-spinner fa-spin me-2"></i>Loading live trading signals...</p></div>');
@@ -123,76 +123,73 @@
                                 const stopLoss = getSafeNumber(signal.stop_loss);
                                 const entryPrice = getSafeNumber(signal.entry_price);
                                 const targetPrice = getSafeNumber(signal.target_price);
-                                let currentPrice = getSafeNumber(signal.current_price); 
+                                // This is the actual current price from the backend, use it for calculations
+                                const actualLiveCurrentPrice = getSafeNumber(signal.current_price); 
                                 
-                                // Store the original currentPrice from signal, as we might change 'currentPrice'
-                                // for display logic (e.g., for Pending status initialization)
-                                const actualLiveCurrentPrice = currentPrice; 
+                                // This will be the price explicitly displayed on the card
+                                let displayCurrentPriceForCard = actualLiveCurrentPrice;
 
-                                console.log(`   Prices - SL: ${stopLoss}, Entry: ${entryPrice}, Target: ${targetPrice}, Current: ${currentPrice}, Status: ${signal.status}`);
+                                console.log(`   Prices - SL: ${stopLoss}, Entry: ${entryPrice}, Target: ${targetPrice}, Actual Live Current: ${actualLiveCurrentPrice}, Status: ${signal.status}`);
 
                                 if (signal.status === 'Target Hit') {
                                     statusBadge = `<div class="status-badge target-hit"><i class="fas fa-check-circle"></i>Target Hit!</div>`;
                                     cardClass = 'target-hit-card';
+                                    // For visual confirmation, show TargetPrice as the current price on the card
+                                    displayCurrentPriceForCard = targetPrice;
+                                    // Set progress bar to 100%
                                     currentPricePercentage = 100;
-                                    // For display, set current price to target if target was hit
-                                    if (targetPrice !== 0 && actualLiveCurrentPrice < targetPrice) {
-                                        currentPrice = targetPrice;
-                                    } else if (targetPrice === 0 && entryPrice !==0 && actualLiveCurrentPrice < entryPrice) {
-                                         // If target is zero, but entry is there, use current if it's high
-                                         currentPrice = actualLiveCurrentPrice > entryPrice ? actualLiveCurrentPrice : entryPrice;
-                                    }
+
                                 } else if (signal.status === 'Stop Loss') {
                                     statusBadge = `<div class="status-badge stop-loss"><i class="fas fa-times-circle"></i>Stop Loss!</div>`;
                                     cardClass = 'stop-loss-card';
+                                    // For visual confirmation, show StopLoss as the current price on the card
+                                    displayCurrentPriceForCard = stopLoss;
+                                    // Set progress bar to 0%
                                     currentPricePercentage = 0;
-                                    // For display, set current price to stop loss if SL was hit
-                                    if (stopLoss !== 0 && actualLiveCurrentPrice > stopLoss) {
-                                        currentPrice = stopLoss;
-                                    } else if (stopLoss === 0 && entryPrice !==0 && actualLiveCurrentPrice > entryPrice) {
-                                        // If stop loss is zero, but entry is there, use current if it's low
-                                        currentPrice = actualLiveCurrentPrice < entryPrice ? actualLiveCurrentPrice : entryPrice;
-                                    }
+
                                 } else if (signal.status === 'Pending') {
                                     statusBadge = `<div class="status-badge pending"><i class="fas fa-exclamation-circle"></i>Pending</div>`;
                                     cardClass = '';
 
-                                    // For Pending signals:
-                                    // Use actualLiveCurrentPrice if it's available (updated by cron)
-                                    // If currentPrice is still 0 (from initial creation) AND entryPrice is available,
-                                    // use entryPrice for visual representation until a live currentPrice comes in.
+                                    // For Pending signals, if actualLiveCurrentPrice is 0 (market data not yet available/updated),
+                                    // and entryPrice is available, display entry price for better context than 0.0000.
+                                    // Otherwise, use the actualLiveCurrentPrice (which might legitimately be 0 if no data exists)
                                     if (actualLiveCurrentPrice === 0 && entryPrice !== 0) {
-                                        currentPrice = entryPrice; // Fallback to entry for display if no live price yet
+                                        displayCurrentPriceForCard = entryPrice;
+                                    } else {
+                                        displayCurrentPriceForCard = actualLiveCurrentPrice; // Use actual live price if available
                                     }
-                                    // Calculate percentage based on currentPrice (which might be actual live or entry fallback)
-                                    if (stopLoss !== 0 && targetPrice !== 0 && currentPrice !== 0 && targetPrice > stopLoss) {
-                                        currentPricePercentage = ((currentPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
+
+
+                                    // Calculate percentage for pending:
+                                    // If we have a range (SL to Target) and a valid current price
+                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && actualLiveCurrentPrice !== 0) {
+                                        currentPricePercentage = ((actualLiveCurrentPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
+                                        currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
+                                    } else if (actualLiveCurrentPrice === 0 && entryPrice !== 0 && stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss) {
+                                        // If currentPrice is 0 (not yet updated) but we have an entry, show entry's position
+                                        currentPricePercentage = ((entryPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else {
                                         currentPricePercentage = 50; // Default to middle if no range or current price is 0
                                     }
+
                                 } else { // Default to 'Active' or general ongoing
                                     statusBadge = `<div class="status-badge active"><i class="fas fa-chart-line"></i>Active</div>`;
                                     cardClass = '';
 
-                                    // For Active signals, always use the live currentPrice
-                                    // No specific fallback to entryPrice needed here, as currentPrice should be live
-                                    if (stopLoss !== 0 && targetPrice !== 0 && currentPrice !== 0) {
-                                        const fullRange = targetPrice - stopLoss;
-                                        if (fullRange > 0) {
-                                            currentPricePercentage = ((currentPrice - stopLoss) / fullRange) * 100;
-                                            currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
-                                        } else if (fullRange === 0) {
-                                            currentPricePercentage = (currentPrice >= targetPrice) ? 100 : 0;
-                                        }
-                                    } else if (currentPrice !== 0 && entryPrice !== 0) {
-                                        // Fallback if SL/Target are missing, but we have current and entry
-                                        currentPricePercentage = 50 + ((currentPrice - entryPrice) / entryPrice) * 50;
+                                    // For Active signals, always use the live currentPrice for calculations and display
+                                    displayCurrentPriceForCard = actualLiveCurrentPrice; // Explicitly set, though often already holding this
+                                    
+                                    // Calculate percentage based on actualLiveCurrentPrice
+                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && actualLiveCurrentPrice !== 0) {
+                                        currentPricePercentage = ((actualLiveCurrentPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
-                                    } else if (currentPrice === 0 && entryPrice !== 0) {
-                                        // If currentPrice is unexpectedly 0 for an active signal, fallback to entryPrice
-                                        currentPrice = entryPrice;
-                                        currentPricePercentage = 50; // Center it
+                                    } else if (actualLiveCurrentPrice !== 0 && entryPrice !== 0) {
+                                        // Fallback if SL/Target are missing, but we have current and entry
+                                        // This is a rough estimation of position relative to entry
+                                        currentPricePercentage = 50 + ((actualLiveCurrentPrice - entryPrice) / entryPrice) * 50;
+                                        currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else {
                                         currentPricePercentage = 50; // General fallback if no price info
                                     }
@@ -200,15 +197,16 @@
                                 console.log(`   Calculated currentPricePercentage: ${currentPricePercentage}%`);
 
                                 // Calculate price change from entry (for display in header)
-                                if (currentPrice !== 0 && entryPrice !== 0) {
-                                    const change = currentPrice - entryPrice;
+                                // ALWAYS use actualLiveCurrentPrice for this calculation
+                                if (actualLiveCurrentPrice !== 0 && entryPrice !== 0) {
+                                    const change = actualLiveCurrentPrice - entryPrice;
                                     const percentageChange = (change / entryPrice) * 100;
                                     const changeClass = percentageChange >= 0 ? 'positive' : 'negative';
                                     priceChangeDisplay = `<span class="price-change ${changeClass}"> (${percentageChange.toFixed(2)}%)</span>`;
-                                    console.log(`   Price Change from Entry: $${change.toFixed(4)} (${percentageChange.toFixed(2)}%)`);
+                                    console.log(`   Price Change from Entry (using actualLiveCurrentPrice): $${change.toFixed(4)} (${percentageChange.toFixed(2)}%)`);
                                 } else {
                                     priceChangeDisplay = '';
-                                    console.log('   Cannot calculate price change (missing current or entry price).');
+                                    console.log('   Cannot calculate price change (missing actualLiveCurrentPrice or entry price).');
                                 }
 
                                 const formatSignalDate = (dateString) => {
@@ -228,9 +226,10 @@
                                 const displayStopLoss = stopLoss.toFixed(4);
                                 const displayEntryPrice = entryPrice.toFixed(4);
                                 const displayTargetPrice = targetPrice.toFixed(4);
-                                const displayCurrentPrice = currentPrice.toFixed(4); // Use the (potentially modified) currentPrice
+                                // Use the specifically determined displayCurrentPriceForCard here
+                                const formattedDisplayCurrentPrice = displayCurrentPriceForCard.toFixed(4); 
 
-                                console.log(`   Formatted Prices - SL: ${displayStopLoss}, Entry: ${displayEntryPrice}, Target: ${displayTargetPrice}, Current: ${displayCurrentPrice}`);
+                                console.log(`   Formatted Prices - SL: ${displayStopLoss}, Entry: ${displayEntryPrice}, Target: ${displayTargetPrice}, Display Current: ${formattedDisplayCurrentPrice}`);
 
                                 const card = `
                                     <div class="col-md-6 col-lg-4 mb-4">
@@ -242,7 +241,7 @@
 
                                             <div class="signal-card-header">
                                                 <div class="current-price-display">
-                                                    Current Price: <strong class="ms-1">$${displayCurrentPrice}</strong>
+                                                    Current Price: <strong class="ms-1">$${formattedDisplayCurrentPrice}</strong>
                                                     ${priceChangeDisplay}
                                                 </div>
                                             </div>
@@ -273,7 +272,7 @@
 
                                             <div class="signal-info-grid">
                                                 <div class="info-item"><span>Strategy:</span><span>${signal.strategy || 'N/A'}</span></div>
-                                                <div class="info-item"><span>Risk:</span><span>${signal.risk || 'N/A'}</span></div>
+<div class="info-item"><span>Risk:</span><span>${signal.risk || 'N/A'}</span></div>
                                                 <div class="info-item"><span>Trade Period:</span><span>${tradeStartDate} - ${tradeEndDate}</span></div>
                                                 <div class="info-item"><span>Duration:</span><span>${signal.totalDuration || 'N/A'}</span></div>
                                             </div>

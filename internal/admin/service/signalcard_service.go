@@ -15,6 +15,9 @@ type ILiveSignalService interface {
 	GetAllSignals(ctx context.Context) ([]models.Signal, error)
 	UpdateAllSignalsCurrentPrices(ctx context.Context) error
 	CheckAndSetSignalStatuses(ctx context.Context) error
+	// --- NEW: Add GetMarketDataBySymbol to the interface ---
+	GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error)
+	// --- END NEW ---
 }
 
 type liveSignalService struct {
@@ -31,8 +34,8 @@ func (s *liveSignalService) CreateSignal(ctx context.Context, signal *models.Sig
 	} else {
 		signal.Status = "Active"
 	}
-	log.Printf("Creating signal: Symbol=%s, Trader=%s, Entry=%.4f, Target=%.4f, SL=%.4f, InitialStatus=%s",
-		signal.Symbol, signal.TraderName, signal.EntryPrice, signal.TargetPrice, signal.StopLoss, signal.Status)
+	log.Printf("Creating signal: Symbol=%s, Trader=%s, Entry=%.4f, Target=%.4f, SL=%.4f, InitialStatus=%s, InitialCurrentPrice=%.4f",
+		signal.Symbol, signal.TraderName, signal.EntryPrice, signal.TargetPrice, signal.StopLoss, signal.Status, signal.CurrentPrice)
 	return s.signalRepo.CreateSignal(ctx, signal)
 }
 
@@ -45,6 +48,13 @@ func (s *liveSignalService) GetAllSignals(ctx context.Context) ([]models.Signal,
 	log.Printf("Retrieved %d signals from DB for GetAllSignals.", len(signals))
 	return signals, nil
 }
+
+// --- NEW: Implement GetMarketDataBySymbol for the service layer ---
+func (s *liveSignalService) GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error) {
+	return s.signalRepo.GetMarketDataBySymbol(ctx, symbol)
+}
+
+// --- END NEW ---
 
 func (s *liveSignalService) UpdateAllSignalsCurrentPrices(ctx context.Context) error {
 	log.Println("Starting to update current prices for all signals...")
@@ -111,13 +121,14 @@ func (s *liveSignalService) CheckAndSetSignalStatuses(ctx context.Context) error
 			continue
 		}
 
+		// Only check SL/Target for Active signals
 		if signal.Status != "Active" {
 			log.Printf("Signal ID %d (Symbol: %s) is not Active, skipping SL/Target check. Current Status: %s", signal.ID, signal.Symbol, signal.Status)
 			continue
 		}
 
 		if signal.CurrentPrice == 0 {
-			log.Printf("Warning: Signal ID %d (%s) has zero current price, skipping SL/Target check.", signal.ID, signal.Symbol)
+			log.Printf("Warning: Signal ID %d (%s) has zero current price, skipping SL/Target check. Ensure market data is updating.", signal.ID, signal.Symbol)
 			continue
 		}
 		if signal.TargetPrice == 0 && signal.StopLoss == 0 {
