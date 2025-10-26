@@ -11,10 +11,8 @@ import (
 	"github.com/fathimasithara01/tradeverse/internal/admin/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/admin/cron"
 	"github.com/fathimasithara01/tradeverse/internal/admin/repository"
-	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	"github.com/fathimasithara01/tradeverse/internal/admin/router"
 	"github.com/fathimasithara01/tradeverse/internal/admin/service"
-	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 
 	cusSvc "github.com/fathimasithara01/tradeverse/internal/customer/service"
 
@@ -45,29 +43,29 @@ func InitializeApp() (*App, error) {
 	seeder.CreateAdminSeeder(DB, *cfg)
 
 	// Admin Repositories
-	adminUserRepo := adminRepo.NewUserRepository(DB)
-	adminRoleRepo := adminRepo.NewRoleRepository(DB)
-	adminDashboardRepo := adminRepo.NewDashboardRepository(DB)
-	adminPermissionRepo := adminRepo.NewPermissionRepository(DB)
-	adminActivityRepo := adminRepo.NewActivityRepository(DB)
-	adminSubscriptionPlanRepo := adminRepo.NewSubscriptionPlanRepository(DB)
-	adminSubscriptionRepo := adminRepo.NewSubscriptionRepository(DB)
-	adminAdminWalletRepo := adminRepo.NewAdminWalletRepository(DB)
-	adminSignalRepo := adminRepo.NewSignalRepository(DB)
-	adminTransactionRepo := adminRepo.NewTransactionRepository(DB)
+	adminUserRepo := repository.NewUserRepository(DB)
+	adminRoleRepo := repository.NewRoleRepository(DB)
+	adminDashboardRepo := repository.NewDashboardRepository(DB)
+	adminPermissionRepo := repository.NewPermissionRepository(DB)
+	adminActivityRepo := repository.NewActivityRepository(DB)
+	adminSubscriptionPlanRepo := repository.NewSubscriptionPlanRepository(DB)
+	adminSubscriptionRepo := repository.NewSubscriptionRepository(DB)
+	adminAdminWalletRepo := repository.NewAdminWalletRepository(DB)
+	adminSignalRepo := repository.NewSignalRepository(DB)
+	adminTransactionRepo := repository.NewTransactionRepository(DB)
 	commissionRepo := repository.NewCommissionRepository(DB)
 
 	// Admin Services
-	adminUserService := adminService.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWT.Secret)
-	adminRoleService := adminService.NewRoleService(adminRoleRepo, adminPermissionRepo, adminUserRepo)
-	adminDashboardService := adminService.NewDashboardService(adminDashboardRepo)
-	adminPermissionService := adminService.NewPermissionService(adminPermissionRepo)
-	adminActivityService := adminService.NewActivityService(adminActivityRepo)
-	adminSubscriptionPlanService := adminService.NewSubscriptionPlanService(adminSubscriptionPlanRepo)
-	adminAdminWalletService := adminService.NewAdminWalletService(adminAdminWalletRepo, DB)
-	adminSubscriptionService := adminService.NewSubscriptionService(adminSubscriptionRepo, adminSubscriptionPlanRepo, adminUserRepo, adminAdminWalletService, DB)
-	adminLiveSignalService := adminService.NewLiveSignalService(adminSignalRepo)
-	adminTransactionService := adminService.NewTransactionService(adminTransactionRepo)
+	adminUserService := service.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWT.Secret)
+	adminRoleService := service.NewRoleService(adminRoleRepo, adminPermissionRepo, adminUserRepo)
+	adminDashboardService := service.NewDashboardService(adminDashboardRepo)
+	adminPermissionService := service.NewPermissionService(adminPermissionRepo)
+	adminActivityService := service.NewActivityService(adminActivityRepo)
+	adminSubscriptionPlanService := service.NewSubscriptionPlanService(adminSubscriptionPlanRepo)
+	adminAdminWalletService := service.NewAdminWalletService(adminAdminWalletRepo, DB)
+	adminSubscriptionService := service.NewSubscriptionService(adminSubscriptionRepo, adminSubscriptionPlanRepo, adminUserRepo, adminAdminWalletService, DB)
+	adminLiveSignalService := service.NewLiveSignalService(adminSignalRepo)
+	adminTransactionService := service.NewTransactionService(adminTransactionRepo)
 	marketDataService := service.NewMarketDataService()
 	commissionService := service.NewCommissionService(commissionRepo, DB)
 
