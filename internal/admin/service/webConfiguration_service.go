@@ -1,4 +1,3 @@
-// internal/admin/service/web_configuration_service.go
 package service
 
 import (
@@ -8,7 +7,8 @@ import (
 
 type WebConfigurationService interface {
 	GetWebConfiguration() (*models.WebConfiguration, error)
-	UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone, filesystemConfig string) error
+	// --- THIS LINE MUST BE CORRECTED ---
+	UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone string) error
 }
 
 type webConfigurationService struct {
@@ -23,7 +23,8 @@ func (s *webConfigurationService) GetWebConfiguration() (*models.WebConfiguratio
 	return s.webConfigRepo.GetWebConfiguration()
 }
 
-func (s *webConfigurationService) UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone, filesystemConfig string) error {
+// --- THIS FUNCTION SIGNATURE AND BODY MUST BE CORRECTED ---
+func (s *webConfigurationService) UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone string) error {
 	config, err := s.webConfigRepo.GetWebConfiguration()
 	if err != nil {
 		return err
@@ -32,7 +33,7 @@ func (s *webConfigurationService) UpdateWebConfiguration(primaryCountry, primary
 	config.PrimaryCountry = primaryCountry
 	config.PrimaryCurrency = primaryCurrency
 	config.PrimaryTimezone = primaryTimezone
-	config.FilesystemConfig = filesystemConfig // Update filesystem as well
+	// Removed: config.FilesystemConfig = filesystemConfig // Filesystem is no longer updated via form
 
 	return s.webConfigRepo.UpdateWebConfiguration(config)
 }

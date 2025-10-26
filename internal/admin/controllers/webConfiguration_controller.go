@@ -1,4 +1,3 @@
-// internal/admin/controllers/web_configuration_controller.go
 package controllers
 
 import (
@@ -27,8 +26,6 @@ func (ctrl *WebConfigurationController) GetWebConfigurationPage(c *gin.Context) 
 		return
 	}
 
-	// For the dropdowns, you might want to fetch lists of countries, currencies, and timezones
-	// from an external source or a pre-defined list. For now, we'll hardcode some options.
 	countries := []string{"United Arab Emirates", "United States", "India", "United Kingdom", "Canada"}
 	currencies := []string{"United Arab Emirates Dirham (AED)", "United States Dollar (USD)", "Indian Rupee (INR)", "British Pound (GBP)", "Canadian Dollar (CAD)"}
 	timezones := []string{"Asia/Dubai", "America/New_York", "Asia/Kolkata", "Europe/London", "America/Toronto"}
@@ -48,14 +45,16 @@ func (ctrl *WebConfigurationController) UpdateWebConfiguration(c *gin.Context) {
 	primaryCountry := c.PostForm("primary_country")
 	primaryCurrency := c.PostForm("primary_currency")
 	primaryTimezone := c.PostForm("primary_timezone")
-	filesystemConfig := c.PostForm("filesystem_config") // Assuming this is also a form field
+	// Removed: filesystemConfig := c.PostForm("filesystem_config") // Filesystem is no longer submitted via form
 
 	if primaryCountry == "" || primaryCurrency == "" || primaryTimezone == "" {
 		c.Redirect(http.StatusFound, "/admin/web-configuration?error=All fields are required")
 		return
 	}
 
-	err := ctrl.webConfigService.UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone, filesystemConfig)
+	// --- THIS LINE MUST BE CORRECTED ---
+	// The service call should now only have 3 arguments.
+	err := ctrl.webConfigService.UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/admin/web-configuration?error=Failed to update configuration")
 		return
