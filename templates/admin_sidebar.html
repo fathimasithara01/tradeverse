@@ -130,6 +130,10 @@
                 <li class="nav-item {{if eq .ActiveSubTab "admin_wallet_transactions"}}active{{end}}">
                     <a href="/admin/financials/wallet/transactions" class="nav-link">Admin Wallet Transaction</a>
                 </li>
+
+                <li class="nav-item {{if eq .ActiveSubTab "all_transactions"}}active{{end}}">
+                    <a href="/admin/customer-transactions" class="nav-link">Customer Wallet</a>
+                </li>
                 <li class="nav-item {{if eq .ActiveSubTab "transactions"}}active{{end}}">
                     <a href="/admin/transactions" class="nav-link">All Transactions</a>
                 </li>
