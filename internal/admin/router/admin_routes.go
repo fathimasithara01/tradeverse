@@ -25,6 +25,7 @@ func WireAdminRoutes(
 	db *gorm.DB,
 	signalCtrl *controllers.SignalController,
 	commissionCtrl *controllers.CommissionController,
+	adminWebConfigController *controllers.WebConfigurationController,
 
 ) {
 	authz := middleware.NewAuthzMiddleware(roleService)
@@ -151,6 +152,9 @@ func WireAdminRoutes(
 
 				protected.GET("/transactions", tranasactionController.GetTransactionsPage)
 				protected.GET("/api/transactions", tranasactionController.GetTransactionsAPI)
+
+				admin.GET("/web-configuration", adminWebConfigController.GetWebConfigurationPage)
+				admin.POST("/web-configuration", adminWebConfigController.UpdateWebConfiguration)
 			}
 
 		}

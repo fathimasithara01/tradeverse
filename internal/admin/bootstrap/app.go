@@ -18,6 +18,7 @@ import (
 
 	"github.com/fathimasithara01/tradeverse/migrations"
 
+	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"github.com/fathimasithara01/tradeverse/pkg/seeder"
 
 	"github.com/gin-gonic/gin"
@@ -40,6 +41,10 @@ func InitializeApp() (*App, error) {
 		return nil, fmt.Errorf("error connecting db: %w", err)
 	}
 
+	if err := models.EnsureDefaultWebConfiguration(DB); err != nil {
+		return nil, fmt.Errorf("error ensuring default web configuration: %w", err)
+	}
+
 	seeder.CreateAdminSeeder(DB, *cfg)
 
 	// Admin Repositories
@@ -54,6 +59,7 @@ func InitializeApp() (*App, error) {
 	adminSignalRepo := repository.NewSignalRepository(DB)
 	adminTransactionRepo := repository.NewTransactionRepository(DB)
 	commissionRepo := repository.NewCommissionRepository(DB)
+	adminWebConfigRepo := repository.NewWebConfigurationRepository(DB)
 
 	// Admin Services
 	adminUserService := service.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWT.Secret)
@@ -68,6 +74,7 @@ func InitializeApp() (*App, error) {
 	adminTransactionService := service.NewTransactionService(adminTransactionRepo)
 	marketDataService := service.NewMarketDataService()
 	commissionService := service.NewCommissionService(commissionRepo, DB)
+	adminWebConfigService := service.NewWebConfigurationService(adminWebConfigRepo)
 
 	// Admin Controllers
 	adminAuthController := controllers.NewAuthController(adminUserService)
@@ -81,6 +88,7 @@ func InitializeApp() (*App, error) {
 	adminSignalController := controllers.NewSignalController(adminLiveSignalService)
 	adminTransactionController := controllers.NewTransactionController(adminTransactionService)
 	commissionController := controllers.NewCommissionController(commissionService)
+	adminWebConfigController := controllers.NewWebConfigurationController(adminWebConfigService)
 
 	var customerAdminUpgradeSubscriptionService cusSvc.CustomerSubscriptionService
 	_ = customerAdminUpgradeSubscriptionService
@@ -139,6 +147,7 @@ func InitializeApp() (*App, error) {
 		DB,
 		adminSignalController,
 		commissionController,
+		adminWebConfigController,
 	)
 
 	cron.StartCronJobs(adminSubscriptionService, customerAdminUpgradeSubscriptionService, adminLiveSignalService, DB)

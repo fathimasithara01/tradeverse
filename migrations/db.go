@@ -55,6 +55,8 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 
 		&models.TraderPerformance{},
 		&models.CommissionSetting{},
+
+		&models.WebConfiguration{},
 	)
 	if err != nil {
 		log.Printf("DATABASE MIGRATION ERROR (Step 1): %v", err)
