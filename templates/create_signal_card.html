@@ -8,14 +8,14 @@
     <!-- Include Bootstrap CSS and Font Awesome for icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="/static/sidebar.css">
-        <link rel="stylesheet" href="/static/create_signal_card.css">
+    <link rel="stylesheet" href="/static/sidebar.css">
+    <link rel="stylesheet" href="/static/create_signal_card.css">
 
 </head>
 
 <body>
     <div class="wrapper">
-      {{ template "admin_sidebar" . }}
+        {{ template "admin_sidebar" . }}
 
         <!-- Page Content -->
         <div id="content">
@@ -52,33 +52,36 @@
                                     placeholder="e.g., TraderOne" required>
                             </div>
                             <div class="mb-3">
-                                <label for="symbol" class="form-label">Symbol (e.g., BTCUSDT)</label>
+                                <label for="symbol" class="form-label">Symbol (e.g., BTC, BTCUSDT)</label>
                                 <input type="text" class="form-control" id="symbol" name="symbol"
-                                    placeholder="e.g., BTCUSDT" required>
+                                    placeholder="e.g., BTC, ETH" required>
+                                <small class="form-text text-muted">Enter the base symbol. "USDT" will be appended
+                                    automatically if not present.</small>
                             </div>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label for="stopLoss" class="form-label">Stop Loss ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="stopLoss" name="stopLoss"
-                                        placeholder="e.g., 43000" required>
+                                    <input type="number" step="0.0001" class="form-control" id="stopLoss"
+                                        name="stopLoss" placeholder="e.g., 43000" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="entryPrice" class="form-label">Entry Price ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="entryPrice"
+                                    <input type="number" step="0.0001" class="form-control" id="entryPrice"
                                         name="entryPrice" placeholder="e.g., 45000" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="targetPrice" class="form-label">Target Price ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="targetPrice"
+                                    <input type="number" step="0.0001" class="form-control" id="targetPrice"
                                         name="targetPrice" placeholder="e.g., 50000" required>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label for="currentPrice" class="form-label">Current Price ($)</label>
                                 <input type="number" step="0.0001" class="form-control" id="currentPrice"
-                                    name="currentPrice" placeholder="e.g., 0.006184" value="0" readonly>
-                                <small class="form-text text-muted">This will be auto-updated by the system from market
-                                    data.</small>
+                                    name="currentPrice" placeholder="Fetching..." value="0" readonly>
+                                <small class="form-text text-muted">This will be auto-updated by the system from live
+                                    market
+                                    data based on the symbol provided.</small>
                             </div>
                             <div class="mb-3">
                                 <label for="strategy" class="form-label">Strategy</label>
@@ -113,8 +116,7 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="totalDuration" class="form-label">Total Duration (e.g., 4 weeks 2
-                                    days)</label>
+                                <label for="totalDuration" class="form-label">Total Duration</label>
                                 <input type="text" class="form-control" id="totalDuration" name="totalDuration" readonly
                                     placeholder="Auto-calculated">
                             </div>
@@ -161,19 +163,28 @@
             // Function to fetch current market price for a given symbol
             function fetchCurrentMarketPrice(symbol, callback) {
                 if (!symbol) {
-                    $('#currentPrice').val('0'); // Set to 0 if symbol is empty
+                    $('#currentPrice').val('0.0000'); // Set to 0.0000 if symbol is empty
                     return;
                 }
+
+                // Normalize symbol for API call (ensure USDT suffix and uppercase)
+                let normalizedSymbol = symbol.toUpperCase();
+                if (!normalizedSymbol.endsWith("USDT")) {
+                    normalizedSymbol += "USDT";
+                }
+
+                console.log(`Fetching market data for: ${normalizedSymbol}`);
+
                 $.ajax({
                     url: '/admin/api/market-data', // Your endpoint to get market data
                     method: 'GET',
                     success: function (response) {
                         // Assuming response is an array of market data objects and we need to find the specific one
-                        const marketData = response.find(item => item.symbol.toUpperCase() === symbol.toUpperCase());
+                        const marketData = response.find(item => item.symbol.toUpperCase() === normalizedSymbol);
                         if (marketData && typeof marketData.current_price === 'number') {
                             callback(marketData.current_price);
                         } else {
-                            console.warn("No market data found for symbol:", symbol);
+                            console.warn(`No market data found for symbol: ${normalizedSymbol}`);
                             callback(0); // Return 0 if no data found
                         }
                     },
@@ -187,16 +198,21 @@
             // Fetch current price when symbol changes or input loses focus
             $('#symbol').on('change blur', function () {
                 const symbol = $(this).val();
-                console.log('#currentPrice').val(price.toFixed(8));
-
                 if (symbol) {
                     fetchCurrentMarketPrice(symbol, function (price) {
                         $('#currentPrice').val(price.toFixed(8)); // Display with higher precision
                     });
                 } else {
-                    $('#currentPrice').val('0'); // Set to 0 if symbol field is empty
+                    $('#currentPrice').val('0.0000'); // Set to 0 if symbol field is empty
                 }
             });
+
+            // Initial fetch of market data if symbol field is pre-filled (e.g., on edit page if implemented)
+            // Or just to set initial placeholder if user types nothing initially
+            if ($('#symbol').val()) {
+                $('#symbol').trigger('blur'); // Trigger fetch on load if symbol has a value
+            }
+
 
             // Auto-calculate duration
             $('#startDate, #endDate').on('change', function () {
@@ -253,7 +269,7 @@
                 const stopLossVal = parseFloat($('#stopLoss').val());
                 const entryPriceVal = parseFloat($('#entryPrice').val());
                 const targetPriceVal = parseFloat($('#targetPrice').val());
-                const currentPriceVal = parseFloat($('#currentPrice').val());
+                const currentPriceVal = parseFloat($('#currentPrice').val()); // This will be the client-side fetched value, the backend will re-verify.
 
                 // Basic validation for numbers
                 if (isNaN(stopLossVal) || isNaN(entryPriceVal) || isNaN(targetPriceVal) || isNaN(currentPriceVal)) {
@@ -263,32 +279,31 @@
 
                 const formData = {
                     traderName: $('#traderName').val(),
-                    symbol: $('#symbol').val().toUpperCase(), // Ensure symbol is uppercase
+                    symbol: $('#symbol').val().toUpperCase(), // Ensure symbol is uppercase, backend will handle USDT suffix
                     stopLoss: stopLossVal,
                     entryPrice: entryPriceVal,
                     targetPrice: targetPriceVal,
-                    currentPrice: currentPriceVal, // Use the parsed float value
+                    currentPrice: currentPriceVal, // Send client's current price, but backend will override with live data
                     strategy: $('#strategy').val(),
                     risk: $('#risk').val(),
                     // Correct ISO 8601 format for Go's time.Parse
-                    // Go's default time.Time parsing expects "YYYY-MM-DDTHH:MM:SSZ07:00"
                     // Appending "T00:00:00Z" (for UTC midnight) to a date string works.
                     startDate: $('#startDate').val() ? $('#startDate').val() + "T00:00:00Z" : "",
                     endDate: $('#endDate').val() ? $('#endDate').val() + "T00:00:00Z" : "",
-                    totalDuration: $('#totalDuration').val(), // This can be calculated on backend too, but send for consistency
-                    status: "Pending" // Initial status set by client, but backend service should confirm/override based on logic
+                    totalDuration: $('#totalDuration').val(),
+                    status: "Pending" // Initial status set by client, but backend service will confirm/override based on logic
                 };
 
                 console.log("Form Data to be sent:", formData);
 
                 $.ajax({
-                    url: '/admin/api/signals', // Replace with your actual API endpoint for creating signals
+                    url: '/admin/api/signals', // Your API endpoint for creating signals
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
                     success: function (response) {
                         alert('Signal created successfully!');
-                        // Optionally, redirect to the signals list page
+                        // Redirect to the signals list page
                         window.location.href = '/admin/signals';
                     },
                     error: function (jqXHR, textStatus, errorThrown) {

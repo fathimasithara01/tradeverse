@@ -39,7 +39,7 @@
 
             <div class="container-fluid">
                 <div class="row" id="signal-cards-container">
-                    <!-- Signal cards will be loaded here by JavaScript -->
+                    <!-- Initial loading message -->
                     <div class="col-12 loading-message">
                         <p><i class="fas fa-spinner fa-spin me-2"></i>Loading live trading signals...</p>
                     </div>
@@ -79,12 +79,13 @@
 
             // Helper function to safely get a numeric value, defaulting to 0 if null/undefined
             function getSafeNumber(value) {
-                return (value !== undefined && value !== null) ? parseFloat(value) : 0;
+                return (value !== undefined && value !== null && !isNaN(parseFloat(value))) ? parseFloat(value) : 0;
             }
 
             function fetchSignals() {
                 const container = $('#signal-cards-container');
                 container.empty(); // Clear existing cards
+                // Add loading message back while fetching
                 container.append('<div class="col-12 loading-message"><p><i class="fas fa-spinner fa-spin me-2"></i>Loading live trading signals...</p></div>');
 
                 console.log("Fetching signals from /admin/api/signals...");
@@ -96,16 +97,17 @@
                     success: function (signals) {
                         console.log("Signals received:", signals);
 
-                        container.empty();
+                        container.empty(); // Clear loading message
 
                         if (signals && signals.length > 0) {
+                            // Sort signals: Pending, Active, Target Hit, Stop Loss
                             signals.sort((a, b) => {
                                 const getStatusOrder = (status) => {
                                     if (status === 'Pending') return 1;
                                     if (status === 'Active') return 2;
                                     if (status === 'Target Hit') return 3;
                                     if (status === 'Stop Loss') return 4;
-                                    return 5;
+                                    return 5; // Default for any other status
                                 };
                                 return getStatusOrder(a.status) - getStatusOrder(b.status);
                             });
@@ -160,16 +162,20 @@
                                         displayCurrentPriceForCard = actualLiveCurrentPrice; // Use actual live price if available
                                     }
 
-
                                     // Calculate percentage for pending:
                                     // If we have a range (SL to Target) and a valid current price
-                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && actualLiveCurrentPrice !== 0) {
-                                        currentPricePercentage = ((actualLiveCurrentPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
-                                        currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
-                                    } else if (actualLiveCurrentPrice === 0 && entryPrice !== 0 && stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss) {
-                                        // If currentPrice is 0 (not yet updated) but we have an entry, show entry's position
-                                        currentPricePercentage = ((entryPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
-                                        currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
+                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss) {
+                                        let referencePrice = actualLiveCurrentPrice;
+                                        if (referencePrice === 0 && entryPrice !== 0) {
+                                            referencePrice = entryPrice; // Use entry price to show initial position if current is 0
+                                        }
+
+                                        if (referencePrice !== 0) {
+                                            currentPricePercentage = ((referencePrice - stopLoss) / (targetPrice - stopLoss)) * 100;
+                                            currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
+                                        } else {
+                                            currentPricePercentage = 50; // Fallback if no valid price to calculate
+                                        }
                                     } else {
                                         currentPricePercentage = 50; // Default to middle if no range or current price is 0
                                     }
@@ -179,7 +185,7 @@
                                     cardClass = '';
 
                                     // For Active signals, always use the live currentPrice for calculations and display
-                                    displayCurrentPriceForCard = actualLiveCurrentPrice; // Explicitly set, though often already holding this
+                                    displayCurrentPriceForCard = actualLiveCurrentPrice; 
                                     
                                     // Calculate percentage based on actualLiveCurrentPrice
                                     if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && actualLiveCurrentPrice !== 0) {
@@ -188,6 +194,8 @@
                                     } else if (actualLiveCurrentPrice !== 0 && entryPrice !== 0) {
                                         // Fallback if SL/Target are missing, but we have current and entry
                                         // This is a rough estimation of position relative to entry
+                                        // Aim for 0% at half the entry price, 100% at double entry price, adjust range.
+                                        // A more sophisticated fallback might be needed here if SL/Target are truly optional.
                                         currentPricePercentage = 50 + ((actualLiveCurrentPrice - entryPrice) / entryPrice) * 50;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else {
@@ -272,12 +280,13 @@
 
                                             <div class="signal-info-grid">
                                                 <div class="info-item"><span>Strategy:</span><span>${signal.strategy || 'N/A'}</span></div>
-<div class="info-item"><span>Risk:</span><span>${signal.risk || 'N/A'}</span></div>
+                                                <div class="info-item"><span>Risk:</span><span>${signal.risk || 'N/A'}</span></div>
                                                 <div class="info-item"><span>Trade Period:</span><span>${tradeStartDate} - ${tradeEndDate}</span></div>
                                                 <div class="info-item"><span>Duration:</span><span>${signal.totalDuration || 'N/A'}</span></div>
                                             </div>
 
                                             <div class="signal-actions">
+                                                <!-- Disable copy button for completed signals -->
                                                 <button class="btn btn-copy" ${cardClass.includes('target-hit') || cardClass.includes('stop-loss') ? 'disabled' : ''}>Copy Trades</button>
                                                 <button class="btn btn-view">View Profile</button>
                                             </div>
@@ -305,7 +314,7 @@
             fetchSignals();
             let refreshIntervalId = setInterval(fetchSignals, 60000); // Store interval ID
 
-            // --- Start of NEW CODE for instant refresh ---
+            // --- Start of NEW CODE for instant refresh on tab focus ---
             let lastFetched = Date.now();
             const refreshThreshold = 5000; // Refresh if it's been more than 5 seconds since last fetch
 
