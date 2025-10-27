@@ -167,10 +167,28 @@
                     <td>${plan.max_followers || 'Unlimited'}</td>
                     <td>${traderPlan}</td>
                     <td>${status}</td>
-                    <td>
+                    <!--<td>
                         <button class="btn btn-sm btn-primary me-1" data-id="${plan.ID}" data-action="edit">Edit</button>
                         <button class="btn btn-sm btn-danger" data-id="${plan.ID}" data-action="delete">Delete</button>
+                    </td> -->
+
+                    <td class="text-end pe-3">
+                    <button 
+                        class="btn btn-sm btn-primary me-1" 
+                        data-id="${plan.ID}" 
+                        data-action="edit" 
+                        title="Edit Plan">
+                        <i class="fas fa-pencil-alt me-1"></i>
+                    </button>
+                    <button 
+                        class="btn btn-sm btn-danger" 
+                        data-id="${plan.ID}" 
+                        data-action="delete" 
+                        title="Delete Plan">
+                        <i class="fas fa-trash-alt me-1"></i>
+                    </button>
                     </td>
+
                 `;
                 fragment.appendChild(tr);
             });

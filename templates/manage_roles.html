@@ -97,20 +97,21 @@
                                     </button>
                                 </td> -->
 
+                                <td class="text-end pe-4">
+                                <a href="/admin/roles/edit/${role.ID}" 
+                                    title="Edit Role"
+                                    style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background-color:#0d6efd;color:#fff;text-decoration:none;margin-left:6px;transition:0.2s;">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <button 
+                                    onclick="deleteRole(${role.ID})" 
+                                    title="Delete Role"
+                                    style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background-color:#dc3545;color:#fff;border:none;cursor:pointer;margin-left:6px;transition:0.2s;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                </td>
 
-                                  <a href="/admin/roles/edit/${role.ID}" 
-     class="btn btn-sm btn-info me-1" 
-     title="Edit Role">
-    <i class="fas fa-pencil-alt"></i>
-  </a>
-  <button 
-     class="btn btn-sm btn-danger delete-btn action-btn delete" 
-     title="Delete" 
-     data-id="${ReadableByteStreamController.ID}">
-    <i class="fas fa-trash"></i>
-  </button>
-</td>
-                            `;
+                      `;
                             tableBody.appendChild(row);
                         });
                     })
