@@ -24,8 +24,6 @@ func NewSignalController(liveSignalService service.ILiveSignalService) *SignalCo
 }
 
 func (ctrl *SignalController) ShowLiveSignalsPage(c *gin.Context) {
-	// The signals are now fetched via AJAX, so this page doesn't need to pass them initially.
-	// It just renders the container for JS to fill.
 	c.HTML(http.StatusOK, "signal_cards.html", gin.H{
 		"Title":        "Live Trading Signals",
 		"ActiveTab":    "activity",
@@ -43,8 +41,6 @@ func (ctrl *SignalController) GetLiveSignals(c *gin.Context) {
 	c.JSON(http.StatusOK, signals)
 }
 
-// GetSignalCardsPage is redundant if ShowLiveSignalsPage does the same thing.
-// If it serves a different purpose, keep it. Assuming ShowLiveSignalsPage is the primary for the UI.
 func GetSignalCardsPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "signal_cards.html", gin.H{
 		"Title":        "Signal Cards",
@@ -86,15 +82,12 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 	reqJSON, _ := json.MarshalIndent(req, "", "  ")
 	log.Printf("Received Signal Request:\n%s", string(reqJSON))
 
-	// Normalize symbol: ensure it ends with USDT and is uppercase
-	// This makes the symbol consistent before querying market data or saving.
 	normalizedSymbol := strings.ToUpper(req.Symbol)
 	if !strings.HasSuffix(normalizedSymbol, "USDT") {
 		normalizedSymbol += "USDT"
 	}
 	req.Symbol = normalizedSymbol // Update the request struct's symbol
 
-	// Parse dates from ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
 	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
 		log.Printf("ERROR: Invalid startDate '%s': %v", req.StartDate, err)
@@ -109,8 +102,6 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		return
 	}
 
-	// --- CRITICAL: Fetch actual current price from market data to ensure accuracy ---
-	// This overrides any client-provided 'currentPrice' to prevent stale or manipulated data.
 	marketData, err := ctrl.liveSignalService.GetMarketDataBySymbol(c, req.Symbol)
 	if err != nil {
 		log.Printf("Warning: Could not fetch market data for symbol %s during signal creation: %v. Using client-provided price (%.4f).", req.Symbol, err, req.CurrentPrice)
@@ -121,23 +112,19 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 	} else {
 		log.Printf("No market data found for %s during signal creation. CurrentPrice will be client-provided (%.4f).", req.Symbol, req.CurrentPrice)
 	}
-	// --- END CRITICAL FIX ---
-
-	// Hardcoding these for simplicity in admin panel; in a real app, these would come from auth context.
 	createdByRole := "Admin"
-	creatorID := uint(1)
+	creatorID := uint(1) // Assuming Admin ID is 1 for simplicity
 
 	signal := models.Signal{
-		TraderName:   req.TraderName,
-		Symbol:       req.Symbol,
-		StopLoss:     req.StopLoss,
-		EntryPrice:   req.EntryPrice,
-		TargetPrice:  req.TargetPrice,
-		CurrentPrice: req.CurrentPrice, // Now potentially updated from live market data
-		Risk:         req.Risk,
-		Strategy:     req.Strategy,
-		// The `Status` from the request is a hint; the service layer will set the definitive status
-		// based on TradeStartDate.
+		TraderID:       creatorID, // Set TraderID, assuming admin creating is the 'trader'
+		TraderName:     req.TraderName,
+		Symbol:         req.Symbol,
+		StopLoss:       req.StopLoss,
+		EntryPrice:     req.EntryPrice,
+		TargetPrice:    req.TargetPrice,
+		CurrentPrice:   req.CurrentPrice, // Now potentially updated from live market data
+		Risk:           req.Risk,
+		Strategy:       req.Strategy,
 		Status:         req.Status, // Will be overridden by service.CreateSignal
 		TotalDuration:  req.TotalDuration,
 		TradeStartDate: startDate,
@@ -163,8 +150,6 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 	})
 }
 
-// GetMarketDataAPI now relies on the `db` from Gin context, assuming it's injected by middleware.
-// It also ensures Volume24H is returned.
 func GetMarketDataAPI(c *gin.Context) {
 	db, exists := c.Get("db")
 	if !exists {
@@ -181,8 +166,6 @@ func GetMarketDataAPI(c *gin.Context) {
 
 	var marketData []models.MarketData
 	log.Println("Attempting to retrieve market data from DB for /admin/api/market-data...")
-	// Order by current_price DESC might not be strictly necessary for this endpoint,
-	// but it doesn't harm. `Find` without `Where` gets all.
 	if err := gormDB.Order("current_price DESC").Find(&marketData).Error; err != nil {
 		log.Printf("ERROR: Failed to retrieve market data from DB: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve market data"})

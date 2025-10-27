@@ -291,19 +291,18 @@
                     startDate: $('#startDate').val() ? $('#startDate').val() + "T00:00:00Z" : "",
                     endDate: $('#endDate').val() ? $('#endDate').val() + "T00:00:00Z" : "",
                     totalDuration: $('#totalDuration').val(),
-                    status: "Pending" // Initial status set by client, but backend service will confirm/override based on logic
-                };
+                    status: "Pending" 
+                   };
 
                 console.log("Form Data to be sent:", formData);
 
                 $.ajax({
-                    url: '/admin/api/signals', // Your API endpoint for creating signals
+                    url: '/admin/api/signals', 
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
                     success: function (response) {
                         alert('Signal created successfully!');
-                        // Redirect to the signals list page
                         window.location.href = '/admin/signals';
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
