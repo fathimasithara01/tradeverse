@@ -16,7 +16,6 @@ type AdminTraderSubscriptionPlan struct {
 	Interval    string        `gorm:"size:20;not null" json:"interval"`      // e.g., "day", "month", "year"
 	IsActive    bool          `gorm:"default:true" json:"is_active"`
 
-	// Fields specific to general plans, potentially created by admin for general users
 	IsTraderPlan     bool    `gorm:"default:false" json:"is_trader_plan"` // True if this plan is offered by a trader (perhaps not needed if TraderSubscriptionPlan handles this)
 	TraderID         *uint   `gorm:"index" json:"trader_id,omitempty"`    // Link to the Trader (User.ID) if IsTraderPlan is true (Can be removed if TraderSubscriptionPlan is used instead)
 	Features         string  `gorm:"type:text" json:"features"`
@@ -27,14 +26,3 @@ type AdminTraderSubscriptionPlan struct {
 
 	IsUpgradeToTrader bool `gorm:"default:false" json:"is_upgrade_to_trader"`
 }
-
-// type AdminTraderSubscriptionPlan struct {
-// 	gorm.Model
-// 	Name              string  `gorm:"size:255;not null" json:"name"`
-// 	Description       string  `gorm:"type:text" json:"description"`
-// 	Price             float64 `gorm:"type:numeric(18,4);not null" json:"price"`
-// 	Currency          string  `gorm:"size:10;not null" json:"currency"`
-// 	Duration          uint    `gorm:"not null" json:"duration_days"` // Duration in days
-// 	IsActive          bool    `gorm:"default:true" json:"is_active"`
-// 	IsUpgradeToTrader bool    `gorm:"default:false" json:"is_upgrade_to_trader"`
-// }
