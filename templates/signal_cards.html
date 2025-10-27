@@ -31,11 +31,7 @@
                             <i class="fas fa-plus me-2"></i>Create Signal Card
                         </a>
                     </div>
-                    <!-- Dark Mode Toggle -->
-                    <div class="form-check form-switch d-flex align-items-center">
-                        <input class="form-check-input ms-2 me-1" type="checkbox" id="darkModeSwitch">
-                        <label class="form-check-label" for="darkModeSwitch">Dark Mode</label>
-                    </div>
+                  
                 </div>
             </nav>
 
@@ -126,62 +122,63 @@
                                 const stopLoss = getSafeNumber(signal.stop_loss);
                                 const entryPrice = getSafeNumber(signal.entry_price);
                                 const targetPrice = getSafeNumber(signal.target_price);
-                                // This is the actual current price from the backend, use it for all calculations where live price is needed
+                                // This is the actual current price from the backend (updated by cron)
                                 const actualLiveCurrentPrice = getSafeNumber(signal.current_price);
 
                                 // The price explicitly displayed on the card under "Current Price:"
-                                // Start with the actual live price from the DB.
+                                // PRIORITIZE actualLiveCurrentPrice from DB. Fallback to entryPrice if actualLiveCurrentPrice is 0.
                                 let displayCurrentPriceForCard = actualLiveCurrentPrice;
-
-                                // Fallback for display if actualLiveCurrentPrice is 0 (e.g., market data not yet available)
-                                // For Pending/Active, use EntryPrice as a temporary placeholder.
                                 if (displayCurrentPriceForCard === 0 && entryPrice !== 0 && (signal.status === 'Pending' || signal.status === 'Active')) {
                                     displayCurrentPriceForCard = entryPrice;
-                                    console.log(`   Overriding display price with Entry Price (${entryPrice}) for Signal ID ${signal.ID} due to zero actualLiveCurrentPrice.`);
+                                    console.log(`   Display price fallback to Entry Price (${entryPrice}) for Signal ID ${signal.ID} due to zero actualLiveCurrentPrice.`);
                                 }
 
+
                                 console.log(`   Prices - SL: ${stopLoss}, Entry: ${entryPrice}, Target: ${targetPrice}, Actual Live Current from DB: ${actualLiveCurrentPrice}, Display Price on Card: ${displayCurrentPriceForCard}, Status: ${signal.status}`);
+
 
                                 if (signal.status === 'Target Hit') {
                                     statusBadge = `<div class="status-badge target-hit"><i class="fas fa-check-circle"></i>Target Hit!</div>`;
                                     cardClass = 'target-hit-card';
-                                    // Set progress bar to 100% for completed target
-                                    currentPricePercentage = 100;
+                                    currentPricePercentage = 100; // Force to 100% for achieved target
 
                                 } else if (signal.status === 'Stop Loss') {
                                     statusBadge = `<div class="status-badge stop-loss"><i class="fas fa-times-circle"></i>Stop Loss!</div>`;
                                     cardClass = 'stop-loss-card';
-                                    // Set progress bar to 0% for stop loss
-                                    currentPricePercentage = 0;
+                                    currentPricePercentage = 0; // Force to 0% for stop loss hit
 
                                 } else if (signal.status === 'Pending') {
                                     statusBadge = `<div class="status-badge pending"><i class="fas fa-exclamation-circle"></i>Pending</div>`;
                                     cardClass = '';
 
-                                    // Calculate percentage for pending using displayCurrentPriceForCard
-                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss) {
-                                        let referencePriceForProgress = displayCurrentPriceForCard;
-                                        if (referencePriceForProgress !== 0) {
-                                            currentPricePercentage = ((referencePriceForProgress - stopLoss) / (targetPrice - stopLoss)) * 100;
-                                            currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
-                                        } else {
-                                            currentPricePercentage = 50; // Fallback if no valid price to calculate
-                                        }
+                                    // For Pending signals, calculate progress based on entry/current price relative to SL/Target.
+                                    // Use the actualLiveCurrentPrice for calculation, falling back to EntryPrice if live is 0.
+                                    let priceForProgress = actualLiveCurrentPrice;
+                                    if (priceForProgress === 0 && entryPrice !== 0) {
+                                        priceForProgress = entryPrice;
+                                    }
+
+                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && priceForProgress !== 0) {
+                                        currentPricePercentage = ((priceForProgress - stopLoss) / (targetPrice - stopLoss)) * 100;
+                                        currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else {
-                                        currentPricePercentage = 50; // Default to middle if no range or current price is 0
+                                        currentPricePercentage = 50; // Fallback if no valid range or price to calculate
                                     }
 
                                 } else { // Default to 'Active' or general ongoing
                                     statusBadge = `<div class="status-badge active"><i class="fas fa-chart-line"></i>Active</div>`;
                                     cardClass = '';
 
-                                    // For Active signals, calculate percentage based on displayCurrentPriceForCard
-                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && displayCurrentPriceForCard !== 0) {
-                                        currentPricePercentage = ((displayCurrentPriceForCard - stopLoss) / (targetPrice - stopLoss)) * 100;
+                                    // For Active signals, calculate percentage based on actualLiveCurrentPrice
+                                    if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && actualLiveCurrentPrice !== 0) {
+                                        currentPricePercentage = ((actualLiveCurrentPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
-                                    } else if (displayCurrentPriceForCard !== 0 && entryPrice !== 0) {
+                                    } else if (actualLiveCurrentPrice !== 0 && entryPrice !== 0) {
                                         // Fallback if SL/Target are missing, but we have current and entry
-                                        currentPricePercentage = 50 + ((displayCurrentPriceForCard - entryPrice) / entryPrice) * 50;
+                                        // This creates a relative progress from entry, capped.
+                                        const diffFromEntry = actualLiveCurrentPrice - entryPrice;
+                                        // If diffFromEntry is positive, move above 50%, negative below 50%
+                                        currentPricePercentage = 50 + (diffFromEntry / entryPrice) * 50;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else {
                                         currentPricePercentage = 50; // General fallback if no price info
@@ -219,10 +216,13 @@
                                 const displayStopLoss = stopLoss.toFixed(4);
                                 const displayEntryPrice = entryPrice.toFixed(4);
                                 const displayTargetPrice = targetPrice.toFixed(4);
-                                // Use the specifically determined displayCurrentPriceForCard here
+                                // Use the specifically determined displayCurrentPriceForCard here, formatted
                                 const formattedDisplayCurrentPrice = displayCurrentPriceForCard.toFixed(4);
 
                                 console.log(`   Formatted Prices - SL: ${displayStopLoss}, Entry: ${displayEntryPrice}, Target: ${displayTargetPrice}, Display Current: ${formattedDisplayCurrentPrice}`);
+
+                                const isSignalCompleted = (signal.status === 'Target Hit' || signal.status === 'Stop Loss');
+                                const copyButtonDisabled = isSignalCompleted ? 'disabled' : '';
 
                                 const card = `
                                     <div class="col-md-6 col-lg-4 mb-4">
@@ -271,8 +271,7 @@
                                             </div>
 
                                             <div class="signal-actions">
-                                                <!-- Disable copy button for completed signals -->
-                                                <button class="btn btn-copy" ${cardClass.includes('target-hit') || cardClass.includes('stop-loss') ? 'disabled' : ''}>Copy Trades</button>
+                                                <button class="btn btn-copy" ${copyButtonDisabled}>Copy Trades</button>
                                                 <button class="btn btn-view">View Profile</button>
                                             </div>
                                         </div>

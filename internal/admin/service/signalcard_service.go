@@ -85,11 +85,13 @@ func (s *liveSignalService) UpdateAllSignalsCurrentPrices(ctx context.Context) e
 
 		// Only update if the current price has actually changed to avoid unnecessary DB writes
 		if signal.CurrentPrice != marketData.CurrentPrice {
+			oldPrice := signal.CurrentPrice
 			err := s.signalRepo.UpdateSignalCurrentPrice(ctx, signal.ID, marketData.CurrentPrice)
 			if err != nil {
 				log.Printf("Error updating current price for signal ID %d: %v", signal.ID, err)
 			} else {
-				log.Printf("Updated signal ID %d current price: %.4f -> %.4f", signal.ID, signal.CurrentPrice, marketData.CurrentPrice)
+				// Corrected log statement
+				log.Printf("Updated signal ID %d current price: %.4f -> %.4f", signal.ID, oldPrice, marketData.CurrentPrice)
 			}
 		}
 	}

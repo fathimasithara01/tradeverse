@@ -64,7 +64,7 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		StopLoss      float64 `json:"stopLoss"`
 		EntryPrice    float64 `json:"entryPrice"`
 		TargetPrice   float64 `json:"targetPrice"`
-		CurrentPrice  float64 `json:"currentPrice"` // This will be client-provided, but we'll override it if market data is available
+		CurrentPrice  float64 `json:"currentPrice"` // Client might provide, but we will always override with live data
 		Risk          string  `json:"risk"`
 		Strategy      string  `json:"strategy"`
 		Status        string  `json:"status"` // Client might provide "Pending", but service will confirm
@@ -102,16 +102,19 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		return
 	}
 
+	// ALWAYS fetch live market data for CurrentPrice when creating a signal
 	marketData, err := ctrl.liveSignalService.GetMarketDataBySymbol(c, req.Symbol)
 	if err != nil {
-		log.Printf("Warning: Could not fetch market data for symbol %s during signal creation: %v. Using client-provided price (%.4f).", req.Symbol, err, req.CurrentPrice)
-		// If market data fetch fails, we'll proceed with req.CurrentPrice (which might be 0)
+		log.Printf("Warning: Could not fetch market data for symbol %s during signal creation: %v. CurrentPrice will be initialized to 0.", req.Symbol, err)
+		req.CurrentPrice = 0 // Initialize to 0 if market data cannot be fetched
 	} else if marketData != nil {
-		req.CurrentPrice = marketData.CurrentPrice                                                                                       // Override client-provided current price with live data
-		log.Printf("Fetched live current price for %s: %.4f (overriding client's %.4f)", req.Symbol, req.CurrentPrice, req.CurrentPrice) // Log both for clarity
+		req.CurrentPrice = marketData.CurrentPrice // Override client-provided current price with live data
+		log.Printf("Fetched live current price for %s: %.4f (overriding client's %.4f)", req.Symbol, req.CurrentPrice, req.CurrentPrice)
 	} else {
-		log.Printf("No market data found for %s during signal creation. CurrentPrice will be client-provided (%.4f).", req.Symbol, req.CurrentPrice)
+		log.Printf("No market data found for %s during signal creation. CurrentPrice will be initialized to 0.", req.Symbol)
+		req.CurrentPrice = 0 // Explicitly set to 0 if no market data found
 	}
+
 	createdByRole := "Admin"
 	creatorID := uint(1) // Assuming Admin ID is 1 for simplicity
 
@@ -122,7 +125,7 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		StopLoss:       req.StopLoss,
 		EntryPrice:     req.EntryPrice,
 		TargetPrice:    req.TargetPrice,
-		CurrentPrice:   req.CurrentPrice, // Now potentially updated from live market data
+		CurrentPrice:   req.CurrentPrice, // Now definitively set from live market data or 0
 		Risk:           req.Risk,
 		Strategy:       req.Strategy,
 		Status:         req.Status, // Will be overridden by service.CreateSignal

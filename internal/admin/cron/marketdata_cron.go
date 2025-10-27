@@ -1,4 +1,3 @@
-// internal/admin/cron/cron.go
 package cron
 
 import (
@@ -24,6 +23,8 @@ type CoinGeckoCoin struct {
 	Image                    string  `json:"image"`
 	CurrentPrice             float64 `json:"current_price"`
 	PriceChangePercentage24h float64 `json:"price_change_percentage_24h"`
+	TotalVolume              float64 `json:"total_volume"` // Added for Volume24H
+	MarketCap                float64 `json:"market_cap"`   // Added for MarketCap
 }
 
 func FetchAndSaveMarketData(db *gorm.DB) {
@@ -61,20 +62,21 @@ func FetchAndSaveMarketData(db *gorm.DB) {
 			CurrentPrice:   coin.CurrentPrice,
 			PriceChange24H: coin.PriceChangePercentage24h,
 			LogoURL:        coin.Image,
-			// LastUpdated:    time.Now(),
+			Volume24H:      coin.TotalVolume, // Populate Volume24H
+			MarketCap:      coin.MarketCap,   // Populate MarketCap
 		}
-		log.Printf(" current data for %s", coin.CurrentPrice)
+		log.Printf(" current data for %s", coin.CurrentPrice) // This log seems redundant after fix
 
+		// Use db.Clauses(clause.OnConflict{...}) for more robust upsert, or rely on FirstOrCreate logic
 		result := db.Where(models.MarketData{Symbol: marketData.Symbol}).Assign(marketData).FirstOrCreate(&marketData)
 		if result.Error != nil {
 			log.Printf("Error saving/updating market data for %s: %v", coin.Symbol, result.Error)
 		} else if result.RowsAffected == 0 {
-
+			// No rows affected typically means it was found but nothing changed, or already existed.
+			// Log this if you want to differentiate, but usually 'FirstOrCreate' handles this gracefully.
 		} else {
 			log.Printf("Saved/Updated market data for %s (Current Price: %.4f)", coin.Symbol, coin.CurrentPrice)
 		}
-		log.Printf(" current data for %s", coin.CurrentPrice)
-
 	}
 	log.Println("Market data fetch complete.")
 
