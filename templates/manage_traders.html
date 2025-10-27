@@ -92,7 +92,6 @@
       let deleteTargetRow = null; // Stores the table row element to be removed after successful deletion
       let deleteUserId = null;    // Stores the ID of the user to be deleted
 
-      // Function to fetch trader data from the API and display it in the table
       function fetchAndDisplayTraders() {
         fetch('/admin/api/users/traders') // Make a GET request to the traders API
           .then(res => res.json())       // Parse the JSON response
@@ -104,13 +103,10 @@
               return;
             }
 
-            // Iterate over each trader and create a table row
             traders.forEach(user => {
-              // Determine status badge based on is_blocked property
               const status = user.is_blocked
                 ? '<span class="badge bg-danger">Blocked</span>'
                 : '<span class="badge bg-success">Active</span>';
-              // Format creation date (or 'N/A' if not available)
               const startDate = user.CreatedAt
                 ? new Date(user.CreatedAt).toLocaleDateString('en-IN')
                 : 'N/A';
