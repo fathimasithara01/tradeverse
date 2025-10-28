@@ -124,17 +124,15 @@
                     });
             }
 
-            // Event listener for clicks on the table body to handle delete button clicks
             tableBody.addEventListener('click', function (event) {
                 const deleteButton = event.target.closest('.delete-btn');
                 if (deleteButton) {
-                    deleteUserId = deleteButton.getAttribute('data-id'); // FIX: Assign to the global deleteUserId
+                    deleteUserId = deleteButton.getAttribute('data-id'); 
                     deleteTargetRow = deleteButton.closest('tr');
                     confirmDeleteModal.show();
                 }
             });
 
-            // Event listener for the "Delete" button inside the confirmation modal
             confirmDeleteBtn.addEventListener('click', function () {
                 if (!deleteUserId) return; // If deleteUserId is null, do nothing
 
