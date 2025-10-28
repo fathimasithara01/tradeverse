@@ -47,6 +47,13 @@ func (ctrl *AuthController) LoginUser(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/admin/dashboard")
 }
 
+
+
+
+
+
+
+
 func (ctrl *AuthController) RegisterCustomer(c *gin.Context) {
 	var user models.User
 	var profile models.CustomerProfile
