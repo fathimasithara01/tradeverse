@@ -156,10 +156,9 @@ func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequ
 		log.Printf("[INFO] UpdateAdminProfile: No valid profile picture provided for admin user ID %d. Skipping file upload.", userID)
 	}
 
-	return s.UserRepo.UpdateUser(user) // Pass pointer to UpdateUser
+	return s.UserRepo.UpdateUser(user) 
 }
 
-// ChangeAdminPassword changes the password for an admin user.
 func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword string) error {
 	user, err := s.UserRepo.GetUserByID(userID)
 	if err != nil {
@@ -189,13 +188,8 @@ func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword 
 	return s.UserRepo.UpdateUser(user) // Pass pointer to UpdateUser
 }
 
-// IsValidPassword checks if a password meets the strength requirements.
 func IsValidPassword(password string) bool {
-	// Minimum 8 characters
-	// At least one uppercase letter
-	// At least one lowercase letter
-	// At least one digit
-	// At least one special character (from common set)
+
 	var (
 		minLen     = 8
 		hasUpper   = regexp.MustCompile(`[A-Z]`)

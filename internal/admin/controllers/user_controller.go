@@ -155,7 +155,6 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 
 	if userToUpdate.Role == models.RoleCustomer {
 		if userToUpdate.CustomerProfile.ID == 0 {
-
 		}
 		userToUpdate.CustomerProfile.Name = c.PostForm("Name")
 		userToUpdate.CustomerProfile.Phone = c.PostForm("PhoneNumber")

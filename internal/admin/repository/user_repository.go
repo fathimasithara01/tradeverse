@@ -17,7 +17,6 @@ type IUserRepository interface {
 	CreateTraderWithProfile(user *models.User, profile *models.TraderProfile) error
 
 	FindByID(id uint) (models.User, error)
-	// FindByEmail(email string) (models.User, error)
 	FindByEmail(email string) (*models.User, error)
 	FindByRole(role models.UserRole) ([]models.User, error)
 	FindAllNonAdmins() ([]models.User, error)
