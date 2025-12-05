@@ -4,7 +4,7 @@ A production-grade **trading, wallet, and subscription automation system** built
 
 ---
 
-## 🚀 Overview
+##  Overview
 Tradeverse is a complete multi-role fintech platform for **Admin**, **Trader**, and **Customer** workflows.
 It includes:
 - Real-time market price fetching
@@ -18,46 +18,46 @@ This project demonstrates scalable backend engineering, DDD, and production-styl
 
 ---
 
-## ⭐ Implemented Features
+## Implemented Features
 
-### 🔄 Cron Jobs (Schedulers)
+### Cron Jobs (Schedulers)
 - Periodic real-time market data fetcher
 - Configurable intervals via UI
 - Retry/backoff + rate-limit safe
 - Stores normalized OHLC/price snapshots
 
-### 🧾 Subscription Automation
+### Subscription Automation
 - Auto-check for expired plans
 - Instantly disables access
 - Sends notifications
 - Optimized batch processing
 
-### 🛠️ Admin UI
+### Admin UI
 - User management (CRUD, roles, block/unblock)
 - Commission & pricing configuration
 - System settings (API keys, intervals, toggles)
 - Dashboard with charts, analytics & live metrics
 
-### 💰 Dynamic Pricing
+### Dynamic Pricing
 - Admin sets commission %
 - Role-based pricing
 - Plan pricing adjustments
 - Fully persisted to DB
 
-### 📈 Signal Cards
+### Signal Cards
 Show: current price, entry, SL, targets, timestamp, trader info.
 
-### 🔐 RBAC
+### RBAC
 - Admin / Trader / Customer
 - JWT with role + plan
 - Server + UI enforcement
 
-### 👥 User Management
+### User Management
 - CRUD
 - Role assignment
 - Status & subscription management
 
-### 📊 Dashboard
+### Dashboard
 - Traders/customers stats
 - Revenue graph
 - Active subscriptions
@@ -66,9 +66,9 @@ Show: current price, entry, SL, targets, timestamp, trader info.
 
 ---
 
-## 👥 Role Overview
+## Role Overview
 
-### 👤 Customer
+### Customer
 - Signup/Login
 - Browse traders
 - Subscribe/unsubscribe
@@ -76,14 +76,14 @@ Show: current price, entry, SL, targets, timestamp, trader info.
 - View subscribed signals
 - Wallet (deposit/withdraw/history)
 
-### 👨‍💼 Trader
+### Trader
 - Create & publish trading signals
 - Push live trades
 - Manage subscription plans
 - View subscribers
 - Profile management
 
-### 🛡️ Admin
+### Admin
 - Manage users & traders
 - System configuration
 - Subscription plans
@@ -92,78 +92,84 @@ Show: current price, entry, SL, targets, timestamp, trader info.
 
 ---
 
-## 🧱 Architecture Overview
+## Architecture Overview
 
-### 🧩 Clean Architecture
+### Clean Architecture
 - **Handlers** — routing & validation
 - **Services** — core business logic
 - **Repositories** — data access
 - **Domain Models** — pure business entities
 
-### 📁 Project Structure
+### Project Structure
 ```
 tradeverse/
 ├── cmd/
 │   ├── admin/
 │   ├── trader/
 │   └── customer/
+│
+├── config/
+│
 ├── internal/
 │   ├── admin/
 │   ├── trader/
 │   ├── customer/
-│   └── migrations/
+│
+│──── migrations/
+│
 ├── pkg/
 │   ├── auth/
 │   ├── models/
+│   ├── payment_gateway.go/
 │   ├── seeder/
 │   └── utils/
-├── config/
+│
 ├── static/
 ├── templates/
 └── README.md
 ```
 
-### 🔄 Request Flow
+### Request Flow
 ```
 Client → Router → Handler → Service → Repository → PostgreSQL
 ```
 
 ---
 
-## ⚙️ Core Modules
+## Core Modules
 
-### 🔐 Authentication
+### Authentication
 - JWT-based
 - RBAC middleware
 - Claims store role + subscription info
 
-### 💳 Wallet System
+### Wallet System
 - Deposit / Withdraw
 - Transaction history
 - Race-condition safe
 - Ledger accuracy guaranteed
 
-### 📡 Trader Module
+### Trader Module
 - CRUD trading signals
 - Publish live trades
 - Subscription plans
 - Subscriber management
 
-### 🧾 Customer Module
+### Customer Module
 - Explore traders
 - Subscribe/unsubscribe
 - View signals
 - Upload KYC
 - Wallet summary
 
-### 🛠️ Admin Module
+### Admin Module
 - Manage users/traders/customers
 - Manage subscription plans
 - Dashboard & analytics
 
 ---
 
-## 📘 API Endpoints (High-Level)
+## API Endpoints (High-Level)
 
 ### Trader
 ```
@@ -200,7 +206,7 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 - Go (Golang) — Gin
 - PostgreSQL
 - GORM ORM
@@ -212,7 +218,7 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 
 ---
 
-## 🔧 How Internals Work
+## How Internals Work
 1. **Market Fetcher** — scheduled, normalized prices stored, live updates.
 2. **Subscription Watcher** — expires plans, notifications.
 3. **RBAC Engine** — JWT claim inspection.
@@ -222,7 +228,7 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 
 ---
 
-## ▶️ Running the Project
+## Running the Project
 ```
 go run cmd/admin/main.go
 go run cmd/trader/main.go
@@ -241,7 +247,7 @@ go run pkg/seeder/main.go
 
 ---
 
-## 🔐 Security
+## Security
 - JWT expiry & rotation
 - External secrets (Vault / AWS Secrets Manager)
 - Rate limiting
@@ -251,7 +257,7 @@ go run pkg/seeder/main.go
 
 ---
 
-## 🚀 Deployment
+## Deployment
 - Docker / Docker Compose
 - Kubernetes-ready
 - Separate worker containers for cron jobs
@@ -261,7 +267,7 @@ go run pkg/seeder/main.go
 
 ---
 
-## 🎯 Why This Project Stands Out
+## Why This Project Stands Out
 - Rare multi-role fintech system
 - Realistic wallet + subscription engine
 - Clean Architecture + DDD
@@ -270,7 +276,7 @@ go run pkg/seeder/main.go
 
 ---
 
-## 🖥️ System Diagram
+## System Diagram
 ```
            +-----------------------+
            |      Client (UI)      |
@@ -302,7 +308,7 @@ go run pkg/seeder/main.go
 
 ---
 
-## 👩‍💻 Author
+## Author
 **Fathima Sithara**
 Backend Developer (Golang • Microservices • Full Stack Capable)
 GitHub: https://github.com/fathimasithara01
