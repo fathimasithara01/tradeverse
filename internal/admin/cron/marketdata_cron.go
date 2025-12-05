@@ -23,8 +23,8 @@ type CoinGeckoCoin struct {
 	Image                    string  `json:"image"`
 	CurrentPrice             float64 `json:"current_price"`
 	PriceChangePercentage24h float64 `json:"price_change_percentage_24h"`
-	TotalVolume              float64 `json:"total_volume"` // Added for Volume24H
-	MarketCap                float64 `json:"market_cap"`   // Added for MarketCap
+	TotalVolume              float64 `json:"total_volume"` 
+	MarketCap                float64 `json:"market_cap"`
 }
 
 func FetchAndSaveMarketData(db *gorm.DB) {

@@ -1,62 +1,172 @@
-#  TradeVerse – Multi‑Role Copy Trading Platform
+Tradeverse – Multi-Role Trading Automation Platform
 
-A Production‑Ready SaaS Application — **Admin, Trader & Customer Modules**
+A production-grade trading, wallet, and subscription automation system built using Go (Golang), PostgreSQL, Clean Architecture, cron jobs, and real-time market APIs.
 
-TradeVerse is a complete **Copy Trading SaaS Platform** built using **Golang**, following **Clean Architecture**, **Domain‑Driven Design (DDD)**, and a **microservice‑ready modular structure**. It supports **Admin**, **Trader**, and **Customer** roles with secure authentication, wallet operations, subscriptions, signal publishing, KYC, and performance analytics.
+🚀 Overview
 
----
+Tradeverse is a complete multi-role fintech platform designed for Admin, Trader, and Customer workflows.
+It supports:
 
-##  Key Highlights
+✅ Real-time market price fetching
+✅ Automated subscription lifecycle
+✅ Advanced RBAC
+✅ Wallet with strong validations
+✅ Trader signal publishing
+✅ Admin UI for configuration and management
 
-* **Clean Architecture + DDD**
-* **Role‑based modular services** (`cmd/admin`, `cmd/trader`, `cmd/customer`)
-* **Secure JWT Authentication**
-* **Fully validated Wallet System**
-* **Subscriptions + Live Trading Signals**
-* **PostgreSQL + GORM ORM**
-* **Scalable & Microservice‑Ready Structure**
+This project demonstrates my capabilities in scalable backend engineering, DDD, production architecture, and fintech-grade workflows.
 
----
+⭐ Implemented Features
+🔄 Cron Jobs (Schedulers)
 
-##  Role Overview
+Fetches real-time market data periodically
 
-### Customer
+Configurable intervals via UI
 
-* Signup/Login (JWT)
-* Browse traders
-* Subscribe/unsubscribe
-* KYC upload & status tracking
-* View signals from subscribed traders
-* Wallet: deposit, withdrawal, transaction history
+Retry/backoff + rate limit handling
 
-###  Trader
+Stores normalized OHLC/price snapshots
 
-* Create trading signals
-* Publish live trades
-* Create/manage subscription plans
-* View subscribers
-* Manage trader profile
+Powers dashboards & signal updates
 
-### ** Admin**
+🧾 Subscription Automation
 
-* Manage traders & system data
-* Manage subscription plans
-* Monitor activity & audits
+Auto-checks for expired plans
 
----
+Disables access instantly
 
-##  Architecture Overview
+Sends notifications
 
-### **Clean Architecture Layers**
+Batch updates for efficiency
 
-* **Handlers / Controllers** – Request validation + routing
-* **Services / Use‑Cases** – Core business logic
-* **Repositories** – Database interactions using GORM
-* **Domain Models** – Independent business entities
+🛠️ Admin UI
 
-### **Modular Directory Structure**
+A functional admin panel with:
 
-```
+User management (CRUD, block/unblock, role assignment)
+
+Commission & pricing management
+
+System configuration (API keys, intervals, feature toggles)
+
+Dashboard with charts, analytics, and live metrics
+
+💰 Commission & Dynamic Pricing
+
+Admin can configure:
+
+Percentage commission
+
+Role-based pricing
+
+Plan pricing
+
+Entire system persists changes in DB
+
+📈 Signal Cards
+
+Each trading signal displays:
+Current price, Entry, SL, Targets, Timestamp, and Trader info.
+
+🔐 RBAC (Role-Based Access Control)
+
+Admin / Trader / Customer roles
+
+Enforced both server-side and UI-side
+
+JWT tokens carry role + plan info
+
+👥 User Management
+
+CRUD
+
+Role assignment
+
+Status management
+
+Subscription management
+
+📊 Dashboard
+
+Total traders/customers
+
+Revenue graph
+
+Active subscriptions
+
+Live price feed
+
+Recent signals
+
+Time-series charts
+
+🔍 Key Highlights
+
+Clean Architecture + Domain-Driven Design
+
+Multi-role modular services (cmd/admin, cmd/trader, cmd/customer)
+
+Secure JWT authentication
+
+Validated wallet system
+
+Real-time signals + subscriptions
+
+Production-ready directory structure
+
+Docker-ready deployment
+
+👥 Role Overview
+👤 Customer
+
+Signup/Login
+
+Browse traders
+
+Subscribe/unsubscribe
+
+Upload KYC
+
+View subscribed signals
+
+Wallet operations (deposit/withdraw/history)
+
+👨‍💼 Trader
+
+Create & publish signals
+
+Push live trades
+
+Create/manage subscription plans
+
+View subscribers
+
+Manage profile
+
+🛡️ Admin
+
+Manage traders & customers
+
+Manage subscription plans
+
+Dashboard & analytics
+
+System configuration
+
+Audit logs
+
+🧱 Architecture Overview
+🧩 Clean Architecture Layers
+
+Handlers — HTTP, validation, routing
+
+Services / Use-Cases — Core business logic
+
+Repositories — Data persistence
+
+Domain Models — Pure business rules, no external dependencies
+
+📁 Project Structure
 tradeverse/
 ├── cmd/
 │   ├── admin/
@@ -79,159 +189,229 @@ tradeverse/
 ├── static/
 ├── templates/
 └── README.md
-```
 
-### **Data Flow**
-
-```
+🔄 Request Flow
 Client → Router → Handler → Service → Repository → PostgreSQL
-```
 
----
+⚙️ Core Modules
+🔐 Authentication
 
-## Core Features
+JWT-based
 
-### **Authentication & Access Control**
+RBAC middleware
 
-* JWT login/signup
-* Role‑based access (Admin / Trader / Customer)
-* Token validation middleware
-* Session management
+Token claims for role + expiry + subscription
 
-### **Wallet System**
+💳 Wallet System
 
-* Deposit / Withdraw
-* Balance compute
-* Transaction history
-* Multi‑role actions
-* Strong validations to prevent corruption
+Deposit/Withdraw
 
-### **Trader Module**
+Transaction history
 
-* CRUD Trading Signals
-* Live trade publishing
-* Subscription plan creation
-* Subscriber list view
-* Profile CRUD
+Race-condition safe
 
-###  **Customer Module**
+Per-role actions
 
-* View traders & performance metrics
-* Subscribe/unsubscribe
-* View signals from subscribed traders
-* KYC upload & verification
-* Full profile management
+Ledger accuracy guaranteed
 
-### **Admin Module**
+📡 Trader Module
 
-* Manage traders & customers
-* Manage subscription plans
-* Audit & reporting utilities
+CRUD signals
 
----
+Publish live trades
 
-## API Overview (High‑Level)
+Subscription plans
 
-### 🟦 **Trader**
+Subscriber management
 
-* `/login`
-* `/createSignal`, `/getAllSignals`, `/updateSignal`
-* `/CreateTraderSubscriptionPlan`, `/ListSubscribers`
-* `/PublishLiveTrade`
-* `/GetBalance`, `/Deposit`, `/Withdraw`
+🧾 Customer Module
 
-### **Customer**
+Explore traders
 
-* `/signup`, `/login`
-* `/ListTraders`, `/GetTraderDetails`
-* `/SubscribeToTrader`, `/GetSignalsFromSubscribedTraders`
-* `/kycDocument`, `/GetWalletSummary`
+Subscribe/unsubscribe
 
-### **Admin**
+See signals of subscribed traders
 
-* `/ListAdminSubscriptionPlans`
-* `/SubscribeToAdminPlan`
-* `/CancelAdminSubscription`
+KYC upload
 
-> **Full API Documentation available inside the repository.**
+Wallet summary
 
----
+🛠️ Admin Module
 
-##  Tech Stack
+User, trader, customer management
 
-* **Go (Golang) – Gin / net/http**
-* **PostgreSQL**
-* **GORM ORM**
-* **JWT Authentication**
-* **Clean Architecture + DDD**
-* **Docker‑ready setup**
-* **Seeders + Migrations included**
+Subscription plans
 
----
+Dashboard & analytics
 
-##  Running the Services
+📘 API Endpoints (High-Level)
+Trader
+/login
+/createSignal
+/getAllSignals
+/updateSignal
+/CreateTraderSubscriptionPlan
+/ListSubscribers
+/PublishLiveTrade
+/GetBalance
+/Deposit
+/Withdraw
 
-### **Admin Service**
+Customer
+/signup
+/login
+/ListTraders
+/GetTraderDetails
+/SubscribeToTrader
+/GetSignalsFromSubscribedTraders
+/kycDocument
+/GetWalletSummary
 
-```
+Admin
+/ListAdminSubscriptionPlans
+/SubscribeToAdminPlan
+/CancelAdminSubscription
+
+🧰 Tech Stack
+
+Go (Golang) — Gin framework
+
+PostgreSQL
+
+GORM ORM
+
+Cron Jobs
+
+Server-side rendered Admin UI
+
+JWT Authentication
+
+Clean Architecture + DDD
+
+Docker-ready
+
+🔧 How Internals Work
+1️⃣ Market Price Fetcher
+
+Scheduler triggers every X seconds
+
+Calls market APIs
+
+Normalizes & stores price data
+
+Pushes updates to UI or cache
+
+2️⃣ Subscription Watcher
+
+Runs every few minutes
+
+Deactivates expired subscriptions
+
+Sends events/notifications
+
+3️⃣ RBAC Engine
+
+JWT claim inspection
+
+Middleware checks before handler execution
+
+4️⃣ Admin Panel
+
+Configurable system settings
+
+Commission & pricing
+
+Complete user lifecycle
+
+5️⃣ Signal Cards
+
+Live current price
+
+Entry/SL/Target UI formatting
+
+Status-based color coding
+
+6️⃣ Dashboard
+
+Charts for:
+
+Revenue
+
+Subscription growth
+
+Active signals
+
+Market data
+
+▶️ Running the Project
+Admin Service
 go run cmd/admin/main.go
-```
 
-### **Trader Service**
-
-```
+Trader Service
 go run cmd/trader/main.go
-```
 
-### **Customer Service**
-
-```
+Customer Service
 go run cmd/customer/main.go
-```
 
----
-
-##  Database Migrations
-
-```
+Migrations
 go run internal/migrations/main.go
-```
 
-##  Database Seeder
-
-```
+Seeder
 go run pkg/seeder/main.go
-```
 
----
+🔐 Security Considerations
 
-##  Author
+JWT expiry & rotation
 
-**Fathima Sithara**
-Backend Developer (Golang | Microservices)
- **GitHub:** [https://github.com/fathimasithara01](https://github.com/fathimasithara01)
+API keys managed externally (Vault/AWS Secrets Manager)
 
----
+Rate limiting for market APIs
 
-##  Why This Project is Unique
+SQL injection protection
 
-* Full **multi-role SaaS design** rarely seen in fresher projects.
-* **Production-like wallet + subscription + signals system**.
-* **Clean Architecture + DDD + modular services** combined.
-* Microservice-ready structure with separate executables.
-* Realistic trading workflows similar to fintech platforms.
+HTTPS + Nginx reverse proxy
 
-##  Performance Considerations
+Strong CORS policy
 
-* Optimized read queries and structured DB access.
-* Services separated for future horizontal scaling.
-* Repository layer avoids N+1 queries.
-* Wallet logic protected against race conditions.
-* Ready for Redis caching / Kafka events integration.
+🚀 Deployment
 
-##  System Architecture (ASCII Diagram)
+Docker / Docker Compose
 
-```
+Kubernetes-ready
+
+Separate worker containers (cron jobs)
+
+Prometheus metrics
+
+Redis for caching / pub-sub
+
+Managed PostgreSQL
+
+🎯 Why This Project Stands Out
+
+Rare multi-role fintech architecture
+
+Realistic wallet, trader signals, and subscription engine
+
+Clean Architecture + DDD (industry standard)
+
+Separate executables for horizontal scaling
+
+Strong backend engineering practices
+
+🔧 Performance
+
+Optimized DB queries
+
+Zero N+1 queries
+
+Wallet consistency via transactions
+
+Microservice-ready split
+
+Supports future Kafka/Redis integration
+
+🖥️ System Diagram
            +-----------------------+
            |      Client (UI)      |
            +-----------+-----------+
@@ -239,7 +419,7 @@ Backend Developer (Golang | Microservices)
                        v
               +--------+--------+
               |     API Layer    |
-              |   (Gin Handlers)  |
+              |   (Gin Handlers) |
               +--------+--------+
                        |
                        v
@@ -258,12 +438,9 @@ Backend Developer (Golang | Microservices)
               +-------------------+
               |   PostgreSQL DB   |
               +-------------------+
-```
 
-##  Badges
+👩‍💻 Author
 
-![Go Version](https://img.shields.io/badge/Go-1.21+-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
-![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-orange)
-
+Fathima Sithara
+Backend Developer (Golang • Microservices • Full Stack Capable)
+GitHub: https://github.com/fathimasithara01
