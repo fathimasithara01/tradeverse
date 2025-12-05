@@ -1,177 +1,212 @@
 # Tradeverse – Multi-Role Trading Automation Platform
 
-A production-grade **trading, wallet, and subscription automation system** built using **Go (Golang)**, **PostgreSQL**, **Clean Architecture**, **Cron Jobs**, and **Real-Time Market APIs**.
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)]()
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791?logo=postgresql)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+[![Build Status](https://img.shields.io/badge/Status-Production--Ready-success)]()
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-blue.svg)]()
+
+A production-grade **trading, wallet, and subscription automation system** built using
+**Golang, PostgreSQL, Clean Architecture, Cron Jobs, RBAC, and Real-Time Market APIs.**
+
+Tradeverse is designed as a **multi-role fintech platform** supporting:
+
+* **Admin**
+* **Trader**
+* **Customer**
+
+It follows strict engineering standards similar to real-world fintech systems.
 
 ---
 
 ##  Overview
-Tradeverse is a complete multi-role fintech platform for **Admin**, **Trader**, and **Customer** workflows.
-It includes:
-- Real-time market price fetching
-- Automated subscription lifecycle
-- Advanced RBAC
-- Wallet system with strong validations
-- Trader signal publishing
-- Fully functional Admin UI
 
-This project demonstrates scalable backend engineering, DDD, and production-style fintech workflows.
+Tradeverse includes:
 
----
+* Real-time market price fetching (OHLC / snapshot)
+* Automated subscription lifecycle (expiry, disable, notify)
+* Wallet system with strict ledger consistency
+* Trader signal publishing + analytics
+* Dynamic admin-driven pricing
+* JWT + RBAC (Admin / Trader / Customer)
+* Cron-based background workers
+* Full Admin UI
 
-## Implemented Features
-
-### Cron Jobs (Schedulers)
-- Periodic real-time market data fetcher
-- Configurable intervals via UI
-- Retry/backoff + rate-limit safe
-- Stores normalized OHLC/price snapshots
-
-### Subscription Automation
-- Auto-check for expired plans
-- Instantly disables access
-- Sends notifications
-- Optimized batch processing
-
-### Admin UI
-- User management (CRUD, roles, block/unblock)
-- Commission & pricing configuration
-- System settings (API keys, intervals, toggles)
-- Dashboard with charts, analytics & live metrics
-
-### Dynamic Pricing
-- Admin sets commission %
-- Role-based pricing
-- Plan pricing adjustments
-- Fully persisted to DB
-
-### Signal Cards
-Show: current price, entry, SL, targets, timestamp, trader info.
-
-### RBAC
-- Admin / Trader / Customer
-- JWT with role + plan
-- Server + UI enforcement
-
-### User Management
-- CRUD
-- Role assignment
-- Status & subscription management
-
-### Dashboard
-- Traders/customers stats
-- Revenue graph
-- Active subscriptions
-- Live price feed
-- Recent signals + charts
+This project demonstrates **scalable backend architecture**, **clean code**, and **production-level fintech engineering**.
 
 ---
 
-## Role Overview
+##  Features
 
-### Customer
-- Signup/Login
-- Browse traders
-- Subscribe/unsubscribe
-- Upload KYC
-- View subscribed signals
-- Wallet (deposit/withdraw/history)
+###  Cron Jobs (Schedulers)
 
-### Trader
-- Create & publish trading signals
-- Push live trades
-- Manage subscription plans
-- View subscribers
-- Profile management
+* Real-time market data fetcher
+* Configurable intervals
+* Retry + rate limiting
+* Normalized OHLC storage
 
-### Admin
-- Manage users & traders
-- System configuration
-- Subscription plans
-- Dashboard & analytics
-- Audit logs
+###  Subscription Automation
+
+* Auto-expiry
+* Auto-disable access
+* Notification triggers
+* Batch-optimized
+
+###  Admin UI
+
+* User CRUD
+* Commission & pricing configuration
+* API key / cron intervals
+* Dashboard + charts
+
+###  Dynamic Pricing
+
+* Commission % control
+* DB-driven pricing
+* Trader-specific plans
+
+###  Signal Cards
+
+* Entry, SL, targets
+* Live price
+* Color-coded cards
+* Trader info
+
+###  RBAC (Role Based Access Control)
+
+* Admin / Trader / Customer
+* JWT with role + plan + expiry
+* Backend + UI-controlled access
+
+###  User Management
+
+* CRUD
+* Role assignment
+* Block/Unblock
+* Subscription status
+
+###  Dashboard Insights
+
+* Revenue analytics
+* Live prices
+* Active subscriptions
+* Trader/customer statistics
 
 ---
 
-## Architecture Overview
+##  Role Breakdown
 
-### Clean Architecture
-- **Handlers** — routing & validation
-- **Services** — core business logic
-- **Repositories** — data access
-- **Domain Models** — pure business entities
+###  Customer
 
-### Project Structure
+* Signup / Login
+* Browse traders
+* Subscribe / Unsubscribe
+* Wallet deposit/withdraw/history
+* KYC uploads
+* View subscribed signals
+
+###  Trader
+
+* Create/publish signals
+* Live trade updates
+* Subscription plans
+* Subscriber analytics
+* Profile management
+
+###  Admin
+
+* Manage users & traders
+* Pricing & commission rules
+* System settings
+* Dashboard analytics
+* Audit logs
+
+---
+
+##  Architecture Overview
+
+###  Clean Architecture Layers
+
+* **Handlers** — routing, request parsing
+* **Services** — business logic
+* **Repositories** — DB + external APIs
+* **Domain Models** — entities
+
+###  Project Structure
+
 ```
 tradeverse/
 ├── cmd/
 │   ├── admin/
 │   ├── trader/
 │   └── customer/
-│
 ├── config/
-│
 ├── internal/
 │   ├── admin/
 │   ├── trader/
-│   ├── customer/
-│
-│──── migrations/
-│
+│   └── customer/
+├── migrations/
 ├── pkg/
 │   ├── auth/
 │   ├── models/
-│   ├── payment_gateway.go/
+│   ├── payment_gateway.go
 │   ├── seeder/
 │   └── utils/
-│
 ├── static/
 ├── templates/
 └── README.md
 ```
 
-### Request Flow
+###  Request Flow
+
 ```
 Client → Router → Handler → Service → Repository → PostgreSQL
 ```
 
 ---
 
-## Core Modules
+##  Core Modules
 
-### Authentication
-- JWT-based
-- RBAC middleware
-- Claims store role + subscription info
+###  Authentication
 
-### Wallet System
-- Deposit / Withdraw
-- Transaction history
-- Race-condition safe
-- Ledger accuracy guaranteed
+* JWT-based
+* RBAC middleware
+* Claims contain role + subscription
 
-### Trader Module
-- CRUD trading signals
-- Publish live trades
-- Subscription plans
-- Subscriber management
+###  Wallet System
 
-### Customer Module
-- Explore traders
-- Subscribe/unsubscribe
-- View signals
-- Upload KYC
-- Wallet summary
+* Deposit / Withdraw
+* Transaction ledger
+* Race-condition safe
+* Accurate balance tracking
 
-### Admin Module
-- Manage users/traders/customers
-- Manage subscription plans
-- Dashboard & analytics
+###  Trader Module
+
+* Signal CRUD
+* Live trade publishing
+* Subscription plans
+* Subscriber analytics
+
+###  Customer Module
+
+* Explore traders
+* Subscribe/unsubscribe
+* View signals
+* Wallet + KYC
+
+###  Admin Module
+
+* User & trader management
+* Plans & commissions
+* System configuration
+* Analytics dashboard
 
 ---
 
-## API Endpoints (High-Level)
+##  API Endpoints (High-Level)
 
 ### Trader
+
 ```
 /login
 /createSignal
@@ -186,6 +221,7 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 ```
 
 ### Customer
+
 ```
 /signup
 /login
@@ -198,6 +234,7 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 ```
 
 ### Admin
+
 ```
 /ListAdminSubscriptionPlans
 /SubscribeToAdminPlan
@@ -206,109 +243,133 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 
 ---
 
-## Tech Stack
-- Go (Golang) — Gin
-- PostgreSQL
-- GORM ORM
-- Cron Jobs
-- Server-side Admin UI
-- JWT Authentication
-- Clean Architecture + DDD
-- Docker-ready
+## 🛠 Tech Stack
+
+* **Golang (Gin Framework)**
+* **PostgreSQL**
+* **GORM ORM**
+* **Cron Jobs**
+* **Server-rendered Admin UI**
+* **JWT Authentication**
+* **Clean Architecture + DDD**
+* **Docker Ready**
 
 ---
 
-## How Internals Work
-1. **Market Fetcher** — scheduled, normalized prices stored, live updates.
-2. **Subscription Watcher** — expires plans, notifications.
-3. **RBAC Engine** — JWT claim inspection.
-4. **Admin Panel** — system settings, commission, pricing.
-5. **Signal Cards** — color-coded, real-time enriched.
-6. **Dashboard** — charts, analytics, revenue, signals.
+##  Internals Summary
+
+* Market Fetcher — cron-based OHLC + price
+* Subscription Watcher — auto-expiry
+* RBAC Engine — role logic
+* Admin Configuration
+* Signal Cards with real-time data
+* Dashboard analytics
 
 ---
 
-## Running the Project
-```
+##  Running the Project
+
+### Start Admin
+
+```sh
 go run cmd/admin/main.go
+```
+
+### Start Trader
+
+```sh
 go run cmd/trader/main.go
+```
+
+### Start Customer
+
+```sh
 go run cmd/customer/main.go
 ```
 
-### Migrations
-```
+### Run Migrations
+
+```sh
 go run internal/migrations/main.go
 ```
 
-### Seeder
-```
+### Seed Data
+
+```sh
 go run pkg/seeder/main.go
 ```
 
 ---
 
-## Security
-- JWT expiry & rotation
-- External secrets (Vault / AWS Secrets Manager)
-- Rate limiting
-- SQL injection protection
-- HTTPS + Nginx reverse proxy
-- Strict CORS
+##  Security
+
+* JWT expiry + rotation
+* Secrets via Vault / AWS SM
+* SQL injection protection
+* HTTPS + Nginx
+* CORS restrictions
+* Rate limiting
 
 ---
 
-## Deployment
-- Docker / Docker Compose
-- Kubernetes-ready
-- Separate worker containers for cron jobs
-- Prometheus metrics
-- Redis (cache/pub-sub)
-- Managed PostgreSQL
+##  Deployment
+
+* Docker / Docker Compose
+* Kubernetes-ready
+* Worker containers
+* Prometheus metrics
+* Redis caching & pub/sub
+* Cloud PostgreSQL
 
 ---
 
-## Why This Project Stands Out
-- Rare multi-role fintech system
-- Realistic wallet + subscription engine
-- Clean Architecture + DDD
-- Horizontally scalable services
-- Production-like engineering
+##  Why This Project Stands Out
+
+* Rare multi-role fintech system
+* Realistic wallet + subscription engine
+* Clean Architecture + DDD
+* Horizontally scalable
+* Production-like engineering
 
 ---
 
-## System Diagram
+##  System Diagram
+
 ```
-           +-----------------------+
-           |      Client (UI)      |
-           +-----------+-----------+
-                       |
-                       v
-              +--------+--------+
-              |     API Layer    |
-              |   (Gin Handlers) |
-              +--------+--------+
-                       |
-                       v
-              +--------+--------+
-              |     Services     |
-              | (Business Logic) |
-              +--------+--------+
-                       |
-                       v
-              +--------+--------+
-              |   Repositories   |
-              |    (DB Layer)    |
-              +--------+--------+
-                       |
-                       v
-              +-------------------+
-              |   PostgreSQL DB   |
-              +-------------------+
+       +-----------------------+
+       |      Client (UI)      |
+       +-----------+-----------+
+                   |
+                   v
+          +--------+--------+
+          |     API Layer    |
+          |   (Gin Handlers) |
+          +--------+--------+
+                   |
+                   v
+          +--------+--------+
+          |     Services     |
+          | (Business Logic) |
+          +--------+--------+
+                   |
+                   v
+          +--------+--------+
+          |   Repositories   |
+          |    (DB Layer)    |
+          +--------+--------+
+                   |
+                   v
+          +-------------------+
+          |   PostgreSQL DB   |
+          +-------------------+
 ```
 
 ---
 
-## Author
+##  Author
+
 **Fathima Sithara**
-Backend Developer (Golang • Microservices • Full Stack Capable)
-GitHub: https://github.com/fathimasithara01
+Backend Developer — Golang • Microservices • Fintech
+GitHub: [https://github.com/fathimasithara01](https://github.com/fathimasithara01)
+
+---
