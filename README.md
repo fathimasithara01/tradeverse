@@ -246,59 +246,68 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 /CancelAdminSubscription
 ```
 
-🧪 Postman Collection (API Testing)
-TradeVerse includes a complete Postman setup for testing all APIs.
+# Postman Collection (API Testing)
 
-📁 Included Files
-File	Purpose
-/postman/TradeVerse_API_Collection.json	Full API Collection
-/postman/TradeVerse_Environment.json	Pre-configured environment variables
+TradeVerse includes a complete Postman setup for testing all Admin, Trader, and Customer API workflows.
 
-📥 How to Import
-Open Postman
+---
 
-Click Import
+##  Included Files
 
-Select:
+| File | Purpose |
+|------|---------|
+| `/postman/TradeVerse_API_Collection.json` | Full API collection with all endpoints |
+| `/postman/TradeVerse_Environment.json` | Pre-configured environment variables |
 
-TradeVerse_API_Collection.json
+---
 
-TradeVerse_Environment.json (recommended)
+##  How to Import
 
-Choose environment: TradeVerse Local
+1. Open **Postman**
+2. Click **Import**
+3. Select both:
+   - `TradeVerse_API_Collection.json`
+   - `TradeVerse_Environment.json`
+4. Set active environment: **TradeVerse Local**
 
-🌍 Required Environment Variables (if added manually)
-ini
-Copy code
+---
+
+##  Required Environment Variables (Manual Setup)
+
 BASE_URL        = http://localhost:8080
 ADMIN_TOKEN     = <after admin login>
 TRADER_TOKEN    = <after trader login>
 CUSTOMER_TOKEN  = <after customer login>
-🎯 What You Can Test
-Authentication (Admin/Trader/Customer)
 
-Wallet operations (deposit/withdraw/ledger)
+---
 
-Trader signals
+##  What You Can Test
+* Authentication (Admin/Trader/Customer)
 
-Live trade updates
+* Wallet operations (deposit/withdraw/ledger)
 
-Subscriptions
+* Trader signals
 
-KYC uploads
+* Live trade updates
 
-Market data (OHLC + live)
+* Subscriptions
 
-Cron simulation
+* KYC uploads
 
-Dashboard analytics
+* Market data (OHLC + live)
 
-🧑‍💼 Why Important?
-Recruiters test your backend instantly
+* Cron simulation
 
-Shows professional API documentation
+* Dashboard analytics
 
-Proves production-readiness
+---
+
+## Why Important?
+* Recruiters test your backend instantly
+
+* Shows professional API documentation
+
+* Proves production-readiness
 
 ---
 
