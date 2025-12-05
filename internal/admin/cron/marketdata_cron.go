@@ -23,7 +23,7 @@ type CoinGeckoCoin struct {
 	Image                    string  `json:"image"`
 	CurrentPrice             float64 `json:"current_price"`
 	PriceChangePercentage24h float64 `json:"price_change_percentage_24h"`
-	TotalVolume              float64 `json:"total_volume"` 
+	TotalVolume              float64 `json:"total_volume"`
 	MarketCap                float64 `json:"market_cap"`
 }
 
@@ -65,7 +65,7 @@ func FetchAndSaveMarketData(db *gorm.DB) {
 			Volume24H:      coin.TotalVolume, // Populate Volume24H
 			MarketCap:      coin.MarketCap,   // Populate MarketCap
 		}
-		log.Printf(" current data for %s", coin.CurrentPrice) // This log seems redundant after fix
+		log.Printf("Updated price for %s: %.2f", coin.Symbol, coin.CurrentPrice)
 
 		// Use db.Clauses(clause.OnConflict{...}) for more robust upsert, or rely on FirstOrCreate logic
 		result := db.Where(models.MarketData{Symbol: marketData.Symbol}).Assign(marketData).FirstOrCreate(&marketData)
