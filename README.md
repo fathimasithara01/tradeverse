@@ -1,3 +1,8 @@
+
+A production-ready multi-role fintech platform with real-time trading,
+wallet ledgering, subscription automation, and admin controls — built using
+Golang, PostgreSQL, Clean Architecture, and Cron Workers.
+
 # Tradeverse – Multi-Role Trading Automation Platform
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)]()
@@ -322,6 +327,14 @@ go run pkg/seeder/main.go
 * Cloud PostgreSQL
 
 ---
+
+##  Why This Project is Valuable for Recruiters
+- Shows backend ownership end-to-end
+- Demonstrates realistic fintech domain knowledge
+- Highlights distributed cron workers & automation
+- Proves understanding of architecture & scalability
+- Perfect fit for Backend (Golang) / Fintech / SaaS roles
+
 
 ##  Why This Project Stands Out
 
