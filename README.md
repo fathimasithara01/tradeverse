@@ -8,19 +8,19 @@ TradeVerse is a complete **Copy Trading SaaS Platform** built using **Golang**, 
 
 ##  Key Highlights
 
-* ✔ **Clean Architecture + DDD**
-* ✔ **Role‑based modular services** (`cmd/admin`, `cmd/trader`, `cmd/customer`)
-* ✔ **Secure JWT Authentication**
-* ✔ **Fully validated Wallet System**
-* ✔ **Subscriptions + Live Trading Signals**
-* ✔ **PostgreSQL + GORM ORM**
-* ✔ **Scalable & Microservice‑Ready Structure**
+* **Clean Architecture + DDD**
+* **Role‑based modular services** (`cmd/admin`, `cmd/trader`, `cmd/customer`)
+* **Secure JWT Authentication**
+* **Fully validated Wallet System**
+* **Subscriptions + Live Trading Signals**
+* **PostgreSQL + GORM ORM**
+* **Scalable & Microservice‑Ready Structure**
 
 ---
 
 ##  Role Overview
 
-### **👤 Customer**
+### Customer
 
 * Signup/Login (JWT)
 * Browse traders
@@ -29,7 +29,7 @@ TradeVerse is a complete **Copy Trading SaaS Platform** built using **Golang**, 
 * View signals from subscribed traders
 * Wallet: deposit, withdrawal, transaction history
 
-### ** Trader**
+###  Trader
 
 * Create trading signals
 * Publish live trades
