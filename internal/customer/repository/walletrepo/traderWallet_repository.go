@@ -1,4 +1,3 @@
-// internal/customer/repository/walletrepo/wallet_repository.go
 package walletrepo
 
 import (
@@ -21,22 +20,21 @@ var (
 type WalletRepository interface {
 	GetUserWallet(userID uint) (*models.Wallet, error)
 	GetOrCreateWallet(userID uint) (*models.Wallet, error)
-	UpdateWallet(wallet *models.Wallet) error                // Simple update, consider if needed outside transaction
-	UpdateWalletTx(tx *gorm.DB, wallet *models.Wallet) error // Transaction-safe wallet update
+	UpdateWallet(wallet *models.Wallet) error
+	UpdateWalletTx(tx *gorm.DB, wallet *models.Wallet) error
 
 	DebitWallet(tx *gorm.DB, walletID uint, amount float64, txType models.TransactionType, referenceID, description string) error
 	CreditWallet(tx *gorm.DB, walletID uint, amount float64, txType models.TransactionType, referenceID, description string) (*models.WalletTransaction, error)
 	CreateWalletTransaction(tx *gorm.DB, transaction *models.WalletTransaction) error
 	GetWalletTransactions(userID uint, pagination models.PaginationParams) ([]models.WalletTransaction, int64, error)
 
-	CreateDepositRequest(req *models.DepositRequest) error                      // <--- ADD THIS
-	GetDepositRequestByID(id uint) (*models.DepositRequest, error)              // <--- ADD THIS
-	UpdateDepositRequest(req *models.DepositRequest) error                      // <--- ADD THIS (for non-tx updates)
-	UpdateDepositRequestTx(tx *gorm.DB, req *models.DepositRequest) error       // <--- ADD THIS (for tx updates)
-	CreateWithdrawalRequest(req *models.WithdrawalRequest) error                // <--- ADD THIS
-	GetWithdrawalRequestByID(id uint) (*models.WithdrawalRequest, error)        // <--- ADD THIS
-	UpdateWithdrawalRequestTx(tx *gorm.DB, req *models.WithdrawalRequest) error // <--- ADD THIS
-
+	CreateDepositRequest(req *models.DepositRequest) error
+	GetDepositRequestByID(id uint) (*models.DepositRequest, error)
+	UpdateDepositRequest(req *models.DepositRequest) error
+	UpdateDepositRequestTx(tx *gorm.DB, req *models.DepositRequest) error
+	CreateWithdrawalRequest(req *models.WithdrawalRequest) error
+	GetWithdrawalRequestByID(id uint) (*models.WithdrawalRequest, error)
+	UpdateWithdrawalRequestTx(tx *gorm.DB, req *models.WithdrawalRequest) error
 }
 
 type gormWalletRepository struct {
@@ -62,11 +60,10 @@ func (r *gormWalletRepository) GetOrCreateWallet(userID uint) (*models.Wallet, e
 	var wallet models.Wallet
 	err := r.db.Where("user_id = ?", userID).First(&wallet).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		// Create new wallet if not found
 		wallet = models.Wallet{
 			UserID:      userID,
 			Balance:     0,
-			Currency:    "INR", // Default currency, adjust as needed
+			Currency:    "INR",
 			LastUpdated: time.Now(),
 		}
 		if createErr := r.db.Create(&wallet).Error; createErr != nil {
@@ -116,7 +113,7 @@ func (r *gormWalletRepository) DebitWallet(tx *gorm.DB, walletID uint, amount fl
 		TransactionType: txType,
 		Amount:          amount,
 		Currency:        wallet.Currency,
-		Status:          models.TxStatusSuccess, // Assuming success if debit goes through
+		Status:          models.TxStatusSuccess,
 		ReferenceID:     referenceID,
 		Description:     description,
 		BalanceBefore:   balanceBefore,
@@ -150,11 +147,11 @@ func (r *gormWalletRepository) CreditWallet(tx *gorm.DB, walletID uint, amount f
 		TransactionType: txType,
 		Amount:          amount,
 		Currency:        wallet.Currency,
-		Status:          models.TxStatusSuccess, // Assuming success if credit goes through
+		Status:          models.TxStatusSuccess,
 		ReferenceID:     referenceID,
 		Description:     description,
 		BalanceBefore:   balanceBefore,
-		BalanceAfter:    wallet.Balance, // Wallet.Balance is now updated
+		BalanceAfter:    wallet.Balance,
 	}
 	if err := tx.Create(transaction).Error; err != nil {
 		return nil, fmt.Errorf("failed to create credit transaction record: %w", err)
@@ -172,17 +169,15 @@ func (r *gormWalletRepository) GetWalletTransactions(userID uint, pagination mod
 
 	query := r.db.Model(&models.WalletTransaction{}).Where("user_id = ?", userID)
 
-	// Get total count
 	if err := query.Count(&totalCount).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count wallet transactions: %w", err)
 	}
 
-	// Apply pagination
 	if pagination.Limit == 0 {
-		pagination.Limit = 10 // Default limit
+		pagination.Limit = 10
 	}
 	if pagination.Page == 0 {
-		pagination.Page = 1 // Default page
+		pagination.Page = 1 
 	}
 	offset := (pagination.Page - 1) * pagination.Limit
 

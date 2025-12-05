@@ -37,7 +37,6 @@ func (ctrl *AuthController) LoginUser(c *gin.Context) {
 
 	token, user, err := ctrl.UserSvc.Login(email, password)
 	if err != nil {
-		log.Printf("[LOGIN FAILED] for user '%s': %v", email, err)
 		c.Redirect(http.StatusFound, "/login?error="+err.Error())
 		return
 	}
@@ -105,6 +104,5 @@ func (ctrl *AuthController) RegisterTrader(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "register_trader.html", gin.H{"error": err.Error()})
 		return
 	}
-	log.Printf("[REGISTER SUCCESS] Trader '%s' registered successfully. Awaiting admin approval.", user.Email)
 	c.Redirect(http.StatusFound, "/login?message=Trader registration successful! Awaiting admin approval.")
 }

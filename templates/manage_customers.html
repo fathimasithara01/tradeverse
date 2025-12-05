@@ -50,7 +50,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap Delete Confirmation Modal -->
     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -72,7 +71,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap JavaScript Bundle (includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -82,7 +80,7 @@
             const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
             let deleteTargetRow = null;
-            let deleteUserId = null; // This variable will store the ID of the customer to be deleted
+            let deleteUserId = null; 
 
             function fetchAndDisplayCustomers() {
                 fetch('/admin/api/users/customers')
@@ -134,19 +132,19 @@
             });
 
             confirmDeleteBtn.addEventListener('click', function () {
-                if (!deleteUserId) return; // If deleteUserId is null, do nothing
+                if (!deleteUserId) return; 
 
                 fetch(`/admin/api/users/${deleteUserId}`, { method: 'DELETE' })
                     .then(res => res.json())
                     .then(data => {
                         if (data.error) throw new Error(data.error);
 
-                        deleteTargetRow.remove(); // Remove the row from the table
+                        deleteTargetRow.remove(); 
 
-                        confirmDeleteModal.hide(); // Hide the modal
+                        confirmDeleteModal.hide(); 
                         const alertDiv = document.createElement('div');
                         alertDiv.className = 'alert alert-success mt-3';
-                        alertDiv.textContent = 'Customer deleted successfully.'; // Corrected typo
+                        alertDiv.textContent = 'Customer deleted successfully.'; 
                         document.querySelector('.card-body').prepend(alertDiv);
                         setTimeout(() => alertDiv.remove(), 3000);
                     })
@@ -160,7 +158,7 @@
                     });
             });
 
-            fetchAndDisplayCustomers(); // Initial call to load customers
+            fetchAndDisplayCustomers(); 
         });
     </script>
 </body>

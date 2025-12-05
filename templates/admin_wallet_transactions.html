@@ -40,13 +40,11 @@
                                 </tr>
                             </thead>
                             <tbody id="transactionTableBody">
-                                <!-- Transactions will be loaded here via JavaScript -->
                             </tbody>
                         </table>
                     </div>
                     <nav>
                         <ul class="pagination justify-content-center" id="transactionPagination">
-                            <!-- Pagination for transactions -->
                         </ul>
                     </nav>
                 </div>
@@ -54,12 +52,9 @@
         </div>
     </div>
 
-    <!-- Toast Container - Added positioning classes -->
     <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3" id="toastContainer">
-        <!-- Toasts will be appended here -->
     </div>
 
-    <!-- Bootstrap JavaScript Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -155,7 +150,7 @@
                 }
 
                 transactionTableBody.innerHTML = `<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading transactions...</td></tr>`;
-                transactionPagination.innerHTML = ''; // Clear pagination while loading
+                transactionPagination.innerHTML = ''; 
 
                 fetch(url)
                     .then(response => {
@@ -201,7 +196,6 @@
                     });
             }
 
-            // Initial fetch for transactions
             fetchAdminWalletTransactions();
 
             let searchTimeout;

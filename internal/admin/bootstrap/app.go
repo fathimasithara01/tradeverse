@@ -47,7 +47,6 @@ func InitializeApp() (*App, error) {
 
 	seeder.CreateAdminSeeder(DB, *cfg)
 
-	// Admin Repositories
 	adminUserRepo := repository.NewUserRepository(DB)
 	adminRoleRepo := repository.NewRoleRepository(DB)
 	adminDashboardRepo := repository.NewDashboardRepository(DB)
@@ -61,7 +60,6 @@ func InitializeApp() (*App, error) {
 	commissionRepo := repository.NewCommissionRepository(DB)
 	adminWebConfigRepo := repository.NewWebConfigurationRepository(DB)
 
-	// Admin Services
 	adminUserService := service.NewUserService(adminUserRepo, adminRoleRepo, cfg.JWT.Secret)
 	adminRoleService := service.NewRoleService(adminRoleRepo, adminPermissionRepo, adminUserRepo)
 	adminDashboardService := service.NewDashboardService(adminDashboardRepo)
@@ -76,7 +74,6 @@ func InitializeApp() (*App, error) {
 	commissionService := service.NewCommissionService(commissionRepo, DB)
 	adminWebConfigService := service.NewWebConfigurationService(adminWebConfigRepo)
 
-	// Admin Controllers
 	adminAuthController := controllers.NewAuthController(adminUserService)
 	adminUserController := controllers.NewUserController(adminUserService)
 	adminRoleController := controllers.NewRoleController(adminRoleService)

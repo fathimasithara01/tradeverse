@@ -28,13 +28,11 @@ func (r *CommissionRepository) CreateOrUpdateCommissionSetting(setting *models.C
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// Not found, create new
 			return r.DB.Create(setting).Error
 		}
 		return fmt.Errorf("failed to check existing commission setting: %w", result.Error)
 	}
 
-	// Found, update existing
 	existingSetting.Value = setting.Value
 	existingSetting.Description = setting.Description
 	existingSetting.UpdatedBy = setting.UpdatedBy
@@ -57,7 +55,7 @@ func (r *CommissionRepository) GetPlatformCommissionPercentage() (float64, error
 	setting, err := r.GetCommissionSettingByKey("trader_subscription_commission_percentage")
 	if err != nil {
 		if errors.Is(err, errors.New("commission setting not found")) {
-			return 0.0, nil // Or return a default commission like 10.0, based on business logic
+			return 0.0, nil
 		}
 		return 0.0, fmt.Errorf("failed to get platform commission percentage: %w", err)
 	}

@@ -47,7 +47,6 @@ func InitializeApp() (*App, error) {
 	traderRepo := customerrepo.NewTraderRepository(db)
 	customerTraderSubsRepo := customerrepo.NewCustomerTraderSignalSubscriptionRepository(db)
 
-	// --- Services ---
 	adminAdminWalletService := adminSvc.NewAdminWalletService(adminAdminWalletRepo, db)
 	customerWalletService := service.NewWalletService(db, customerWalletRepo, paymentgateway.NewSimulatedPaymentClient())
 	customerSubscriptionPlanService := service.NewCustomerSubscriptionPlanService(customerSubscriptionPlanRepo)
@@ -71,9 +70,6 @@ func InitializeApp() (*App, error) {
 		customerWalletService,
 	)
 
-	// planService service.ICustomerSubscriptionPlanService,
-	// subService service.ICustomerSubscriptionService,
-	// walletService service.IWalletService,
 	customerTraderSubsController := controllers.NewCustomerTraderSignalSubscriptionController(customerTraderSubsService)
 	authController := controllers.NewAuthController(userService)
 	profileController := controllers.NewProfileController(userService)

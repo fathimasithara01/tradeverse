@@ -43,7 +43,6 @@ func (r *signalRepository) GetAllSignals(ctx context.Context) ([]models.Signal, 
 
 func (r *signalRepository) GetActiveAndPendingSignals(ctx context.Context) ([]models.Signal, error) {
 	var signals []models.Signal
-	// Fetch signals that are either "Active" or "Pending" for status checks
 	if err := r.db.WithContext(ctx).Where("status = ? OR status = ?", "Active", "Pending").Find(&signals).Error; err != nil {
 		return nil, fmt.Errorf("failed to get active/pending signals: %w", err)
 	}
@@ -53,21 +52,16 @@ func (r *signalRepository) GetActiveAndPendingSignals(ctx context.Context) ([]mo
 func (r *signalRepository) GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error) {
 	var marketData models.MarketData
 
-	// Ensure the symbol is uppercase for case-insensitive matching with the database (if necessary)
-	// and to match the stored `Symbol` in `MarketData` which is likely uppercase.
 	symbol = strings.ToUpper(symbol)
 
 	err := r.db.WithContext(ctx).
-		Where("UPPER(symbol) = ?", symbol). // Use UPPER() for robust case-insensitive search
+		Where("UPPER(symbol) = ?", symbol). 
 		First(&marketData).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			// If record not found, return nil MarketData and nil error.
-			// This indicates that no data exists for the symbol, which is not an "error" in flow.
 			return nil, nil
 		}
-		// For any other DB error, return the error.
 		return nil, fmt.Errorf("failed to get market data for symbol %s: %w", symbol, err)
 	}
 
@@ -80,7 +74,7 @@ func (r *signalRepository) UpdateSignalCurrentPrice(ctx context.Context, signalI
 		return fmt.Errorf("failed to update signal current price: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound // Indicate that no record was found/updated
+		return gorm.ErrRecordNotFound 
 	}
 	return nil
 }
@@ -91,7 +85,7 @@ func (r *signalRepository) UpdateSignalStatus(ctx context.Context, signalID uint
 		return fmt.Errorf("failed to update signal status: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound // Indicate that no record was found/updated
+		return gorm.ErrRecordNotFound
 	}
 	return nil
 }

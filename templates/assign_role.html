@@ -45,7 +45,6 @@
                     </div>
                 </div>
 
-                <!-- User Roles List Section -->
                 <div class="card mt-4">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Users and Assigned Roles</h5>
@@ -60,7 +59,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="user-roles-table-body">
-                                    <!-- User data will be loaded here -->
                                 </tbody>
                             </table>
                         </div>
@@ -112,17 +110,14 @@
                         tableBody.innerHTML = '';
 
                         users.forEach(user => {
-                            // Populate user dropdown
                             const option = document.createElement('option');
                             option.value = user.ID;
                             option.textContent = `${user.name} (${user.email})`;
                             userSelect.append(option);
 
-                            // Populate user roles table
                             const roleName = user.role ? `<strong>${user.role}</strong>` : '<span class="text-muted fst-italic">Not Assigned</span>';
                             const row = document.createElement('tr');
                             
-                            // --- CHANGE 1: ADD A UNIQUE ID TO EACH ROW ---
                             row.id = `user-row-${user.ID}`; 
                             
                             row.innerHTML = `
@@ -141,7 +136,6 @@
                     const userID = userSelect.value;
                     const roleID = roleSelect.value;
                     
-                    // Get the TEXT of the selected role for display purposes
                     const roleName = roleSelect.options[roleSelect.selectedIndex].text;
 
                     if (!userID || !roleID) {
@@ -168,7 +162,6 @@
                             const cellToUpdate = rowToUpdate.querySelector('.role-cell');
                             cellToUpdate.innerHTML = `<strong>${roleName}</strong>`;
                         }
-                        // --- END OF FIX ---
 
                     } catch (err) {
                         showAlert(`Error: ${err.message}`, 'danger');
@@ -177,7 +170,6 @@
                     }
                 });
 
-                // Initial data load
                 loadRoles();
                 loadUsers();
             });

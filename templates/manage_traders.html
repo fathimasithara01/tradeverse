@@ -4,28 +4,22 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin - Manage Traders</title>
-  <!-- Bootstrap CSS for styling -->
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts for 'Inter' -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Custom CSS for sidebar (assuming this file exists in /static/) -->
   <link rel="stylesheet" href="/static/sidebar.css">
-  <!-- Custom CSS for manage_traders page (assuming this file exists in /static/) -->
   <link rel="stylesheet" href="/static/manage_traders.css">
 </head>
 
 <body>
   <div class="wrapper">
-    <!-- Template for the admin sidebar - this will be injected by the Go backend -->
     {{template "admin_sidebar" .}}
 
     <div id="content" class="container-fluid p-4">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h4 class="card-title mb-0">Manage Traders (Masters)</h4>
-          <!-- Button to add a new trader -->
           <a href="/admin/users/traders/add" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i> Add New Trader
           </a>
@@ -46,7 +40,6 @@
                 </tr>
               </thead>
               <tbody id="trader-table-body">
-                <!-- Initial loading message, replaced by JS -->
                 <tr>
                   <td colspan="7" class="text-center">Loading traders...</td>
                 </tr>
@@ -58,7 +51,6 @@
     </div>
   </div>
 
-  <!-- Bootstrap Delete Confirmation Modal -->
   <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -78,27 +70,24 @@
     </div>
   </div>
 
-  <!-- Bootstrap JavaScript Bundle (includes Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // Execute script once the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', function () {
-      const tableBody = document.getElementById('trader-table-body'); // Reference to the table body
-      // Initialize Bootstrap modal instance
-      const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-      const confirmDeleteBtn = document.getElementById('confirmDeleteBtn'); // Reference to the delete confirmation button in the modal
+      const tableBody = document.getElementById('trader-table-body');
       
-      let deleteTargetRow = null; // Stores the table row element to be removed after successful deletion
-      let deleteUserId = null;    // Stores the ID of the user to be deleted
-
+      const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+      const confirmDeleteBtn = document.getElementById('confirmDeleteBtn'); 
+     
+      
+      let deleteTargetRow = null; 
+      let deleteUserId = null;    
       function fetchAndDisplayTraders() {
-        fetch('/admin/api/users/traders') // Make a GET request to the traders API
-          .then(res => res.json())       // Parse the JSON response
+        fetch('/admin/api/users/traders') 
+          .then(res => res.json())     
           .then(traders => {
-            tableBody.innerHTML = ''; // Clear existing table rows
+            tableBody.innerHTML = ''; 
             if (!traders || traders.length === 0) {
-              // Display a message if no traders are found
               tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No traders found.</td></tr>';
               return;
             }
@@ -111,7 +100,7 @@
                 ? new Date(user.CreatedAt).toLocaleDateString('en-IN')
                 : 'N/A';
 
-              const row = document.createElement('tr'); // Create a new table row element
+              const row = document.createElement('tr'); 
               row.innerHTML = `
                 <td>${user.ID}</td>
                 <td>${user.name}</td>
@@ -128,59 +117,51 @@
                   </button>
                 </td>
               `;
-              tableBody.appendChild(row); // Add the new row to the table body
+              tableBody.appendChild(row); 
             });
           })
           .catch(() => {
-            // Display an error message if fetching traders fails
             tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Failed to load traders.</td></tr>';
           });
       }
 
       tableBody.addEventListener('click', function (event) {
-        // Find if the clicked element or its parent is a delete button
         const deleteButton = event.target.closest('.delete-btn');
         if (deleteButton) {
-          deleteUserId = deleteButton.getAttribute('data-id');      // Get the user ID from the data-id attribute
-          deleteTargetRow = deleteButton.closest('tr'); // Store the parent row for later removal
-          confirmDeleteModal.show();                      // Show the Bootstrap confirmation modal
+          deleteUserId = deleteButton.getAttribute('data-id');      
+          deleteTargetRow = deleteButton.closest('tr'); 
+          confirmDeleteModal.show();             
         }
       });
 
-      // Event listener for the "Delete" button inside the confirmation modal
       confirmDeleteBtn.addEventListener('click', function () {
-        if (!deleteUserId) return; // Do nothing if no user ID is set for deletion
+        if (!deleteUserId) return; 
 
-        fetch(`/admin/api/users/${deleteUserId}`, { method: 'DELETE' }) // Send a DELETE request to the API
-          .then(res => res.json()) // Parse the JSON response
+        fetch(`/admin/api/users/${deleteUserId}`, { method: 'DELETE' }) 
+          .then(res => res.json()) 
           .then(data => {
-            if (data.error) throw new Error(data.error); // Throw an error if the API returns an error
-
-            // Remove the deleted row from the table
+            if (data.error) throw new Error(data.error); 
+           
             deleteTargetRow.remove();
 
-            // Hide the modal and display a success alert message
             confirmDeleteModal.hide();
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-success mt-3';
             alertDiv.textContent = 'Trader deleted successfully.';
-            document.querySelector('.card-body').prepend(alertDiv); // Add alert to the top of the card body
+            document.querySelector('.card-body').prepend(alertDiv);
 
-            // Automatically hide the alert after 3 seconds
             setTimeout(() => alertDiv.remove(), 3000);
           })
           .catch(error => {
-            // Hide the modal and display an error alert message if deletion fails
             confirmDeleteModal.hide();
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-danger mt-3';
             alertDiv.textContent = `Error: ${error.message}`;
             document.querySelector('.card-body').prepend(alertDiv);
-            setTimeout(() => alertDiv.remove(), 4000); // Auto-hide after 4 seconds
+            setTimeout(() => alertDiv.remove(), 4000); 
           });
       });
 
-      // Initial call to fetch and display traders when the page loads
       fetchAndDisplayTraders();
     });
   </script>

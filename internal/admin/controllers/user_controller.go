@@ -356,13 +356,11 @@ func (ctrl *UserController) GetAdminProfileAPI(c *gin.Context) {
 		return
 	}
 
-	// Ensure password is never sent in the API response
 	user.Password = ""
 
 	c.JSON(http.StatusOK, user)
 }
 
-// UpdateAdminProfileAPI handles updating the admin profile via API.
 func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -377,7 +375,6 @@ func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 	}
 
 	var req service.AdminUpdateProfileRequest
-	// For multipart/form-data (which includes file uploads), ShouldBind handles it
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request data: %v", err.Error())})
 		return
@@ -392,7 +389,6 @@ func (ctrl *UserController) UpdateAdminProfileAPI(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Admin profile updated successfully"})
 }
 
-// ChangeAdminPasswordAPI handles changing the admin password via API.
 func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -425,7 +421,6 @@ func (ctrl *UserController) ChangeAdminPasswordAPI(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 }
 
-// ShowAdminSettingsPage renders a placeholder for admin settings.
 func (ctrl *UserController) ShowAdminSettingsPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin_settings.html", gin.H{"Title": "Admin Settings"})
 }

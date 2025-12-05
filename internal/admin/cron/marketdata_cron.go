@@ -62,18 +62,15 @@ func FetchAndSaveMarketData(db *gorm.DB) {
 			CurrentPrice:   coin.CurrentPrice,
 			PriceChange24H: coin.PriceChangePercentage24h,
 			LogoURL:        coin.Image,
-			Volume24H:      coin.TotalVolume, // Populate Volume24H
-			MarketCap:      coin.MarketCap,   // Populate MarketCap
+			Volume24H:      coin.TotalVolume,
+			MarketCap:      coin.MarketCap,
 		}
 		log.Printf("Updated price for %s: %.2f", coin.Symbol, coin.CurrentPrice)
 
-		// Use db.Clauses(clause.OnConflict{...}) for more robust upsert, or rely on FirstOrCreate logic
 		result := db.Where(models.MarketData{Symbol: marketData.Symbol}).Assign(marketData).FirstOrCreate(&marketData)
 		if result.Error != nil {
 			log.Printf("Error saving/updating market data for %s: %v", coin.Symbol, result.Error)
 		} else if result.RowsAffected == 0 {
-			// No rows affected typically means it was found but nothing changed, or already existed.
-			// Log this if you want to differentiate, but usually 'FirstOrCreate' handles this gracefully.
 		} else {
 			log.Printf("Saved/Updated market data for %s (Current Price: %.4f)", coin.Symbol, coin.CurrentPrice)
 		}

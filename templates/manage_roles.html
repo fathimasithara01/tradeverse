@@ -121,7 +121,6 @@
                     });
             }
 
-            // Initial call to load the roles table.
             loadRoles();
         });
 
@@ -136,7 +135,7 @@
                             throw new Error(data.error);
                         }
                         document.getElementById('role-table-body').innerHTML = '';
-                        document.dispatchEvent(new Event('DOMContentLoaded')); // Re-run the loadRoles function
+                        document.dispatchEvent(new Event('DOMContentLoaded')); 
                     })
                     .catch(error => {
                         console.error('Error deleting role:', error);

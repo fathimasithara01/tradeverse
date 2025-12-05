@@ -2,7 +2,7 @@ package auth
 
 import (
 	"errors"
-	"fmt" // Import fmt for structured errors
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,13 +12,13 @@ type AuthClaims struct {
 	UserID uint   `json:"user_id"`
 	Email  string `json:"email"`
 	Role   string `json:"role"`
-	RoleID uint   `json:"role_id"` // This is a non-pointer uint, so it should always be present
+	RoleID uint   `json:"role_id"`
 	jwt.RegisteredClaims
 }
 
 func GenerateJWT(userID uint, email, role string, roleID uint, jwtSecret string) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour) // Token valid for 24 hours
-
+	expirationTime := time.Now().Add(24 * time.Hour) 
+	
 	claims := &AuthClaims{
 		UserID: userID,
 		Email:  email,

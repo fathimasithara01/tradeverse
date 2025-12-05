@@ -25,18 +25,15 @@ func (a *AuthzMiddleware) RequirePermission(permissionName string) gin.HandlerFu
 		roleID, idExists := c.Get("roleID")
 
 		if !roleExists || !idExists {
-			log.Println("[AUTHZ-ERROR] Role or RoleID not found in token context. Check JWTMiddleware.")
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Access denied: Incomplete user token."})
 			return
 		}
 
 		if userRole.(string) == "admin" {
-			log.Printf("[AUTHZ-INFO] User is an admin. Bypassing permission check for '%s'. Access granted.", permissionName)
 			c.Next()
 			return
 		}
 
-		log.Printf("[AUTHZ-INFO] User is not an admin. Checking for permission '%s' for RoleID %v.", permissionName, roleID)
 		hasPerm, err := a.RoleSvc.RoleHasPermission(roleID.(uint), permissionName)
 		if err != nil || !hasPerm {
 			log.Printf("[AUTHZ-DENIED] Access denied for RoleID %v, permission '%s'.", roleID, permissionName)

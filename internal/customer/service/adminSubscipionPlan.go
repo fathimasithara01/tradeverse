@@ -1,4 +1,3 @@
-// internal/customer/service/customer_subscription_plan_service.go
 package service
 
 import (

@@ -61,7 +61,6 @@ func (ctrl *SignalController) GetSignalByID(c *gin.Context) {
 	c.JSON(http.StatusOK, signal)
 }
 
-// PUT /trader/signals/:id
 func (ctrl *SignalController) UpdateSignal(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -86,7 +85,6 @@ func (ctrl *SignalController) UpdateSignal(c *gin.Context) {
 	c.JSON(http.StatusOK, signal)
 }
 
-// DELETE /trader/signals/:id
 func (ctrl *SignalController) DeleteSignal(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)

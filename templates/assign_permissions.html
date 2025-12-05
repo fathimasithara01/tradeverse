@@ -16,13 +16,11 @@
 <body>
     <div class="wrapper">
                 {{template "admin_sidebar" .}}
-        <!-- Main Content -->
         <div id="content" class="container-fluid p-4">
             <h2 class="mb-4">Assign Resource Access to Role</h2>
 
             <div class="card">
                 <div class="card-body p-4">
-                    <!-- Role Selection -->
                     <div class="row mb-4 align-items-center">
                         <div class="col-md-5">
                             <label for="role-select" class="form-label fw-bold">Select Role</label>
@@ -33,12 +31,9 @@
                     </div>
                     <hr>
 
-                    <!-- Permissions Container -->
                     <div id="permissions-wrapper">
-                        <!-- This container will be dynamically filled -->
                     </div>
 
-                    <!-- Action Buttons & Alerts -->
                     <div id="actions-container" class="mt-4 border-top pt-3" style="display: none;">
                         <button class="btn btn-primary" id="save-permissions-btn">
                             <i class="fas fa-save me-2"></i>Save Changes
@@ -59,7 +54,6 @@
             const saveBtn = document.getElementById('save-permissions-btn');
             const alertContainer = document.getElementById('alert-container');
 
-            // --- 1. Load Roles into Dropdown ---
             async function loadRoles() {
                 try {
                     const response = await fetch('/admin/api/roles');
@@ -74,7 +68,6 @@
                 }
             }
             
-            // --- 2. Display Permissions for Selected Role ---
             async function displayPermissions(roleId) {
                 permissionsWrapper.innerHTML = `
                     <div class="text-center p-5">
@@ -99,9 +92,9 @@
                             </div>
                         </div>`;
                     
-                    let bodyHtml = '<div class="row g-4">'; // Using Bootstrap Grid
+                    let bodyHtml = '<div class="row g-4">'; 
                     for (const category in groupedPermissions) {
-                        bodyHtml += '<div class="col-lg-4 col-md-6">'; // 3 columns on large, 2 on medium
+                        bodyHtml += '<div class="col-lg-4 col-md-6">';
                         bodyHtml += '<div class="permission-group">';
                         bodyHtml += `<h6>${category}</h6>`;
                         groupedPermissions[category].forEach(p => {
@@ -123,14 +116,12 @@
                 }
             }
             
-            // --- Event Listeners ---
             roleSelect.addEventListener('change', function () {
                 if (this.value) {
                     displayPermissions(this.value);
                 }
             });
 
-            // Using event delegation for 'Select All' as it's created dynamically
             permissionsWrapper.addEventListener('change', function(event) {
                 if (event.target.id === 'select-all-permissions') {
                     document.querySelectorAll('.permission-checkbox').forEach(cb => {
@@ -173,7 +164,6 @@
                     </div>`;
             }
 
-            // --- Initial Load ---
             loadRoles();
             permissionsWrapper.innerHTML = `<p class="text-center text-muted p-5">Please select a role to view and assign permissions.</p>`;
         });

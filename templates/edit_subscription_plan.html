@@ -79,7 +79,6 @@
     <script>
         const planId = document.getElementById("planId").value;
 
-        // Load existing plan data
         async function loadPlan() {
             try {
                 const res = await fetch(`/admin/api/subscription-plans/${planId}`);
@@ -104,7 +103,6 @@
 
         loadPlan();
 
-        // Submit updated plan
         document.getElementById("editPlanForm").addEventListener("submit", async function (e) {
             e.preventDefault();
 

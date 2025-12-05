@@ -30,7 +30,7 @@
                     const traderName = (signal.trader && signal.trader.name) ? signal.trader.name : 'Unknown Trader';
                     const traderId = (signal.trader && signal.trader.ID) ? signal.trader.ID : '#';
 
-                    const trade = signal.latest_trade || {}; // Use an empty object as a default
+                    const trade = signal.latest_trade || {}; 
                     const stopLoss = trade.StopLossPrice || 0;
                     const entryPrice = trade.EntryPrice || 0;
                     const targetPrice = trade.TargetPrice || 0;
@@ -43,15 +43,13 @@
                     const pnlClass = pnlValue >= 0 ? 'positive' : 'negative';
                     const pnlSign = pnlValue >= 0 ? '+' : '';
 
-                    // Calculate progress safely, preventing division by zero
-                    let progressPercent = 50; // Default to the middle
+                    let progressPercent = 50; 
                     const totalRange = targetPrice - stopLoss;
                     if (totalRange !== 0) {
                         const currentProgress = (currentPrice - stopLoss) / totalRange;
                         progressPercent = Math.max(0, Math.min(100, currentProgress * 100));
                     }
 
-                    // The card's HTML is now built safely.
                     return `
             <div class="col-lg-6">
                 <div class="signal-card">
@@ -78,14 +76,12 @@
             </div>`;
                 }
 
-                // --- THIS IS THE CORRECTED FETCH LOGIC WITH BETTER ERROR HANDLING ---
                 function loadLiveSignals() {
                     container.innerHTML = `<p class="text-secondary">Fetching live signals...</p>`;
 
                     fetch('/api/signals')
                         .then(res => {
                             if (!res.ok) {
-                                // If the server sends an error, try to read the message.
                                 return res.json().then(err => { throw new Error(err.error || 'Server responded with an error.') });
                             }
                             return res.json();
@@ -97,21 +93,18 @@
                                 return;
                             }
                             signals.forEach(signal => {
-                                // The += ensures we add one card after another.
                                 container.innerHTML += renderSignalCard(signal);
                             });
                         })
                         .catch(error => {
                             console.error("Fetch Error:", error);
-                            // Display a user-friendly error message on the page.
                             container.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
                         });
                 }
 
-                // ... (Your event listener for the copy button is fine) ...
 
                 loadLiveSignals();
-                setInterval(loadLiveSignals, 60000); // Refresh every minute
+                setInterval(loadLiveSignals, 60000); 
             });
         </script>
 </body>

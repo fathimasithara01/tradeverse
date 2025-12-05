@@ -101,7 +101,7 @@ type DepositVerifyResponse struct {
 	Message       string            `json:"message"`
 }
 
-type WithdrawalRequest struct { 
+type WithdrawalRequest struct {
 	ID                 uint              `gorm:"primaryKey" json:"id"`
 	UserID             uint              `gorm:"not null;index;comment:ID of the user requesting withdrawal" json:"user_id"`
 	User               User              `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user,omitempty"` // Ensure User is preloaded
@@ -126,7 +126,7 @@ type WithdrawalRequestInput struct {
 	BankAccountHolder  string  `json:"bank_account_holder" binding:"required"`
 	IFSCCode           string  `json:"ifsc_code" binding:"required"`
 	Currency           string  `json:"currency" binding:"required,oneof=INR USD"`
-	BeneficiaryAccount string  `json:"beneficiary_account"` // This can be a descriptive string
+	BeneficiaryAccount string  `json:"beneficiary_account"`
 }
 
 type WithdrawalResponse struct {
@@ -171,23 +171,22 @@ type WalletTransaction struct {
 type WithdrawRequest struct {
 	gorm.Model
 	UserID              uint              `gorm:"index;not null"`
-	User                User              `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"` // Added for GORM Preload
+	User                User              `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Amount              float64           `gorm:"type:numeric(18,4);not null"`
 	Currency            string            `gorm:"size:3;not null"`
 	Status              TransactionStatus `gorm:"size:20;not null"`
-	BeneficiaryAccount  string            `gorm:"type:text;not null"` // Full description
-	BankAccountNumber   string            `gorm:"size:50;not null"`   // Separate field for easier handling
-	BankAccountHolder   string            `gorm:"size:100;not null"`  // Separate field
-	IFSCCode            string            `gorm:"size:20;not null"`   // Separate field
+	BeneficiaryAccount  string            `gorm:"type:text;not null"` 
+	BankAccountNumber   string            `gorm:"size:50;not null"`   
+	BankAccountHolder   string            `gorm:"size:100;not null"`  
+	IFSCCode            string            `gorm:"size:20;not null"`  
 	PaymentGateway      string            `gorm:"size:50"`
 	PaymentGatewayTxID  string            `gorm:"size:100"`
 	WalletTransactionID *uint             `gorm:"index"`
 	AdminNotes          string            `gorm:"type:text" json:"admin_notes,omitempty"`
 
-	RequestTime    time.Time  `gorm:"not null;index" json:"request_time"` 
-	ProcessingTime *time.Time `json:"processing_time,omitempty"`       
+	RequestTime    time.Time  `gorm:"not null;index" json:"request_time"`
+	ProcessingTime *time.Time `json:"processing_time,omitempty"`
 	CompletionTime *time.Time `json:"completion_time,omitempty"`
-
 }
 
 type WalletSummaryResponse struct {

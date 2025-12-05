@@ -1,4 +1,3 @@
-// internal/customer/controllers/subscription_plan_controller.go
 package controllers
 
 import (
@@ -55,7 +54,7 @@ func (ctrl *SubscriptionPlanController) GetSubscriptionPlanByID(c *gin.Context) 
 	c.JSON(http.StatusOK, plan)
 }
 func (ctrl *SubscriptionPlanController) SubscribeToPlan(c *gin.Context) {
-	userIDValue, exists := c.Get("userID") // match middleware key exactly
+	userIDValue, exists := c.Get("userID") 
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
 		return

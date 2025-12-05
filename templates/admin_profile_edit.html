@@ -22,7 +22,6 @@
                 <div class="row justify-content-center">
                     <div class="col-md-8">
                         <div class="card shadow-sm position-relative">
-                            <!-- Loading Overlay -->
                             <div class="loading-overlay" id="cardLoadingOverlay" role="status"
                                 aria-label="Loading profile data">
                                 <div class="spinner-border text-primary" role="status">
@@ -38,9 +37,7 @@
                                 </a>
                             </div>
                             <div class="card-body">
-                                <!-- Profile Update Message -->
                                 <div id="profile-message" class="alert d-none" role="status" aria-live="polite">
-                                    <!-- Messages like "Profile updated successfully" will appear here -->
                                 </div>
 
                                 <form id="profileUpdateForm" enctype="multipart/form-data" novalidate>
@@ -98,10 +95,8 @@
                                 <form id="passwordChangeForm" novalidate>
                                     <fieldset>
                                         <legend class="visually-hidden">Change Account Password</legend>
-                                        <!-- Password Change Message -->
                                         <div id="password-message" class="alert d-none" role="status"
                                             aria-live="polite">
-                                            <!-- Messages like "Password changed successfully" will appear here -->
                                         </div>
                                         <div class="mb-3">
                                             <label for="oldPassword" class="form-label">Current Password</label>

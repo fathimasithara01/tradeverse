@@ -23,7 +23,7 @@ type ICustomerTraderSignalSubscriptionService interface {
 
 type CustomerTraderSignalSubscriptionService struct {
 	repo customerrepo.ICustomerTraderSignalSubscriptionRepository
-	db   *gorm.DB 
+	db   *gorm.DB
 }
 
 func NewCustomerTraderSignalSubscriptionService(repo customerrepo.ICustomerTraderSignalSubscriptionRepository, db *gorm.DB) ICustomerTraderSignalSubscriptionService {
@@ -40,7 +40,7 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 	plan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, input.TraderSubscriptionPlanID)
 	if err != nil {
 		log.Printf("Error getting trader subscription plan ID %d: %v", input.TraderSubscriptionPlanID, err)
-		if errors.Is(err, errors.New("trader subscription plan not found")) { // Match the error string from repo
+		if errors.Is(err, errors.New("trader subscription plan not found")) {
 			return errors.New("invalid trader subscription plan: trader subscription plan not found")
 		}
 		return fmt.Errorf("failed to get trader subscription plan: %w", err)
@@ -69,8 +69,8 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		}
 	}()
 
-	// 1. Deduct money from customer's wallet
-	customerWallet, err := s.repo.GetTraderWallet(ctx, customerID) // Assuming GetTraderWallet can get any user's wallet
+	customerWallet, err := s.repo.GetTraderWallet(ctx, customerID)
+
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to get customer wallet: %w", err)
@@ -87,10 +87,8 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 	}
 	customerBalanceAfter := customerWallet.Balance - plan.Price
 
-	// 2. Distribute funds: Admin commission + Trader revenue
 	adminCommissionAmount := plan.Price * (plan.AdminCommission / 100.0)
 	traderRevenueAmount := plan.Price - adminCommissionAmount
-	// Get Admin wallet and update balance
 	adminWallet, err := s.repo.GetAdminWallet(ctx)
 	if err != nil {
 		tx.Rollback()
@@ -102,7 +100,6 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 	}
 	adminBalanceAfter := adminWallet.Balance + adminCommissionAmount
 
-	// Get Trader wallet and update balance
 	traderWallet, err := s.repo.GetTraderWallet(ctx, plan.TraderID)
 	if err != nil {
 		tx.Rollback()
@@ -127,7 +124,7 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		BalanceBefore:   customerWallet.Balance,
 		BalanceAfter:    customerBalanceAfter,
 		ReferenceID:     fmt.Sprintf("TRADER_SUB_%d_PLAN_%d", customerID, plan.ID),
-		TransactionID:   fmt.Sprintf("TRADER_SUB_%d_%d_%d", customerID, plan.TraderID, time.Now().UnixNano()), // unique
+		TransactionID:   fmt.Sprintf("TRADER_SUB_%d_%d_%d", customerID, plan.TraderID, time.Now().UnixNano()),
 	}
 
 	if err := s.repo.CreateWalletTransaction(ctx, &customerTx, tx); err != nil {
@@ -155,7 +152,6 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		return fmt.Errorf("failed to record admin transaction: %w", err)
 	}
 
-	// Trader transaction (credit)
 	traderTx := models.WalletTransaction{
 		WalletID:        traderWallet.ID,
 		UserID:          plan.TraderID,
@@ -176,7 +172,6 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		return fmt.Errorf("failed to record trader transaction: %w", err)
 	}
 
-	// 4. Create CustomerTraderSubscription record
 	startDate := time.Now()
 	endDate := startDate.Add(time.Duration(plan.DurationDays) * 24 * time.Hour)
 
@@ -187,7 +182,7 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		StartDate:                startDate,
 		EndDate:                  endDate,
 		IsActive:                 true,
-		WalletTransactionID:      &customerTx.ID, // Link to the customer's payment transaction
+		WalletTransactionID:      &customerTx.ID,
 	}
 
 	if _, err := s.repo.CreateCustomerTraderSubscription(ctx, newSubscription); err != nil {
@@ -195,7 +190,6 @@ func (s *CustomerTraderSignalSubscriptionService) SubscribeToTrader(ctx context.
 		return fmt.Errorf("failed to create customer-trader subscription record: %w", err)
 	}
 
-	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}

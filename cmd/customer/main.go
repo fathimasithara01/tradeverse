@@ -18,7 +18,7 @@ func main() {
 	engine := app.Engine()
 
 	corsConfig := cors.Config{
-		AllowOrigins:     []string{"*"}, // You can replace "*" with specific domains for production
+		AllowOrigins:     []string{"*"}, 
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

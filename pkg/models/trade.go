@@ -43,7 +43,7 @@ type Trader struct {
 type Trade struct {
 	gorm.Model
 
-	TraderID        uint        `gorm:"index;not null" json:"trader_id"` // This is the column that stores the FK
+	TraderID        uint        `gorm:"index;not null" json:"trader_id"`
 	Symbol          string      `gorm:"size:20;not null" json:"symbol"`
 	TradeType       TradeType   `gorm:"size:10;not null" json:"trade_type"`
 	Side            TradeSide   `gorm:"size:5;not null" json:"side"`
@@ -82,9 +82,9 @@ type TradeInput struct {
 type TradeUpdateInput struct {
 	StopLossPrice   *float64    `json:"stop_loss_price,omitempty"`
 	TakeProfitPrice *float64    `json:"take_profit_price,omitempty"`
-	Action          string      `json:"action,omitempty" binding:"omitempty,oneof=CLOSE CANCEL"` // e.g., "CLOSE", "CANCEL"
-	ClosePrice      *float64    `json:"close_price,omitempty"`                                   // Required if action is CLOSE
-	Status          TradeStatus `json:"status,omitempty"`                                        // Admin-only perhaps, for manual status change
+	Action          string      `json:"action,omitempty" binding:"omitempty,oneof=CLOSE CANCEL"`
+	ClosePrice      *float64    `json:"close_price,omitempty"`
+	Status          TradeStatus `json:"status,omitempty"`
 }
 
 type TradeListResponse struct {

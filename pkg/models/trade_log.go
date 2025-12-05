@@ -19,7 +19,7 @@ type TradeLog struct {
 	MasterTradeID   string
 	FollowerTradeID string
 	Status          LogStatus `gorm:"type:varchar(20);index"`
-	ErrorMessage    string    // Populated only if Status is "failed"
-	ExecutionTime   int64     // Latency in milliseconds
+	ErrorMessage    string    
+	ExecutionTime   int64  
 	Timestamp       time.Time
 }

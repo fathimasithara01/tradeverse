@@ -90,7 +90,6 @@ func (s *UserService) GetAdminProfile(userID uint) (models.User, error) {
 	if err != nil {
 		return models.User{}, err
 	}
-	// Important: Do not send password hash to the client
 	user.Password = ""
 	return user, nil
 }
@@ -108,8 +107,7 @@ func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequ
 		return errors.New("access denied: user is not an admin")
 	}
 
-	// Email duplication check
-	if req.Email != "" && user.Email != req.Email { // Only check if email is provided and changed
+	if req.Email != "" && user.Email != req.Email {
 		existingUserByEmail, err := s.UserRepo.FindByEmail(req.Email)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to check email availability: %w", err)
@@ -117,10 +115,9 @@ func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequ
 		if existingUserByEmail != nil && existingUserByEmail.ID != userID {
 			return errors.New("email already in use by another account")
 		}
-		user.Email = req.Email // Update email only if unique and valid
+		user.Email = req.Email
 	}
 
-	// Update other user fields if provided
 	if req.Name != "" {
 		user.Name = req.Name
 	}
@@ -128,8 +125,7 @@ func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequ
 		user.Phone = req.Phone
 	}
 
-	// Handle profile picture upload ONLY IF a file was actually provided AND has a filename
-	if req.ProfilePic != nil && req.ProfilePic.Filename != "" { // Explicit check for filename
+	if req.ProfilePic != nil && req.ProfilePic.Filename != "" {
 		absUploadDir, err := filepath.Abs(uploadDir)
 		if err != nil {
 			return fmt.Errorf("failed to get absolute path for upload directory: %w", err)
@@ -140,13 +136,10 @@ func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequ
 		}
 
 		safeFilename := filepath.Base(req.ProfilePic.Filename)
-		// Generate a unique filename to prevent clashes
 		filename := fmt.Sprintf("%d-%s%s", userID, time.Now().Format("20060102150405"), filepath.Ext(safeFilename))
 		filePath := filepath.Join(absUploadDir, filename)
 
-		// Call the now more robust SaveUploadedFile
 		if err := SaveUploadedFile(req.ProfilePic, filePath); err != nil {
-			// The specific error from SaveUploadedFile will now propagate
 			return fmt.Errorf("failed to save profile picture: %w", err)
 		}
 
@@ -156,7 +149,7 @@ func (s *UserService) UpdateAdminProfile(userID uint, req AdminUpdateProfileRequ
 		log.Printf("[INFO] UpdateAdminProfile: No valid profile picture provided for admin user ID %d. Skipping file upload.", userID)
 	}
 
-	return s.UserRepo.UpdateUser(user) 
+	return s.UserRepo.UpdateUser(user)
 }
 
 func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword string) error {
@@ -169,23 +162,21 @@ func (s *UserService) ChangeAdminPassword(userID uint, oldPassword, newPassword 
 		return errors.New("access denied: user is not an admin")
 	}
 
-	// Verify old password
 	if !checkPasswordHash(oldPassword, user.Password) { // Use checkPasswordHash
 		return errors.New("current password is incorrect")
 	}
 
-	// Validate new password strength
 	if !IsValidPassword(newPassword) {
 		return errors.New("new password does not meet strength requirements (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)")
 	}
 
-	hashedPassword, err := hashPassword(newPassword) // Use hashPassword
+	hashedPassword, err := hashPassword(newPassword)
 	if err != nil {
 		return fmt.Errorf("failed to hash new password: %w", err)
 	}
 	user.Password = hashedPassword
 
-	return s.UserRepo.UpdateUser(user) // Pass pointer to UpdateUser
+	return s.UserRepo.UpdateUser(user)
 }
 
 func IsValidPassword(password string) bool {
@@ -195,7 +186,7 @@ func IsValidPassword(password string) bool {
 		hasUpper   = regexp.MustCompile(`[A-Z]`)
 		hasLower   = regexp.MustCompile(`[a-z]`)
 		hasNumber  = regexp.MustCompile(`[0-9]`)
-		hasSpecial = regexp.MustCompile(`[!@#$%^&*()_+=\-{}\[\]:;<>,.?~\\|]`) // Added - and |
+		hasSpecial = regexp.MustCompile(`[!@#$%^&*()_+=\-{}\[\]:;<>,.?~\\|]`)
 	)
 
 	if len(password) < minLen {
@@ -217,19 +208,16 @@ func IsValidPassword(password string) bool {
 	return true
 }
 
-// hashPassword hashes a password using bcrypt.
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }
 
-// checkPasswordHash compares a plaintext password with a bcrypt hash.
 func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
-// SaveUploadedFile saves a multipart.FileHeader to the specified destination.
 func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
 	if file == nil {
 		return errors.New("cannot save: file header is nil")
@@ -483,12 +471,10 @@ func (s *UserService) AssignRoleToUser(userID, roleID uint) error {
 		return errors.New("invalid role selected: role not found in database")
 	}
 
-	log.Printf("==> ATTEMPTING TO ASSIGN ROLE: UserID=%d, RoleID=%d, RoleName='%s'\n", userID, roleID, role.Name)
 
 	err = s.UserRepo.AssignRoleToUser(userID, roleID, models.UserRole(role.Name))
 	if err != nil {
 		return fmt.Errorf("failed to assign role %s to user %d: %w", role.Name, userID, err)
 	}
-	log.Printf("==> SUCCESSFULLY ASSIGNED ROLE: UserID=%d, RoleID=%d, RoleName='%s'\n", userID, roleID, role.Name)
 	return nil
 }

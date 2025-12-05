@@ -55,7 +55,6 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 
 	wg.Add(4)
 
-	// Revenue
 	go func() {
 		defer wg.Done()
 		mrr, err := s.Repo.GetMonthlyRecurringRevenue()
@@ -67,7 +66,6 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 		stats.MRR = mrr
 	}()
 
-	// Customers
 	go func() {
 		defer wg.Done()
 		count, err := s.Repo.GetCustomerCount()
@@ -79,7 +77,6 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 		stats.Followers = count
 	}()
 
-	// Traders
 	go func() {
 		defer wg.Done()
 		count, err := s.Repo.GetApprovedTraderCount()
@@ -91,7 +88,6 @@ func (s *DashboardService) GetDashboardStats() (DashboardStats, error) {
 		stats.Traders = count
 	}()
 
-	// Signals
 	go func() {
 		defer wg.Done()
 		count, err := s.Repo.GetTotalSignalCount()
@@ -130,7 +126,6 @@ func (s *DashboardService) GetChartData() (ChartData, error) {
 	chartData.Distribution.Labels = []string{"Followers", "Traders"}
 	chartData.Distribution.Data = []int64{followerCount, traderCount}
 
-	// Last 6 months
 	followerSignups, err := s.Repo.GetMonthlySignups(models.RoleCustomer)
 	if err != nil {
 		return ChartData{}, err

@@ -64,10 +64,10 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		StopLoss      float64 `json:"stopLoss"`
 		EntryPrice    float64 `json:"entryPrice"`
 		TargetPrice   float64 `json:"targetPrice"`
-		CurrentPrice  float64 `json:"currentPrice"` // Client might provide, but we will always override with live data
+		CurrentPrice  float64 `json:"currentPrice"`
 		Risk          string  `json:"risk"`
 		Strategy      string  `json:"strategy"`
-		Status        string  `json:"status"` // Client might provide "Pending", but service will confirm
+		Status        string  `json:"status"`
 		StartDate     string  `json:"startDate"`
 		EndDate       string  `json:"endDate"`
 		TotalDuration string  `json:"totalDuration"`
@@ -86,7 +86,7 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 	if !strings.HasSuffix(normalizedSymbol, "USDT") {
 		normalizedSymbol += "USDT"
 	}
-	req.Symbol = normalizedSymbol // Update the request struct's symbol
+	req.Symbol = normalizedSymbol 
 
 	startDate, err := time.Parse(time.RFC3339, req.StartDate)
 	if err != nil {
@@ -102,33 +102,32 @@ func (ctrl *SignalController) CreateSignal(c *gin.Context) {
 		return
 	}
 
-	// ALWAYS fetch live market data for CurrentPrice when creating a signal
 	marketData, err := ctrl.liveSignalService.GetMarketDataBySymbol(c, req.Symbol)
 	if err != nil {
 		log.Printf("Warning: Could not fetch market data for symbol %s during signal creation: %v. CurrentPrice will be initialized to 0.", req.Symbol, err)
-		req.CurrentPrice = 0 // Initialize to 0 if market data cannot be fetched
+		req.CurrentPrice = 0 
 	} else if marketData != nil {
-		req.CurrentPrice = marketData.CurrentPrice // Override client-provided current price with live data
+		req.CurrentPrice = marketData.CurrentPrice
 		log.Printf("Fetched live current price for %s: %.4f (overriding client's %.4f)", req.Symbol, req.CurrentPrice, req.CurrentPrice)
 	} else {
 		log.Printf("No market data found for %s during signal creation. CurrentPrice will be initialized to 0.", req.Symbol)
-		req.CurrentPrice = 0 // Explicitly set to 0 if no market data found
+		req.CurrentPrice = 0
 	}
 
 	createdByRole := "Admin"
-	creatorID := uint(1) // Assuming Admin ID is 1 for simplicity
+	creatorID := uint(1) 
 
 	signal := models.Signal{
-		TraderID:       creatorID, // Set TraderID, assuming admin creating is the 'trader'
+		TraderID:       creatorID, 
 		TraderName:     req.TraderName,
 		Symbol:         req.Symbol,
 		StopLoss:       req.StopLoss,
 		EntryPrice:     req.EntryPrice,
 		TargetPrice:    req.TargetPrice,
-		CurrentPrice:   req.CurrentPrice, // Now definitively set from live market data or 0
+		CurrentPrice:   req.CurrentPrice, 
 		Risk:           req.Risk,
 		Strategy:       req.Strategy,
-		Status:         req.Status, // Will be overridden by service.CreateSignal
+		Status:         req.Status,
 		TotalDuration:  req.TotalDuration,
 		TradeStartDate: startDate,
 		TradeEndDate:   endDate,
@@ -184,7 +183,7 @@ func GetMarketDataAPI(c *gin.Context) {
 			CurrentPrice:   md.CurrentPrice,
 			PriceChange24H: md.PriceChange24H,
 			LogoURL:        md.LogoURL,
-			Volume24H:      md.Volume24H, // Ensure Volume24H is included
+			Volume24H:      md.Volume24H,
 		})
 	}
 

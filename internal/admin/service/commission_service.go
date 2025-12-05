@@ -15,10 +15,9 @@ type ICommissionService interface {
 
 type CommissionService struct {
 	CommissionRepo repository.ICommissionRepository
-	DB             *gorm.DB // In case transactions are needed for more complex operations
+	DB             *gorm.DB
 }
 
-// NewCommissionService creates a new instance of CommissionService.
 func NewCommissionService(commissionRepo repository.ICommissionRepository, db *gorm.DB) *CommissionService {
 	return &CommissionService{
 		CommissionRepo: commissionRepo,
@@ -26,7 +25,6 @@ func NewCommissionService(commissionRepo repository.ICommissionRepository, db *g
 	}
 }
 
-// SetPlatformCommissionPercentage sets or updates the global platform commission percentage.
 func (s *CommissionService) SetPlatformCommissionPercentage(adminID uint, percentage float64) (*models.AdminCommissionResponsePayload, error) {
 	if percentage < 0 || percentage > 100 {
 		return nil, fmt.Errorf("commission percentage must be between 0 and 100")
@@ -44,10 +42,8 @@ func (s *CommissionService) SetPlatformCommissionPercentage(adminID uint, percen
 		return nil, fmt.Errorf("failed to set platform commission percentage: %w", err)
 	}
 
-	// Retrieve the updated setting to get its ID and LastUpdated time
 	updatedSetting, err := s.CommissionRepo.GetCommissionSettingByKey("trader_subscription_commission_percentage")
 	if err != nil {
-		// This should not happen immediately after update/create but as a fallback
 		return nil, fmt.Errorf("failed to retrieve updated commission setting: %w", err)
 	}
 

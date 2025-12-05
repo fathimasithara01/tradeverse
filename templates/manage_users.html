@@ -112,8 +112,8 @@
             const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
             const confirmDeleteBtn = document.getElementById('confirmDeleteBtn'); 
       
-            let deleteTargetRow = null; // Stores the table row element to be removed after successful deletion
-            let deleteUserId = null;   // Stores the ID of the user to be deleted
+            let deleteTargetRow = null; 
+            let deleteUserId = null;   
          
             let currentPage = 1;
             let debounceTimer;
@@ -124,7 +124,6 @@
                 const role = roleFilter.value;
                 const period = periodFilter.value;
                 const url = `/admin/api/users/advanced?page=${page}&search=${search}&role=${role}&period=${period}`;
-                // Correct colspan to 8 to match the number of headers in this specific table
                 tableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4">Loading...</td></tr>';
                 paginationNav.innerHTML = '';
                 fetch(url)
@@ -136,7 +135,6 @@
                     })
                     .catch(error => {
                         console.error("Fetch Error:", error);
-                        // Correct colspan to 8
                         tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger p-4">Failed to load users: ${error.message}</td></tr>`;
                     });
             }
@@ -144,7 +142,6 @@
             function renderTable(users) {
                 tableBody.innerHTML = '';
                 if (users.length === 0) {
-                    // Correct colspan to 8
                     tableBody.innerHTML = '<tr><td colspan="8" class="text-center p-4">No users found.</td></tr>';
                     return;
                 }
@@ -172,7 +169,6 @@
                     `;
                     tableBody.appendChild(row);
                 });
-                // Removed the .catch block from renderTable as it's handled in fetchData
             }
 
 
@@ -196,10 +192,7 @@
                 paginationNav.innerHTML = html;
             }
 
-            // Moved deleteUser logic into the modal's confirm button listener
-            // Replaced the old deleteUser function which used `confirm()`
-
-            // --- Event Listeners ---
+          
             searchInput.addEventListener('keyup', () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => fetchData(1), 500);
@@ -207,40 +200,37 @@
             roleFilter.addEventListener('change', () => fetchData(1));
             periodFilter.addEventListener('change', () => fetchData(1));
 
-            // Listener to show the modal when a delete button is clicked
             tableBody.addEventListener('click', function (event) {
-                const deleteButton = event.target.closest('.delete-btn'); // Target the button with class 'delete-btn'
+                const deleteButton = event.target.closest('.delete-btn'); 
                 if (deleteButton) {
-                    deleteUserId = deleteButton.getAttribute('data-id'); // Set the global deleteUserId
-                    deleteTargetRow = deleteButton.closest('tr');       // Set the global deleteTargetRow
-                    confirmDeleteModal.show();                           // Show the Bootstrap modal
+                    deleteUserId = deleteButton.getAttribute('data-id'); 
+                    deleteTargetRow = deleteButton.closest('tr');   
+                    confirmDeleteModal.show();                       
                 }
             });
 
-            // Listener for the "Delete" button inside the Bootstrap confirmation modal
             confirmDeleteBtn.addEventListener('click', function () {
-                if (!deleteUserId) return; // If deleteUserId is null, do nothing
+                if (!deleteUserId) return; 
 
                 fetch(`/admin/api/users/${deleteUserId}`, { method: 'DELETE' })
                     .then(res => res.json())
                     .then(data => {
                         if (data.error) throw new Error(data.error);
 
-                        deleteTargetRow.remove(); // Remove the row from the table
+                        deleteTargetRow.remove(); 
                         
-                        // Check if the current page is empty after deletion, then refetch
                         if (tableBody.children.length === 0 && currentPage > 1) {
-                            fetchData(currentPage - 1); // Go to previous page if current becomes empty
+                            fetchData(currentPage - 1);
                         } else {
-                            fetchData(currentPage); // Otherwise, just refresh current page
+                            fetchData(currentPage); 
                         }
                         
 
-                        confirmDeleteModal.hide(); // Hide the modal
+                        confirmDeleteModal.hide();
                         const alertDiv = document.createElement('div');
                         alertDiv.className = 'alert alert-success mt-3';
                         alertDiv.textContent = 'User deleted successfully.';
-                        document.querySelector('#content').prepend(alertDiv); // Prepend alert to #content for better visibility
+                        document.querySelector('#content').prepend(alertDiv); 
                         setTimeout(() => alertDiv.remove(), 3000);
                     })
                     .catch(error => {
@@ -248,7 +238,7 @@
                         const alertDiv = document.createElement('div');
                         alertDiv.className = 'alert alert-danger mt-3';
                         alertDiv.textContent = `Error: ${error.message}`;
-                        document.querySelector('#content').prepend(alertDiv); // Prepend alert to #content
+                        document.querySelector('#content').prepend(alertDiv); 
                         setTimeout(() => alertDiv.remove(), 4000);
                     });
             });
@@ -263,7 +253,7 @@
                 }
             });
 
-            fetchData(); // Initial load
+            fetchData(); 
         });
     </script>
 </body>

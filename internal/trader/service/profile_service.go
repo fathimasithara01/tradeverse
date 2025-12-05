@@ -19,7 +19,7 @@ type ITraderProfileService interface {
 	GetProfile(userID uint) (*models.TraderProfile, error)
 	CreateProfile(userID uint, name, companyName, bio string) (*models.TraderProfile, error)
 	UpdateProfile(userID uint, profileID uint, name, companyName, bio *string) (*models.TraderProfile, error)
-	DeleteProfile(userID uint, profileID uint) error // Assuming only the user or admin can delete their profile
+	DeleteProfile(userID uint, profileID uint) error
 }
 
 type TraderProfileService struct {
@@ -41,9 +41,7 @@ func (s *TraderProfileService) GetProfile(userID uint) (*models.TraderProfile, e
 	return profile, nil
 }
 
-// CreateProfile creates a new trader profile for a given user.
 func (s *TraderProfileService) CreateProfile(userID uint, name, companyName, bio string) (*models.TraderProfile, error) {
-	// First, check if a profile already exists for this user
 	existingProfile, err := s.traderRepo.GetTraderProfileByUserID(userID)
 	if err != nil {
 		return nil, err
@@ -52,13 +50,12 @@ func (s *TraderProfileService) CreateProfile(userID uint, name, companyName, bio
 		return nil, ErrTraderProfileExists
 	}
 
-	// You might want to check if the user is actually designated as a 'trader' role in the User model
-	user, err := s.traderRepo.GetUserByID(userID) // Assuming this method exists
+	user, err := s.traderRepo.GetUserByID(userID)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil || !user.IsTrader() {
-		return nil, ErrPermissionDenied // Or a more specific error
+		return nil, ErrPermissionDenied
 	}
 
 	profile := &models.TraderProfile{
@@ -66,7 +63,7 @@ func (s *TraderProfileService) CreateProfile(userID uint, name, companyName, bio
 		Name:        name,
 		CompanyName: companyName,
 		Bio:         bio,
-		Status:      models.StatusPending, // New profiles are pending by default
+		Status:      models.StatusPending,
 		TotalPnL:    0.0,
 		IsVerified:  false,
 	}
@@ -117,16 +114,9 @@ func (s *TraderProfileService) DeleteProfile(userID uint, profileID uint) error 
 		return ErrTraderProfileNotFound
 	}
 
-	// Only the owner of the profile can delete it, or an admin
 	if profile.UserID != userID {
-		// Here you would also check if the requesting user is an admin
-		// For simplicity, we'll just check ownership for now.
 		return ErrUnauthorized
 	}
-
-	// Before deleting the profile, consider cascading deletes for related data
-	// (e.g., subscriptions specific to this trader if not handled by DB cascades)
-	// GORM's `constraint:OnDelete:CASCADE` on the User struct for TraderProfile helps here.
 
 	return s.traderRepo.DeleteTraderProfile(profile.ID)
 }

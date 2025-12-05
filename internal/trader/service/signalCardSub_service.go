@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service" // Import the admin service
+	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
 	"github.com/fathimasithara01/tradeverse/internal/trader/repository"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 	"gorm.io/gorm"
@@ -27,16 +27,14 @@ type ITraderSubscriptionService interface {
 type TraderSubscriptionService struct {
 	repo              repository.ITraderSubscriptionRepository
 	db                *gorm.DB
-	commissionService adminService.ICommissionService // Added commission service
+	commissionService adminService.ICommissionService
 }
 
-// NewTraderSubscriptionService creates a new instance of TraderSubscriptionService.
-// It now accepts the ICommissionService.
 func NewTraderSubscriptionService(repo repository.ITraderSubscriptionRepository, db *gorm.DB, cs adminService.ICommissionService) ITraderSubscriptionService {
 	return &TraderSubscriptionService{
 		repo:              repo,
 		db:                db,
-		commissionService: cs, // Inject the commission service
+		commissionService: cs,
 	}
 }
 
@@ -50,13 +48,11 @@ func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Con
 		return nil, fmt.Errorf("user is not a trader and cannot create subscription plans")
 	}
 
-	// --- FETCH GLOBAL ADMIN COMMISSION ---
 	commissionSetting, err := s.commissionService.GetPlatformCommissionPercentage()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get platform commission percentage: %w", err)
 	}
 	adminCommissionPercentage := commissionSetting.CommissionPercentage
-	// --- END FETCH ---
 
 	traderShareAmount := input.Price * (1 - (adminCommissionPercentage / 100.0))
 	if traderShareAmount < 0 {
@@ -70,8 +66,8 @@ func (s *TraderSubscriptionService) CreateTraderSubscriptionPlan(ctx context.Con
 		Price:           input.Price,
 		Currency:        input.Currency,
 		DurationDays:    input.DurationDays,
-		IsActive:        true,                      // Default to active upon creation
-		AdminCommission: adminCommissionPercentage, // Use fetched global commission
+		IsActive:        true,
+		AdminCommission: adminCommissionPercentage,
 		TraderShare:     traderShareAmount,
 	}
 
@@ -100,9 +96,6 @@ func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Con
 		return nil, fmt.Errorf("unauthorized: plan does not belong to this trader")
 	}
 
-	// --- RECALCULATE ADMIN COMMISSION AND TRADER SHARE FOR UPDATED PLANS ---
-	// If you want the admin commission to always reflect the current global setting
-	// when a plan is updated, even if it was created with a different setting previously.
 	commissionSetting, err := s.commissionService.GetPlatformCommissionPercentage()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get platform commission percentage for update: %w", err)
@@ -113,15 +106,14 @@ func (s *TraderSubscriptionService) UpdateTraderSubscriptionPlan(ctx context.Con
 	if traderShareAmount < 0 {
 		traderShareAmount = 0
 	}
-	// --- END RECALCULATION ---
 
 	existingPlan.Name = input.Name
 	existingPlan.Description = input.Description
 	existingPlan.Price = input.Price
 	existingPlan.Currency = input.Currency
 	existingPlan.DurationDays = input.DurationDays
-	existingPlan.AdminCommission = adminCommissionPercentage // Update to current global commission
-	existingPlan.TraderShare = traderShareAmount             // Update trader share based on new price and commission
+	existingPlan.AdminCommission = adminCommissionPercentage
+	existingPlan.TraderShare = traderShareAmount
 
 	if err := s.repo.UpdateTraderSubscriptionPlan(ctx, existingPlan); err != nil {
 		return nil, err
@@ -133,9 +125,7 @@ func (s *TraderSubscriptionService) DeleteTraderSubscriptionPlan(ctx context.Con
 	return s.repo.DeleteTraderSubscriptionPlan(ctx, planID, traderID)
 }
 
-// --- Customer subscription to a specific Trader's plan ---
 func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, customerID uint, traderID uint, planID uint) error {
-	// 1. Fetch the Trader's plan
 	plan, err := s.repo.GetTraderSubscriptionPlanByID(ctx, planID)
 	if err != nil {
 		return fmt.Errorf("trader subscription plan not found: %w", err)
@@ -150,7 +140,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		return fmt.Errorf("customer cannot subscribe to their own plan")
 	}
 
-	// 2. Check if customer is already subscribed to this specific plan and it's active
 	alreadySubscribed, err := s.repo.CheckIfCustomerIsSubscribedToTraderPlan(ctx, customerID, planID)
 	if err != nil {
 		return fmt.Errorf("failed to check existing subscription: %w", err)
@@ -159,7 +148,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		return fmt.Errorf("user is already subscribed to this plan")
 	}
 
-	// 3. Start a database transaction
 	tx := s.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
@@ -170,7 +158,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		}
 	}()
 
-	// 4. Deduct money from customer's wallet
 	customerWallet, err := s.repo.GetUserWallet(ctx, customerID)
 	if err != nil {
 		tx.Rollback()
@@ -188,12 +175,9 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 	}
 	customerBalanceAfter := customerWallet.Balance - plan.Price
 
-	// Use the commission rate stored WITH THE PLAN at the time of its creation/last update
-	// This ensures historical accuracy and stability even if admin changes global commission later
 	adminCommissionAmount := plan.Price * (plan.AdminCommission / 100.0)
 	traderReceiveAmount := plan.Price - adminCommissionAmount
 
-	// 5. Credit commission to Admin wallet
 	adminWallet, err := s.repo.GetAdminWallet(ctx)
 	if err != nil {
 		tx.Rollback()
@@ -205,8 +189,7 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 	}
 	adminBalanceAfter := adminWallet.Balance + adminCommissionAmount
 
-	// 6. Credit remaining amount to Trader's wallet
-	traderWallet, err := s.repo.GetUserWallet(ctx, traderID) // Re-using GetUserWallet for trader
+	traderWallet, err := s.repo.GetUserWallet(ctx, traderID)
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to get trader wallet: %w", err)
@@ -217,7 +200,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 	}
 	traderBalanceAfter := traderWallet.Balance + traderReceiveAmount
 
-	// 7. Create wallet transactions
 	customerTx := models.WalletTransaction{
 		WalletID:        customerWallet.ID,
 		UserID:          customerID,
@@ -279,7 +261,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		return fmt.Errorf("failed to record trader credit transaction: %w", err)
 	}
 
-	// 8. Create CustomerTraderSubscription record
 	startDate := time.Now()
 	endDate := startDate.Add(time.Duration(plan.DurationDays) * 24 * time.Hour)
 
@@ -290,11 +271,11 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		StartDate:                startDate,
 		EndDate:                  endDate,
 		IsActive:                 true,
-		WalletTransactionID:      &customerTx.ID, // Link to the customer's wallet transaction
+		WalletTransactionID:      &customerTx.ID,
 		// PaymentStatus:            models.TxStatusSuccess,
 		AmountPaid:             plan.Price,
 		TraderShare:            traderReceiveAmount,
-		AdminCommission:        plan.AdminCommission, // Store the actual commission used
+		AdminCommission:        plan.AdminCommission,
 		TransactionReferenceID: customerTx.TransactionID,
 	}
 
@@ -303,15 +284,12 @@ func (s *TraderSubscriptionService) SubscribeToTraderPlan(ctx context.Context, c
 		return fmt.Errorf("failed to create customer trader subscription record: %w", err)
 	}
 
-	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
 }
-
-// --- Trader Upgrade Subscription related (for users to take a plan to become trader) ---
 
 func (s *TraderSubscriptionService) GetAllTraderUpgradePlans(ctx context.Context) ([]models.AdminTraderSubscriptionPlan, error) {
 	return s.repo.GetAllTraderUpgradePlans(ctx)
@@ -329,13 +307,11 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 		return fmt.Errorf("this plan is not for upgrading to a trader role")
 	}
 
-	// Check if user is already an active trader via this (or any other relevant) upgrade plan
 	isAlreadyTrader, err := s.repo.CheckIfUserIsActiveTrader(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to check user's trader status: %w", err)
 	}
 	if isAlreadyTrader {
-		// More specific check: if already subscribed to *this specific* upgrade plan
 		existingUpgradeSub, err := s.repo.GetUserActiveUpgradeSubscription(ctx, userID, planID)
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return fmt.Errorf("failed to check for existing upgrade subscription: %w", err)
@@ -345,7 +321,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 		}
 	}
 
-	// Start a database transaction
 	tx := s.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		return fmt.Errorf("failed to begin transaction: %w", tx.Error)
@@ -356,7 +331,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 		}
 	}()
 
-	// 1. Deduct money from user's wallet
 	userWallet, err := s.repo.GetUserWallet(ctx, userID)
 	if err != nil {
 		tx.Rollback()
@@ -374,7 +348,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 	}
 	userBalanceAfter := userWallet.Balance - plan.Price
 
-	// 2. Credit money to Admin wallet (full price, as this is an admin plan)
 	adminWallet, err := s.repo.GetAdminWallet(ctx)
 	if err != nil {
 		tx.Rollback()
@@ -386,7 +359,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 	}
 	adminBalanceAfter := adminWallet.Balance + plan.Price
 
-	// 3. Create wallet transactions
 	userTx := models.WalletTransaction{
 		WalletID:        userWallet.ID,
 		UserID:          userID,
@@ -427,7 +399,6 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 		return fmt.Errorf("failed to record admin transaction for admin subscription: %w", err)
 	}
 
-	// 4. Create UserSubscription record (for the admin plan)
 	startDate := time.Now()
 	endDate := startDate.Add(time.Duration(plan.Duration) * 24 * time.Hour)
 
@@ -437,7 +408,7 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 		StartDate:          startDate,
 		EndDate:            endDate,
 		IsActive:           true,
-		TransactionID:      userTx.ID, // Link to the user's payment transaction
+		TransactionID:      userTx.ID,
 	}
 
 	if err := s.repo.CreateUserSubscription(ctx, userSubscription); err != nil {
@@ -445,13 +416,11 @@ func (s *TraderSubscriptionService) SubscribeToTraderUpgradePlan(ctx context.Con
 		return fmt.Errorf("failed to create user subscription record: %w", err)
 	}
 
-	// 5. Update user's Role to Trader
 	if err := s.repo.SetUserRole(ctx, userID, models.RoleTrader, tx); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to set user as trader: %w", err)
 	}
 
-	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}

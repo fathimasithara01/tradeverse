@@ -21,7 +21,7 @@ type ICustomerTraderSignalSubscriptionRepository interface {
 	CreateWalletTransaction(ctx context.Context, transaction *models.WalletTransaction, tx *gorm.DB) error
 	GetAdminWallet(ctx context.Context) (*models.Wallet, error)
 	GetTraderWallet(ctx context.Context, traderID uint) (*models.Wallet, error)
-	IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error) // New
+	IsCustomerSubscribedToPlan(ctx context.Context, customerID, planID uint) (bool, error)
 }
 
 type CustomerTraderSignalSubscriptionRepository struct {
@@ -111,7 +111,6 @@ func (r *CustomerTraderSignalSubscriptionRepository) GetActiveTraderSubscription
 func (r *CustomerTraderSignalSubscriptionRepository) GetAllSignalsFromSubscribedTraders(ctx context.Context, customerID uint) ([]models.Signal, error) {
 	var signals []models.Signal
 
-	// First, get all trader IDs the customer is subscribed to
 	var subscribedTraderIDs []uint
 	err := r.db.WithContext(ctx).
 		Model(&models.CustomerTraderSignalSubscription{}).

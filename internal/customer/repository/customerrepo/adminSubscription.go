@@ -1,4 +1,3 @@
-// internal/customer/repository/customerrepo/customer_subscription_repository.go
 package customerrepo
 
 import (

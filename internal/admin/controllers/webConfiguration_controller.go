@@ -15,11 +15,9 @@ func NewWebConfigurationController(webConfigService service.WebConfigurationServ
 	return &WebConfigurationController{webConfigService: webConfigService}
 }
 
-// GetWebConfigurationPage renders the web configuration page with current settings.
 func (ctrl *WebConfigurationController) GetWebConfigurationPage(c *gin.Context) {
 	config, err := ctrl.webConfigService.GetWebConfiguration()
 	if err != nil {
-		// Log the error and render with default or error message
 		c.HTML(http.StatusInternalServerError, "admin_web_configuration.html", gin.H{
 			"error": "Failed to load web configuration",
 		})
@@ -32,28 +30,25 @@ func (ctrl *WebConfigurationController) GetWebConfigurationPage(c *gin.Context) 
 
 	c.HTML(http.StatusOK, "admin_web_configuration.html", gin.H{
 		"config":     config,
-		"success":    c.Query("success"), // Check for success query parameter
-		"error":      c.Query("error"),   // Check for error query parameter
+		"success":    c.Query("success"), 
+		"error":      c.Query("error"),   
 		"countries":  countries,
 		"currencies": currencies,
 		"timezones":  timezones,
 	})
 }
 
-// UpdateWebConfiguration handles the submission of the web configuration form.
 func (ctrl *WebConfigurationController) UpdateWebConfiguration(c *gin.Context) {
 	primaryCountry := c.PostForm("primary_country")
 	primaryCurrency := c.PostForm("primary_currency")
 	primaryTimezone := c.PostForm("primary_timezone")
-	// Removed: filesystemConfig := c.PostForm("filesystem_config") // Filesystem is no longer submitted via form
+	// Removed: filesystemConfig := c.PostForm("filesystem_config") 
 
 	if primaryCountry == "" || primaryCurrency == "" || primaryTimezone == "" {
 		c.Redirect(http.StatusFound, "/admin/web-configuration?error=All fields are required")
 		return
 	}
 
-	// --- THIS LINE MUST BE CORRECTED ---
-	// The service call should now only have 3 arguments.
 	err := ctrl.webConfigService.UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/admin/web-configuration?error=Failed to update configuration")

@@ -1,4 +1,3 @@
-// internal/customer/controllers/trader_subscription.go - **NEW FILE**
 package controllers
 
 import (

@@ -14,10 +14,8 @@ var (
 
 type IAdminWalletRepository interface {
 	GetAdminWallet() (*models.Wallet, error)
-	// UpdateWalletBalance takes a GORM transaction object for atomic updates
 	UpdateWalletBalance(tx *gorm.DB, adminWallet *models.Wallet) error
-	// You might also have methods for admin-specific transactions
-	CreateAdminWallet(adminWallet *models.Wallet) error // To initialize if not exists
+	CreateAdminWallet(adminWallet *models.Wallet) error 
 }
 
 type adminWalletRepository struct {
@@ -30,7 +28,6 @@ func NewAdminWalletRepository(db *gorm.DB) IAdminWalletRepository {
 
 func (r *adminWalletRepository) GetAdminWallet() (*models.Wallet, error) {
 	var adminWallet models.Wallet
-	// Assuming there's only one admin wallet or a specific way to identify it (e.g., ID 1)
 	err := r.db.First(&adminWallet).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrAdminWalletNotFound
@@ -41,9 +38,7 @@ func (r *adminWalletRepository) GetAdminWallet() (*models.Wallet, error) {
 	return &adminWallet, nil
 }
 
-// UpdateWalletBalance updates the admin wallet within a transaction
 func (r *adminWalletRepository) UpdateWalletBalance(tx *gorm.DB, adminWallet *models.Wallet) error {
-	// Use the provided transaction object for saving
 	return tx.Save(adminWallet).Error
 }
 

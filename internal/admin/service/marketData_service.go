@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings" // Added for strings.Split
+	"strings"
 	"time"
 
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -18,16 +18,14 @@ type IMarketDataService interface {
 }
 
 type MarketDataService struct {
-	// Potentially inject a MarketDataRepository here if you were storing historical data
 }
 
 func NewMarketDataService() IMarketDataService {
 	return &MarketDataService{}
 }
 
-// GetLiveMarketData fetches live market data from the KuCoin API
 func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse, error) {
-	const url = "https://api.kucoin.com/api/v1/market/allTickers" // KuCoin's public ticker API
+	const url = "https://api.kucoin.com/api/v1/market/allTickers"
 
 	log.Println("Attempting to fetch market data from:", url)
 
@@ -54,7 +52,6 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 		return nil, fmt.Errorf("failed to read market data response: %w", err)
 	}
 
-	// Log the raw response body for debugging (truncate if very long)
 	log.Printf("DEBUG: Raw API response (first %d chars): %s", min(len(body), 1000), body[:min(len(body), 1000)])
 
 	var kucoinResponse struct {
@@ -62,8 +59,8 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 			Ticker []struct {
 				Symbol     string `json:"symbol"`
 				LastPrice  string `json:"last"`
-				ChangeRate string `json:"changeRate"` // 24h change rate (e.g., "0.0123")
-				VolValue   string `json:"volValue"`   // 24h volume in quote currency (e.g., USDT)
+				ChangeRate string `json:"changeRate"`
+				VolValue   string `json:"volValue"`
 			} `json:"ticker"`
 		} `json:"data"`
 	}
@@ -74,7 +71,6 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 	}
 
 	var marketDataList []models.MarketDataAPIResponse
-	// Define the specific symbols you are interested in and their display names
 	symbolsOfInterest := map[string]string{
 		"BTC-USDT":  "Bitcoin",
 		"ETH-USDT":  "Ethereum",
@@ -88,10 +84,9 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 	for _, ticker := range kucoinResponse.Data.Ticker {
 		name, ok := symbolsOfInterest[ticker.Symbol]
 		if !ok {
-			continue // Skip symbols not in our interest list
+			continue
 		}
 
-		// Parse values with robust error handling
 		lastPrice, pErr := parseFloatStrict(ticker.LastPrice)
 		if pErr != nil {
 			log.Printf("WARN: Skipping %s due to price parsing error: %v (value: '%s')", ticker.Symbol, pErr, ticker.LastPrice)
@@ -110,28 +105,26 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 			continue
 		}
 
-		// Generate Logo URL
 		baseSymbol := getBaseSymbol(ticker.Symbol)
-		logoURL := fmt.Sprintf("https://cryptoicons.org/api/icon/%s/24", strings.ToLower(baseSymbol)) // Use lowercase for cryptoicons.org
-		log.Printf("DEBUG: Generated LogoURL for %s: %s", ticker.Symbol, logoURL)                     // Log generated URL
+		logoURL := fmt.Sprintf("https://cryptoicons.org/api/icon/%s/24", strings.ToLower(baseSymbol))
+		log.Printf("DEBUG: Generated LogoURL for %s: %s", ticker.Symbol, logoURL)
 
 		marketDataList = append(marketDataList, models.MarketDataAPIResponse{
 			Symbol:         ticker.Symbol,
 			Name:           name,
 			CurrentPrice:   lastPrice,
-			PriceChange24H: changeRate * 100, // Convert rate (e.g., 0.0123) to percentage (1.23)
+			PriceChange24H: changeRate * 100,
 			Volume24H:      volume,
 			LogoURL:        logoURL,
 		})
 
-		if len(marketDataList) >= 7 { // Limit the number of assets displayed on dashboard
+		if len(marketDataList) >= 7 {
 			break
 		}
 	}
 
 	if len(marketDataList) == 0 {
 		log.Println("WARN: No relevant live data was successfully processed from the API. Falling back to mock data.")
-		// Return mock data ONLY if live data fetching and parsing entirely failed for all symbols
 		return s.getMockMarketData(), nil
 	}
 
@@ -139,7 +132,6 @@ func (s *MarketDataService) GetLiveMarketData() ([]models.MarketDataAPIResponse,
 	return marketDataList, nil
 }
 
-// parseFloatStrict uses strconv.ParseFloat for more robust error handling
 func parseFloatStrict(s string) (float64, error) {
 	if s == "" {
 		return 0, fmt.Errorf("cannot parse empty string to float")
@@ -151,16 +143,14 @@ func parseFloatStrict(s string) (float64, error) {
 	return f, nil
 }
 
-// getBaseSymbol extracts the base currency symbol (e.g., BTC from BTC-USDT)
 func getBaseSymbol(symbol string) string {
-	parts := strings.Split(symbol, "-") // Using standard library strings.Split
+	parts := strings.Split(symbol, "-")
 	if len(parts) > 0 {
 		return parts[0]
 	}
 	return symbol
 }
 
-// min helper function for logging
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -168,15 +158,13 @@ func min(a, b int) int {
 	return b
 }
 
-// getMockMarketData returns static mock data. Updated with more variety.
 func (s *MarketDataService) getMockMarketData() []models.MarketDataAPIResponse {
-	// Use a fixed time for consistency if the actual API fails
 	now := time.Now()
 	mockData := []models.MarketDataAPIResponse{
 		{
 			Symbol:         "BTC-USDT",
 			Name:           "Bitcoin",
-			CurrentPrice:   43000.50 + float64(now.Second()%100), // Simulate minor fluctuations
+			CurrentPrice:   43000.50 + float64(now.Second()%100),
 			PriceChange24H: 1.25,
 			Volume24H:      25000000000.00,
 			LogoURL:        "https://cryptoicons.org/api/icon/btc/24",

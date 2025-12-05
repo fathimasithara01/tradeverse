@@ -37,7 +37,6 @@ func (ctrl *CommissionController) ShowCommissionSettingsPage(c *gin.Context) {
 	})
 }
 
-// GetCommissionSettings handles fetching the current commission percentage via API.
 func (ctrl *CommissionController) GetCommissionSettings(c *gin.Context) {
 	setting, err := ctrl.CommissionService.GetPlatformCommissionPercentage()
 	if err != nil {
@@ -47,7 +46,6 @@ func (ctrl *CommissionController) GetCommissionSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, setting)
 }
 
-// UpdateCommissionSettings handles updating the platform commission percentage via API.
 func (ctrl *CommissionController) UpdateCommissionSettings(c *gin.Context) {
 	var payload models.AdminCommissionRequestPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -55,7 +53,7 @@ func (ctrl *CommissionController) UpdateCommissionSettings(c *gin.Context) {
 		return
 	}
 
-	adminID := c.MustGet("userID").(uint) // Assuming your auth middleware sets userID
+	adminID := c.MustGet("userID").(uint) 
 
 	response, err := ctrl.CommissionService.SetPlatformCommissionPercentage(adminID, payload.CommissionPercentage)
 	if err != nil {

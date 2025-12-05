@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// this is admin created customer to trader upgrade subscription
 type CustomerToTraderSub struct {
 	gorm.Model
 	UserID             uint                        `gorm:"not null;index" json:"user_id"`

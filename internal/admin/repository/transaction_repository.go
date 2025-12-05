@@ -30,7 +30,6 @@ func (r *transactionRepository) GetAllTransactions(page, limit int, search strin
 			Where("users.name ILIKE ? OR users.email ILIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
-	// Apply date filters
 	if year > 0 {
 		query = query.Where("EXTRACT(YEAR FROM wallet_transactions.created_at) = ?", year)
 	}

@@ -5,9 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }}</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="/static/sidebar.css">
     <link rel="stylesheet" href="/static/signal_cards.css">
@@ -20,13 +18,11 @@
 
         {{ template "admin_sidebar" . }}
 
-        <!-- Page Content -->
         <div id="content">
             <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 rounded shadow-sm">
                 <div class="container-fluid">
                     <h2 class="mb-0 ms-3">{{ .Title }}</h2>
-                    <!-- Create Signal Card Button (aligned right) -->
-                    <div class="ms-auto me-3"> <!-- ms-auto pushes it to the right -->
+                    <div class="ms-auto me-3"> 
                         <a href="/admin/signals/create" class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i>Create Signal Card
                         </a>
@@ -37,7 +33,6 @@
 
             <div class="container-fluid">
                 <div class="row" id="signal-cards-container">
-                    <!-- Initial loading message -->
                     <div class="col-12 loading-message">
                         <p><i class="fas fa-spinner fa-spin me-2"></i>Loading live trading signals...</p>
                     </div>
@@ -46,18 +41,15 @@
         </div>
     </div>
 
-    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function () {
-            // Sidebar collapse functionality
             $('#sidebarCollapse').on('click', function () {
                 $('#sidebar').toggleClass('active');
-                $('#content').toggleClass('active'); // Adjust content width
+                $('#content').toggleClass('active');
             });
 
-            // Dark Mode Toggle Functionality
             $('#darkModeSwitch').on('change', function () {
                 if (this.checked) {
                     $('body').addClass('dark-mode');
@@ -68,21 +60,18 @@
                 }
             });
 
-            // Check for saved dark mode preference on load
             if (localStorage.getItem('darkMode') === 'enabled') {
                 $('#darkModeSwitch').prop('checked', true);
                 $('body').addClass('dark-mode');
             }
 
-            // Helper function to safely get a numeric value, defaulting to 0 if null/undefined
             function getSafeNumber(value) {
                 return (value !== undefined && value !== null && !isNaN(parseFloat(value))) ? parseFloat(value) : 0;
             }
 
             function fetchSignals() {
                 const container = $('#signal-cards-container');
-                container.empty(); // Clear existing cards
-                // Add loading message back while fetching
+                container.empty(); 
                 container.append('<div class="col-12 loading-message"><p><i class="fas fa-spinner fa-spin me-2"></i>Loading live trading signals...</p></div>');
 
                 console.log("Fetching signals from /admin/api/signals...");
@@ -94,17 +83,16 @@
                     success: function (signals) {
                         console.log("Signals received:", signals);
 
-                        container.empty(); // Clear loading message
+                        container.empty(); 
 
                         if (signals && signals.length > 0) {
-                            // Sort signals: Pending, Active, Target Hit, Stop Loss
                             signals.sort((a, b) => {
                                 const getStatusOrder = (status) => {
                                     if (status === 'Pending') return 1;
                                     if (status === 'Active') return 2;
                                     if (status === 'Target Hit') return 3;
                                     if (status === 'Stop Loss') return 4;
-                                    return 5; // Default for any other status
+                                    return 5; 
                                 };
                                 return getStatusOrder(a.status) - getStatusOrder(b.status);
                             });
@@ -122,11 +110,8 @@
                                 const stopLoss = getSafeNumber(signal.stop_loss);
                                 const entryPrice = getSafeNumber(signal.entry_price);
                                 const targetPrice = getSafeNumber(signal.target_price);
-                                // This is the actual current price from the backend (updated by cron)
                                 const actualLiveCurrentPrice = getSafeNumber(signal.current_price);
 
-                                // The price explicitly displayed on the card under "Current Price:"
-                                // PRIORITIZE actualLiveCurrentPrice from DB. Fallback to entryPrice if actualLiveCurrentPrice is 0.
                                 let displayCurrentPriceForCard = actualLiveCurrentPrice;
                                 if (displayCurrentPriceForCard === 0 && entryPrice !== 0 && (signal.status === 'Pending' || signal.status === 'Active')) {
                                     displayCurrentPriceForCard = entryPrice;
@@ -140,20 +125,18 @@
                                 if (signal.status === 'Target Hit') {
                                     statusBadge = `<div class="status-badge target-hit"><i class="fas fa-check-circle"></i>Target Hit!</div>`;
                                     cardClass = 'target-hit-card';
-                                    currentPricePercentage = 100; // Force to 100% for achieved target
+                                    currentPricePercentage = 100; 
 
                                 } else if (signal.status === 'Stop Loss') {
                                     statusBadge = `<div class="status-badge stop-loss"><i class="fas fa-times-circle"></i>Stop Loss!</div>`;
                                     cardClass = 'stop-loss-card';
-                                    currentPricePercentage = 0; // Force to 0% for stop loss hit
+                                    currentPricePercentage = 0; 
 
                                 } else if (signal.status === 'Pending') {
                                     statusBadge = `<div class="status-badge pending"><i class="fas fa-exclamation-circle"></i>Pending</div>`;
                                     cardClass = '';
 
-                                    // For Pending signals, calculate progress based on entry/current price relative to SL/Target.
-                                    // Use the actualLiveCurrentPrice for calculation, falling back to EntryPrice if live is 0.
-                                    let priceForProgress = actualLiveCurrentPrice;
+                                   let priceForProgress = actualLiveCurrentPrice;
                                     if (priceForProgress === 0 && entryPrice !== 0) {
                                         priceForProgress = entryPrice;
                                     }
@@ -162,32 +145,26 @@
                                         currentPricePercentage = ((priceForProgress - stopLoss) / (targetPrice - stopLoss)) * 100;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else {
-                                        currentPricePercentage = 50; // Fallback if no valid range or price to calculate
+                                        currentPricePercentage = 50;
                                     }
 
-                                } else { // Default to 'Active' or general ongoing
+                                } else { 
                                     statusBadge = `<div class="status-badge active"><i class="fas fa-chart-line"></i>Active</div>`;
                                     cardClass = '';
 
-                                    // For Active signals, calculate percentage based on actualLiveCurrentPrice
                                     if (stopLoss !== 0 && targetPrice !== 0 && targetPrice > stopLoss && actualLiveCurrentPrice !== 0) {
                                         currentPricePercentage = ((actualLiveCurrentPrice - stopLoss) / (targetPrice - stopLoss)) * 100;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else if (actualLiveCurrentPrice !== 0 && entryPrice !== 0) {
-                                        // Fallback if SL/Target are missing, but we have current and entry
-                                        // This creates a relative progress from entry, capped.
-                                        const diffFromEntry = actualLiveCurrentPrice - entryPrice;
-                                        // If diffFromEntry is positive, move above 50%, negative below 50%
+                                       const diffFromEntry = actualLiveCurrentPrice - entryPrice;
                                         currentPricePercentage = 50 + (diffFromEntry / entryPrice) * 50;
                                         currentPricePercentage = Math.max(0, Math.min(100, currentPricePercentage));
                                     } else {
-                                        currentPricePercentage = 50; // General fallback if no price info
+                                        currentPricePercentage = 50; 
                                     }
                                 }
                                 console.log(`   Calculated currentPricePercentage: ${currentPricePercentage}%`);
 
-                                // Calculate price change from entry (for display in header)
-                                // ALWAYS use actualLiveCurrentPrice from DB for this calculation
                                 if (actualLiveCurrentPrice !== 0 && entryPrice !== 0) {
                                     const change = actualLiveCurrentPrice - entryPrice;
                                     const percentageChange = (change / entryPrice) * 100;
@@ -216,7 +193,6 @@
                                 const displayStopLoss = stopLoss.toFixed(4);
                                 const displayEntryPrice = entryPrice.toFixed(4);
                                 const displayTargetPrice = targetPrice.toFixed(4);
-                                // Use the specifically determined displayCurrentPriceForCard here, formatted
                                 const formattedDisplayCurrentPrice = displayCurrentPriceForCard.toFixed(4);
 
                                 console.log(`   Formatted Prices - SL: ${displayStopLoss}, Entry: ${displayEntryPrice}, Target: ${displayTargetPrice}, Display Current: ${formattedDisplayCurrentPrice}`);
@@ -294,36 +270,31 @@
             }
 
 
-            // Initial fetch and then refresh every minute
             fetchSignals();
-            let refreshIntervalId = setInterval(fetchSignals, 60000); // Store interval ID
+            let refreshIntervalId = setInterval(fetchSignals, 60000); 
 
-            // --- Start of NEW CODE for instant refresh on tab focus ---
             let lastFetched = Date.now();
-            const refreshThreshold = 5000; // Refresh if it's been more than 5 seconds since last fetch
+            const refreshThreshold = 5000; 
 
-            // Listen for when the tab becomes active or gains focus
             $(window).on('focus', function () {
                 const now = Date.now();
                 if (now - lastFetched > refreshThreshold) {
                     console.log("Window focused: Re-fetching signals.");
                     fetchSignals();
-                    lastFetched = now; // Update last fetched time
+                    lastFetched = now; 
                 }
             });
 
-            // Listen for when the document becomes visible (e.g., switching tabs)
             document.addEventListener('visibilitychange', function () {
                 if (document.visibilityState === 'visible') {
                     const now = Date.now();
                     if (now - lastFetched > refreshThreshold) {
                         console.log("Tab became visible: Re-fetching signals.");
                         fetchSignals();
-                        lastFetched = now; // Update last fetched time
+                        lastFetched = now;
                     }
                 }
             });
-            // --- End of NEW CODE for instant refresh ---
         });
     </script>
 </body>

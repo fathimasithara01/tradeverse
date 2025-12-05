@@ -21,7 +21,6 @@ func NewWebConfigurationRepository(db *gorm.DB) WebConfigurationRepository {
 
 func (r *webConfigurationRepository) GetWebConfiguration() (*models.WebConfiguration, error) {
 	var config models.WebConfiguration
-	// Always get the first (and ideally only) configuration entry
 	if err := r.db.First(&config).Error; err != nil {
 		return nil, err
 	}

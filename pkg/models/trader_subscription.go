@@ -65,14 +65,12 @@ type TraderSubscriptionRequest struct {
 	TraderSubscriptionPlanID uint `json:"trader_subscription_plan_id" binding:"required"`
 }
 
-// CreateTraderSubscriptionPlanInput - REMOVED AdminCommissionPercentage here
 type CreateTraderSubscriptionPlanInput struct {
 	Name         string  `json:"name" binding:"required"`
 	Description  string  `json:"description"`
 	Price        float64 `json:"price" binding:"required,gt=0"`
 	Currency     string  `json:"currency" binding:"required,oneof=INR USD"`
 	DurationDays uint    `json:"duration_days" binding:"required,gt=0"`
-	// AdminCommissionPercentage removed - will be fetched from global settings
 }
 
 type SubscribeToTraderInput struct {

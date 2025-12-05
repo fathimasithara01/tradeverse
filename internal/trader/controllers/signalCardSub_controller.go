@@ -20,7 +20,6 @@ func NewTraderSubscriptionController(subsService service.ITraderSubscriptionServ
 	return &TraderSubscriptionController{subsService: subsService}
 }
 
-// Helper to get user ID from context (can be customer or trader)
 func getUserID(c *gin.Context) (uint, error) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -30,7 +29,7 @@ func getUserID(c *gin.Context) (uint, error) {
 }
 
 func (ctrl *TraderSubscriptionController) CreateTraderSubscriptionPlan(c *gin.Context) {
-	traderID, err := getUserID(c) // Use general getUserID
+	traderID, err := getUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -58,21 +57,22 @@ func (ctrl *TraderSubscriptionController) CreateTraderSubscriptionPlan(c *gin.Co
 func (ctrl *TraderSubscriptionController) GetMyTraderSubscriptionPlans(c *gin.Context) {
 	traderID, err := getUserID(c)
 	if err != nil {
-		log.Printf("ERROR: GetMyTraderSubscriptionPlans - Unauthorized: %v", err) // <--- ADD THIS
+		log.Printf("ERROR: GetMyTraderSubscriptionPlans - Unauthorized: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	log.Printf("INFO: GetMyTraderSubscriptionPlans - Fetching plans for trader ID: %d", traderID) // <--- ADD THIS
+	log.Printf("INFO: GetMyTraderSubscriptionPlans - Fetching plans for trader ID: %d", traderID)
 
 	plans, err := ctrl.subsService.GetMyTraderSubscriptionPlans(c, traderID)
 	if err != nil {
-		log.Printf("ERROR: GetMyTraderSubscriptionPlans - Service error: %v", err) // <--- ADD THIS
+		log.Printf("ERROR: GetMyTraderSubscriptionPlans - Service error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to fetch trader's plans: %v", err)})
 		return
 	}
-	log.Printf("INFO: GetMyTraderSubscriptionPlans - Found %d plans for trader ID %d", len(plans), traderID) // <--- ADD THIS
+	log.Printf("INFO: GetMyTraderSubscriptionPlans - Found %d plans for trader ID %d", len(plans), traderID)
 	c.JSON(http.StatusOK, plans)
 }
+
 func (ctrl *TraderSubscriptionController) GetTraderSubscriptionPlanByID(c *gin.Context) {
 	planIDParam := c.Param("planId")
 	planID, err := strconv.ParseUint(planIDParam, 10, 32)
@@ -94,7 +94,7 @@ func (ctrl *TraderSubscriptionController) GetTraderSubscriptionPlanByID(c *gin.C
 }
 
 func (ctrl *TraderSubscriptionController) UpdateTraderSubscriptionPlan(c *gin.Context) {
-	traderID, err := getUserID(c) // Use general getUserID
+	traderID, err := getUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -130,7 +130,7 @@ func (ctrl *TraderSubscriptionController) UpdateTraderSubscriptionPlan(c *gin.Co
 }
 
 func (ctrl *TraderSubscriptionController) DeleteTraderSubscriptionPlan(c *gin.Context) {
-	traderID, err := getUserID(c) // Use general getUserID
+	traderID, err := getUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -146,7 +146,7 @@ func (ctrl *TraderSubscriptionController) DeleteTraderSubscriptionPlan(c *gin.Co
 	err = ctrl.subsService.DeleteTraderSubscriptionPlan(c, traderID, uint(planID))
 	if err != nil {
 		if err.Error() == "trader subscription plan not found or not owned by this trader" {
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()}) // Use forbidden as it implies not owned
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()}) 
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to delete plan: %v", err)})

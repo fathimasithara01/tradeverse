@@ -1,4 +1,3 @@
-<!-- web/templates/admin_wallet.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,16 +11,13 @@
     <link rel="stylesheet" href="/static/sidebar.css">
     <link rel="stylesheet" href="/static/admin_wallet.css">
     <style>
-        /* Custom CSS for better UX */
         .toast-container {
             z-index: 1080;
-            /* Ensure toasts are above modals */
         }
 
         .wallet-summary-card .icon {
             font-size: 3rem;
             color: var(--bs-primary);
-            /* Use a primary color for consistency */
             margin-bottom: 0.5rem;
         }
 
@@ -29,7 +25,6 @@
             font-size: 2.5rem;
             font-weight: 700;
             color: #343a40;
-            /* Darker text for balance */
         }
 
         .wallet-summary-card .title {
@@ -44,9 +39,7 @@
             border-radius: 0.25rem;
             font-size: 0.875em;
             word-break: break-all;
-            /* Ensure long text breaks */
             white-space: pre-wrap;
-            /* Wrap long lines */
         }
 
         .btn-info {
@@ -94,7 +87,6 @@
                 </div>
             </div>
 
-            <!-- Deposit Modal -->
             <div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog">
@@ -115,7 +107,6 @@
                                     <select class="form-select" id="depositCurrency" name="currency" required>
                                         <option value="INR" selected>INR</option>
                                         <option value="USD">USD</option>
-                                        <!-- Add more currencies as needed -->
                                     </select>
                                 </div>
                                 <input type="hidden" id="depositPaymentMethod" name="payment_method" value="AdminManual">
@@ -126,7 +117,6 @@
                 </div>
             </div>
 
-            <!-- Withdraw Modal -->
             <div class="modal fade" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog">
@@ -147,7 +137,6 @@
                                     <select class="form-select" id="withdrawCurrency" name="currency" required>
                                         <option value="INR" selected>INR</option>
                                         <option value="USD">USD</option>
-                                        <!-- Add more currencies as needed -->
                                     </select>
                                 </div>
                                 <div class="mb-3">
@@ -181,7 +170,6 @@
                 </div>
             </div>
 
-            <!-- Pending Withdrawals Modal -->
             <div class="modal fade" id="pendingWithdrawalsModal" tabindex="-1"
                 aria-labelledby="pendingWithdrawalsModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -205,13 +193,11 @@
                                         </tr>
                                     </thead>
                                     <tbody id="pendingWithdrawalsTableBody">
-                                        <!-- Pending withdrawals will be loaded here via JavaScript -->
                                     </tbody>
                                 </table>
                             </div>
                             <nav>
                                 <ul class="pagination justify-content-center" id="pendingWithdrawalsPagination">
-                                    <!-- Pagination for pending withdrawals -->
                                 </ul>
                             </nav>
                         </div>
@@ -219,7 +205,6 @@
                 </div>
             </div>
 
-            <!-- Reject Withdrawal Confirmation Modal -->
             <div class="modal fade" id="rejectWithdrawalConfirmModal" tabindex="-1"
                 aria-labelledby="rejectWithdrawalConfirmModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -246,12 +231,9 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
     <div aria-live="polite" aria-atomic="true" class="toast-container position-fixed bottom-0 end-0 p-3">
-        <!-- Toasts will be appended here -->
     </div>
 
-    <!-- Bootstrap JavaScript Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -271,7 +253,6 @@
             const pendingWithdrawalLimit = 10;
             let currentRejectWithdrawalID = null;
 
-            // Utility function to show toasts
             function showToast(message, type = 'success', delay = 5000) {
                 const toastContainer = document.querySelector('.toast-container');
                 const toastId = `toast-${Date.now()}`;
@@ -295,7 +276,6 @@
                 });
             }
 
-            // Fetches and displays admin wallet summary
             function fetchAdminWalletSummary() {
                 fetch('/admin/financials/api/wallet/summary')
                     .then(response => {
@@ -314,7 +294,6 @@
                     });
             }
 
-            // Renders pagination controls
             function renderPagination(paginationElement, totalItems, limit, currentPage, fetchDataFunction) {
                 paginationElement.innerHTML = '';
                 const totalPages = Math.ceil(totalItems / limit);
@@ -330,24 +309,20 @@
                 if (endPage - startPage + 1 < maxPagesToShow) {
                     startPage = Math.max(1, totalPages - maxPagesToShow + 1);
                 }
-                startPage = Math.max(1, startPage); // Ensure startPage is at least 1
+                startPage = Math.max(1, startPage); 
 
-                // Previous button
                 const prevDisabled = currentPage === 1 ? 'disabled' : '';
                 paginationElement.insertAdjacentHTML('beforeend',
                     `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`);
 
-                // Page numbers
                 for (let i = startPage; i <= endPage; i++) {
                     const activeClass = i === currentPage ? 'active' : '';
                     paginationElement.insertAdjacentHTML('beforeend', `<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
                 }
 
-                // Next button
                 const nextDisabled = currentPage === totalPages ? 'disabled' : '';
                 paginationElement.insertAdjacentHTML('beforeend', `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`);
 
-                // Event listeners for page links
                 paginationElement.querySelectorAll('.page-link').forEach(link => {
                     link.addEventListener('click', function (e) {
                         e.preventDefault();
@@ -361,7 +336,6 @@
                 });
             }
 
-            // Deposit Funds
             depositForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const amount = parseFloat(document.getElementById('depositAmount').value);
@@ -398,7 +372,6 @@
                     });
             });
 
-            // Simulate Deposit Verification (for manual admin deposits)
             function simulateDepositVerification(depositID, amount) {
                 const mockTxID = `ADM-DEP-TX-${Date.now()}`;
                 fetch(`/admin/financials/api/wallet/deposit/${depositID}/verify`, {
@@ -420,7 +393,7 @@
                     })
                     .then(data => {
                         showToast('Deposit successfully verified and credited!', 'success');
-                        fetchAdminWalletSummary(); // Refresh balance
+                        fetchAdminWalletSummary(); 
                     })
                     .catch(error => {
                         console.error('Error during deposit verification simulation:', error);
@@ -428,7 +401,6 @@
                     });
             }
 
-            // Withdraw Funds
             withdrawForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const amount = parseFloat(document.getElementById('withdrawAmount').value);
@@ -472,7 +444,7 @@
                         showToast('Withdrawal request submitted for processing.', 'success');
                         withdrawForm.reset();
                         bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
-                        fetchAdminWalletSummary(); // Refresh balance
+                        fetchAdminWalletSummary(); 
                     })
                     .catch(error => {
                         console.error('Error during withdrawal request:', error);
@@ -480,9 +452,8 @@
                     });
             });
 
-            // Fetch Pending Customer Withdrawals
             function fetchPendingWithdrawals(page = currentPendingWithdrawalPage, limit = pendingWithdrawalLimit) {
-                currentPendingWithdrawalPage = page; // Update current page globally
+                currentPendingWithdrawalPage = page; 
                 pendingWithdrawalsTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading pending withdrawals...</td></tr>`;
                 pendingWithdrawalsPagination.innerHTML = '';
 
@@ -494,7 +465,7 @@
                         return response.json();
                     })
                     .then(data => {
-                        pendingWithdrawalsTableBody.innerHTML = ''; // Clear existing rows
+                        pendingWithdrawalsTableBody.innerHTML = '';
                         if (data.withdrawals && data.withdrawals.length > 0) {
                             data.withdrawals.forEach(withdrawal => {
                                 const userName = withdrawal.User ? withdrawal.User.Name : 'N/A';
@@ -525,7 +496,6 @@
                             });
                             renderPagination(pendingWithdrawalsPagination, data.total, data.limit, data.page, fetchPendingWithdrawals);
 
-                            // Add event listeners for new buttons
                             document.querySelectorAll('.approve-withdrawal-btn').forEach(button => {
                                 button.addEventListener('click', function () {
                                     const withdrawalID = this.dataset.id;
@@ -557,16 +527,14 @@
                     });
             }
 
-            // Confirm Reject Withdrawal button handler
             confirmRejectWithdrawalBtn.addEventListener('click', function () {
                 if (currentRejectWithdrawalID) {
                     processWithdrawal(currentRejectWithdrawalID, 'reject');
                     rejectWithdrawalConfirmModal.hide();
-                    currentRejectWithdrawalID = null; // Clear ID after use
+                    currentRejectWithdrawalID = null; 
                 }
             });
 
-            // Process withdrawal (approve/reject)
             function processWithdrawal(withdrawalID, action) {
                 fetch(`/admin/financials/api/withdrawals/${withdrawalID}/action`, {
                     method: 'POST',
@@ -583,8 +551,8 @@
                     })
                     .then(data => {
                         showToast(`Withdrawal ${action}d successfully!`, 'success');
-                        fetchPendingWithdrawals(currentPendingWithdrawalPage, pendingWithdrawalLimit); // Refresh current page of pending withdrawals
-                        fetchAdminWalletSummary(); // Refresh admin balance
+                        fetchPendingWithdrawals(currentPendingWithdrawalPage, pendingWithdrawalLimit); 
+                        fetchAdminWalletSummary(); 
                     })
                     .catch(error => {
                         console.error('Error processing withdrawal:', error);
@@ -592,16 +560,13 @@
                     });
             }
 
-            // Initial fetches when the page loads
             fetchAdminWalletSummary();
 
-            // Event listener for when the pending withdrawals modal is shown
             pendingWithdrawalsModalElement.addEventListener('show.bs.modal', function () {
-                currentPendingWithdrawalPage = 1; // Reset to first page every time modal is opened
+                currentPendingWithdrawalPage = 1; 
                 fetchPendingWithdrawals(currentPendingWithdrawalPage, pendingWithdrawalLimit);
             });
 
-            // Refresh summary when modals close, in case actions affect balance
             document.getElementById('depositModal').addEventListener('hidden.bs.modal', fetchAdminWalletSummary);
             document.getElementById('withdrawModal').addEventListener('hidden.bs.modal', fetchAdminWalletSummary);
             document.getElementById('pendingWithdrawalsModal').addEventListener('hidden.bs.modal', fetchAdminWalletSummary);

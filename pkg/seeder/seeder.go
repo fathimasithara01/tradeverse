@@ -9,16 +9,13 @@ import (
 )
 
 func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
-	// Check if admin user exists
 	var adminUser models.User
 	if db.Where("email = ?", cfg.Admin.Email).First(&adminUser).Error == gorm.ErrRecordNotFound {
 		log.Println("Admin user not found. Seeding admin data...")
 
-		// Create default admin role
 		adminRole := models.Role{Name: string(models.RoleAdmin), Description: "Super administrator with all permissions."}
 		db.FirstOrCreate(&adminRole, models.Role{Name: string(models.RoleAdmin)})
 
-		// Define all permissions
 		permissions := []models.Permission{
 			{Name: "view_dashboard", Description: "View the admin dashboard"},
 			{Name: "manage_users", Description: "Create, view, update, and delete users (customers and internal staff)"},
@@ -29,27 +26,23 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 			{Name: "manage_subscriptions", Description: "Manage subscription plans and user subscriptions"},
 			{Name: "manage_wallet", Description: "Manage admin wallet, deposits, and withdrawals"},
 			{Name: "view_transactions", Description: "View all platform transactions"},
-			{Name: "delete_users", Description: "Permanently delete user accounts"}, // Specific permission for deletion
+			{Name: "delete_users", Description: "Permanently delete user accounts"}, 
 
-			// NEW ADMIN PROFILE PERMISSIONS
 			{Name: "view_admin_profile", Description: "View own admin profile details"},
 			{Name: "edit_admin_profile", Description: "Edit own admin profile details, including password"},
 			{Name: "view_admin_settings", Description: "View global admin settings"},
-			// Add any other new permissions here
 		}
 
 		for _, perm := range permissions {
 			db.FirstOrCreate(&perm, models.Permission{Name: perm.Name})
 		}
 
-		// Assign all permissions to the admin role
 		var createdPermissions []models.Permission
 		db.Find(&createdPermissions)
 
 		db.Model(&adminRole).Association("Permissions").Replace(createdPermissions)
 		log.Printf("Admin role '%s' created and all permissions assigned.", adminRole.Name)
 
-		// Create admin user
 		admin := models.User{
 			Name:      "Super Admin",
 			Email:     cfg.Admin.Email,
@@ -72,7 +65,6 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 	} else if adminUser.ID != 0 {
 		log.Printf("Admin user '%s' already exists. Skipping seeding.", cfg.Admin.Email)
 
-		// Ensure all permissions exist and are assigned to admin if it's already there
 		permissions := []models.Permission{
 			{Name: "view_dashboard", Description: "View the admin dashboard"},
 			{Name: "manage_users", Description: "Create, view, update, and delete users (customers and internal staff)"},
@@ -85,7 +77,6 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 			{Name: "view_transactions", Description: "View all platform transactions"},
 			{Name: "delete_users", Description: "Permanently delete user accounts"},
 
-			// NEW ADMIN PROFILE PERMISSIONS
 			{Name: "view_admin_profile", Description: "View own admin profile details"},
 			{Name: "edit_admin_profile", Description: "Edit own admin profile details, including password"},
 			{Name: "view_admin_settings", Description: "View global admin settings"},
@@ -95,7 +86,6 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 			db.FirstOrCreate(&perm, models.Permission{Name: perm.Name})
 		}
 
-		// Ensure admin role has all permissions
 		var adminRole models.Role
 		db.Where("name = ?", models.RoleAdmin).First(&adminRole)
 		if adminRole.ID != 0 {

@@ -457,6 +457,7 @@ go run cmd/server/main.go
 
 **Fathima Sithara**
 Backend Developer — Golang • Microservices • Fintech
-GitHub: [https://github.com/fathimasithara01](https://github.com/fathimasithara01)
+Email: fathimasithara011@gmail.com
+GitHub: github.com/fathimasithara01
 
 ---

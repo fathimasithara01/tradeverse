@@ -13,19 +13,16 @@ func TestGenerateAndValidateToken(t *testing.T) {
 	roleID := uint(10)
 	secret := "test-secret-key"
 
-	// Generate token
 	token, err := auth.GenerateJWT(userID, email, role, roleID, secret)
 	if err != nil {
 		t.Fatalf("failed to generate JWT: %v", err)
 	}
 
-	// Validate token
 	claims, err := auth.ValidateJWT(token, secret)
 	if err != nil {
 		t.Fatalf("failed to validate JWT: %v", err)
 	}
 
-	// Assertions
 	if claims.UserID != userID {
 		t.Errorf("expected UserID %d, got %d", userID, claims.UserID)
 	}
