@@ -246,7 +246,62 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 /CancelAdminSubscription
 ```
 
+🧪 Postman Collection (API Testing)
+TradeVerse includes a complete Postman setup for testing all APIs.
+
+📁 Included Files
+File	Purpose
+/postman/TradeVerse_API_Collection.json	Full API Collection
+/postman/TradeVerse_Environment.json	Pre-configured environment variables
+
+📥 How to Import
+Open Postman
+
+Click Import
+
+Select:
+
+TradeVerse_API_Collection.json
+
+TradeVerse_Environment.json (recommended)
+
+Choose environment: TradeVerse Local
+
+🌍 Required Environment Variables (if added manually)
+ini
+Copy code
+BASE_URL        = http://localhost:8080
+ADMIN_TOKEN     = <after admin login>
+TRADER_TOKEN    = <after trader login>
+CUSTOMER_TOKEN  = <after customer login>
+🎯 What You Can Test
+Authentication (Admin/Trader/Customer)
+
+Wallet operations (deposit/withdraw/ledger)
+
+Trader signals
+
+Live trade updates
+
+Subscriptions
+
+KYC uploads
+
+Market data (OHLC + live)
+
+Cron simulation
+
+Dashboard analytics
+
+🧑‍💼 Why Important?
+Recruiters test your backend instantly
+
+Shows professional API documentation
+
+Proves production-readiness
+
 ---
+
 
 ## 🛠 Tech Stack
 
@@ -355,66 +410,6 @@ go run cmd/server/main.go
 * Production-like engineering
 
 ---
-
-
- Postman Collection (API Testing)
-
-A complete Postman Collection is included to help you test all TradeVerse APIs easily.
-
- What’s Included
-
-The collection covers:
-
-Authentication (Admin, Trader, Customer)
-
-User Profile & Management
-
-Wallet (Deposit, Withdraw, Transactions)
-
-Payments & Subscription Lifecycle
-
-Trader Signals
-
-Copy Trading Automation
-
-KYC Verification
-
-Cron Job Simulation APIs
-
-Download Postman Collection
-
-You can find the collection file inside the repository:
-
-/postman/TradeVerse_API_Collection.json
-
- How to Import & Use
-
-Open Postman
-
-Click Import
-
-Select:
-postman/TradeVerse_API_Collection.json
-
-Set the following Environment Variables:
-
-BASE_URL = http://localhost:8080
-ADMIN_TOKEN = <set after admin login>
-TRADER_TOKEN = <set after trader login>
-CUSTOMER_TOKEN = <set after customer login>
-
-
-Start testing APIs 
-
- Why This Section Is Important
-
-Shows API completeness
-
-HR & Interviewers can easily test your backend
-
-Makes the project look like a real production SaaS
-
-Increases credibility and professional quality
 
 ##  System Diagram
 
