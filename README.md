@@ -306,6 +306,16 @@ go run pkg/seeder/main.go
 
 ---
 
+##  Run Locally
+
+```bash
+git clone https://github.com/fathimasithara01/tradeverse
+cd tradeverse
+cp .env.example .env
+go mod tidy
+go run cmd/server/main.go
+
+
 ##  Security
 
 * JWT expiry + rotation
