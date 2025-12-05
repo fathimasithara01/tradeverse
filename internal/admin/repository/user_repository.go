@@ -357,13 +357,18 @@ func (r *UserRepository) Update(user *models.User) error {
 }
 
 func (r *UserRepository) Delete(id uint) error {
-	res := r.DB.Unscoped().Delete(&models.User{}, id)
+	if id == 0 {
+		return errors.New("invalid user id")
+	}
+
+	res := r.DB.Where("id = ?", id).Delete(&models.User{})
 	if res.Error != nil {
-		return fmt.Errorf("failed to delete user (hard delete): %w", res.Error)
+		return fmt.Errorf("failed to delete user: %w", res.Error)
 	}
 	if res.RowsAffected == 0 {
-		return errors.New("user not found for deletion")
+		return errors.New("user not found")
 	}
+
 	return nil
 }
 
