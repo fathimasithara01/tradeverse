@@ -14,9 +14,8 @@ func main() {
 		log.Fatalf("failed to initialize application: %v", err)
 	}
 
-	// Apply CORS middleware to the Gin engine
 	app.Engine().Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // or list specific origins like {"https://example.com"}
+		AllowOrigins:     []string{"*"}, 
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
