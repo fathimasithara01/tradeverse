@@ -356,6 +356,66 @@ go run cmd/server/main.go
 
 ---
 
+
+ Postman Collection (API Testing)
+
+A complete Postman Collection is included to help you test all TradeVerse APIs easily.
+
+ What’s Included
+
+The collection covers:
+
+Authentication (Admin, Trader, Customer)
+
+User Profile & Management
+
+Wallet (Deposit, Withdraw, Transactions)
+
+Payments & Subscription Lifecycle
+
+Trader Signals
+
+Copy Trading Automation
+
+KYC Verification
+
+Cron Job Simulation APIs
+
+Download Postman Collection
+
+You can find the collection file inside the repository:
+
+/postman/TradeVerse_API_Collection.json
+
+ How to Import & Use
+
+Open Postman
+
+Click Import
+
+Select:
+postman/TradeVerse_API_Collection.json
+
+Set the following Environment Variables:
+
+BASE_URL = http://localhost:8080
+ADMIN_TOKEN = <set after admin login>
+TRADER_TOKEN = <set after trader login>
+CUSTOMER_TOKEN = <set after customer login>
+
+
+Start testing APIs 
+
+ Why This Section Is Important
+
+Shows API completeness
+
+HR & Interviewers can easily test your backend
+
+Makes the project look like a real production SaaS
+
+Increases credibility and professional quality
+
 ##  System Diagram
 
 ```
