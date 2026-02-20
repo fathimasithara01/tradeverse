@@ -1,463 +1,185 @@
+# TradeVerse — Multi-Role Trading Platform (Golang + PostgreSQL)
 
-A production-ready multi-role fintech platform with real-time trading,
-wallet ledgering, subscription automation, and admin controls — built using
-Golang, PostgreSQL, Clean Architecture, and Cron Workers.
+TradeVerse is a backend trading platform built using Go (Gin), PostgreSQL, and Clean Architecture principles.  
+It supports multiple user roles (Admin, Trader, Customer) and includes wallet management, subscription automation, and signal publishing.
 
-# Tradeverse – Multi-Role Trading Automation Platform
-
-[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)]()
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791?logo=postgresql)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
-[![Build Status](https://img.shields.io/badge/Status-Production--Ready-success)]()
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-blue.svg)]()
-
-A production-grade **trading, wallet, and subscription automation system** built using
-**Golang, PostgreSQL, Clean Architecture, Cron Jobs, RBAC, and Real-Time Market APIs.**
-
-Tradeverse is designed as a **multi-role fintech platform** supporting:
-
-* **Admin**
-* **Trader**
-* **Customer**
-
-It follows strict engineering standards similar to real-world fintech systems.
+This project demonstrates backend system design, structured layering, and domain modeling for a trading platform.
 
 ---
 
 ##  Overview
 
-Tradeverse includes:
+TradeVerse is designed as a **modular monolith** with clear separation of concerns using Clean Architecture.
 
-* Real-time market price fetching (OHLC / snapshot)
-* Automated subscription lifecycle (expiry, disable, notify)
-* Wallet system with strict ledger consistency
-* Trader signal publishing + analytics
-* Dynamic admin-driven pricing
-* JWT + RBAC (Admin / Trader / Customer)
-* Cron-based background workers
-* Full Admin UI
+It includes:
 
-This project demonstrates **scalable backend architecture**, **clean code**, and **production-level fintech engineering**.
+- Role-based authentication (Admin / Trader / Customer)
+- Wallet system with transaction ledger
+- Subscription lifecycle automation
+- Trader signal publishing
+- Admin configuration and pricing management
+- Cron-based background jobs
 
 ---
 
-##  Features
+##  Tech Stack
 
-###  Cron Jobs (Schedulers)
-
-* Real-time market data fetcher
-* Configurable intervals
-* Retry + rate limiting
-* Normalized OHLC storage
-
-###  Subscription Automation
-
-* Auto-expiry
-* Auto-disable access
-* Notification triggers
-* Batch-optimized
-
-###  Admin UI
-
-* User CRUD
-* Commission & pricing configuration
-* API key / cron intervals
-* Dashboard + charts
-
-###  Dynamic Pricing
-
-* Commission % control
-* DB-driven pricing
-* Trader-specific plans
-
-###  Signal Cards
-
-* Entry, SL, targets
-* Live price
-* Color-coded cards
-* Trader info
-
-###  RBAC (Role Based Access Control)
-
-* Admin / Trader / Customer
-* JWT with role + plan + expiry
-* Backend + UI-controlled access
-
-###  User Management
-
-* CRUD
-* Role assignment
-* Block/Unblock
-* Subscription status
-
-###  Dashboard Insights
-
-* Revenue analytics
-* Live prices
-* Active subscriptions
-* Trader/customer statistics
+- Go (Gin Framework)
+- PostgreSQL
+- GORM
+- JWT Authentication
+- Cron Jobs (Schedulers)
+- Server-rendered Admin UI
+- Clean Architecture (Handler → Service → Repository)
+- Docker (local setup)
 
 ---
 
-##  Role Breakdown
+##  Architecture
 
-###  Customer
+TradeVerse follows Clean Architecture layering:
 
-* Signup / Login
-* Browse traders
-* Subscribe / Unsubscribe
-* Wallet deposit/withdraw/history
-* KYC uploads
-* View subscribed signals
+- **Handlers** — HTTP routing and request handling  
+- **Services** — Business logic  
+- **Repositories** — Database interaction  
+- **Domain Models** — Core entities  
 
-###  Trader
+### Request Flow
 
-* Create/publish signals
-* Live trade updates
-* Subscription plans
-* Subscriber analytics
-* Profile management
-
-###  Admin
-
-* Manage users & traders
-* Pricing & commission rules
-* System settings
-* Dashboard analytics
-* Audit logs
+Client → Router → Handler → Service → Repository → PostgreSQL
 
 ---
 
-##  Architecture Overview
+## Roles & Capabilities
 
-###  Clean Architecture Layers
+### Customer
+- Signup / Login  
+- Browse traders  
+- Subscribe / Unsubscribe  
+- Deposit / Withdraw wallet funds  
+- View transaction history  
+- View subscribed trader signals  
 
-* **Handlers** — routing, request parsing
-* **Services** — business logic
-* **Repositories** — DB + external APIs
-* **Domain Models** — entities
+### Trader
+- Create and manage trading signals  
+- Publish live trades  
+- Create subscription plans  
+- View subscriber information  
 
-###  Project Structure
+### Admin
+- Manage users and traders  
+- Configure pricing and commissions  
+- Monitor subscriptions  
+- View basic analytics  
 
-```
+---
+
+## Wallet System
+
+- Deposit and withdraw functionality  
+- Transaction ledger stored in PostgreSQL  
+- Balance updates handled through service layer logic  
+- Basic race-condition safety using database transactions  
+
+---
+
+## ⏱ Subscription Automation
+
+Implemented using cron jobs:
+
+- Auto-expiry of subscriptions  
+- Access disable after expiry  
+- Scheduled checks for subscription status  
+
+---
+
+## 📈 Market Data
+
+- Periodic fetching of market price data (OHLC format)  
+- Stored in normalized database tables  
+- Used for trader signal context  
+
+---
+
+## Project Structure
+
 tradeverse/
 ├── cmd/
-│   ├── admin/
-│   ├── trader/
-│   └── customer/
+│ ├── admin/
+│ ├── trader/
+│ └── customer/
 ├── config/
 ├── internal/
-│   ├── admin/
-│   ├── trader/
-│   └── customer/
+│ ├── admin/
+│ ├── trader/
+│ └── customer/
 ├── migrations/
 ├── pkg/
-│   ├── auth/
-│   ├── models/
-│   ├── payment_gateway.go
-│   ├── seeder/
-│   └── utils/
+│ ├── auth/
+│ ├── models/
+│ ├── seeder/
+│ └── utils/
 ├── static/
 ├── templates/
 └── README.md
-```
-
-###  Request Flow
-
-```
-Client → Router → Handler → Service → Repository → PostgreSQL
-```
 
 ---
 
-##  Core Modules
+## 🛠 Running Locally
 
-###  Authentication
+### 1️ Clone Repository
 
-* JWT-based
-* RBAC middleware
-* Claims contain role + subscription
-
-###  Wallet System
-
-* Deposit / Withdraw
-* Transaction ledger
-* Race-condition safe
-* Accurate balance tracking
-
-###  Trader Module
-
-* Signal CRUD
-* Live trade publishing
-* Subscription plans
-* Subscriber analytics
-
-###  Customer Module
-
-* Explore traders
-* Subscribe/unsubscribe
-* View signals
-* Wallet + KYC
-
-###  Admin Module
-
-* User & trader management
-* Plans & commissions
-* System configuration
-* Analytics dashboard
-
----
-
-##  API Endpoints (High-Level)
-
-### Trader
-
-```
-/login
-/createSignal
-/getAllSignals
-/updateSignal
-/CreateTraderSubscriptionPlan
-/ListSubscribers
-/PublishLiveTrade
-/GetBalance
-/Deposit
-/Withdraw
-```
-
-### Customer
-
-```
-/signup
-/login
-/ListTraders
-/GetTraderDetails
-/SubscribeToTrader
-/GetSignalsFromSubscribedTraders
-/kycDocument
-/GetWalletSummary
-```
-
-### Admin
-
-```
-/ListAdminSubscriptionPlans
-/SubscribeToAdminPlan
-/CancelAdminSubscription
-```
-
-# Postman Collection (API Testing)
-
-TradeVerse includes a complete Postman setup for testing all Admin, Trader, and Customer API workflows.
-
----
-
-##  Included Files
-
-| File | Purpose |
-|------|---------|
-| `/postman/TradeVerse_API_Collection.json` | Full API collection with all endpoints |
-| `/postman/TradeVerse_Environment.json` | Pre-configured environment variables |
-
----
-
-##  How to Import
-
-1. Open **Postman**
-2. Click **Import**
-3. Select both:
-   - `TradeVerse_API_Collection.json`
-   - `TradeVerse_Environment.json`
-4. Set active environment: **TradeVerse Local**
-
----
-
-##  Required Environment Variables (Manual Setup)
-
-BASE_URL        = http://localhost:8080
-ADMIN_TOKEN     = <after admin login>
-TRADER_TOKEN    = <after trader login>
-CUSTOMER_TOKEN  = <after customer login>
-
----
-
-##  What You Can Test
-* Authentication (Admin/Trader/Customer)
-
-* Wallet operations (deposit/withdraw/ledger)
-
-* Trader signals
-
-* Live trade updates
-
-* Subscriptions
-
-* KYC uploads
-
-* Market data (OHLC + live)
-
-* Cron simulation
-
-* Dashboard analytics
-
----
-
-## Why Important?
-* Recruiters test your backend instantly
-
-* Shows professional API documentation
-
-* Proves production-readiness
-
----
-
-
-## 🛠 Tech Stack
-
-* **Golang (Gin Framework)**
-* **PostgreSQL**
-* **GORM ORM**
-* **Cron Jobs**
-* **Server-rendered Admin UI**
-* **JWT Authentication**
-* **Clean Architecture + DDD**
-* **Docker Ready**
-
----
-
-##  Internals Summary
-
-* Market Fetcher — cron-based OHLC + price
-* Subscription Watcher — auto-expiry
-* RBAC Engine — role logic
-* Admin Configuration
-* Signal Cards with real-time data
-* Dashboard analytics
-
----
-
-##  Running the Project
-
-### Start Admin
-
-```sh
-go run cmd/admin/main.go
-```
-
-### Start Trader
-
-```sh
-go run cmd/trader/main.go
-```
-
-### Start Customer
-
-```sh
-go run cmd/customer/main.go
-```
-
-### Run Migrations
-
-```sh
-go run internal/migrations/main.go
-```
-
-### Seed Data
-
-```sh
-go run pkg/seeder/main.go
-```
-
----
-
-##  Run Locally
-
-```bash
 git clone https://github.com/fathimasithara01/tradeverse
 cd tradeverse
+
+### 2️ Setup Environment
+
 cp .env.example .env
+
 go mod tidy
+
+### 3️ Run Migrations
+
+go run internal/migrations/main.go
+
+### 4️ Seed Data (Optional)
+
+go run pkg/seeder/main.go
+
+### 5️ Start Application
+
 go run cmd/server/main.go
 
-
-##  Security
-
-* JWT expiry + rotation
-* Secrets via Vault / AWS SM
-* SQL injection protection
-* HTTPS + Nginx
-* CORS restrictions
-* Rate limiting
-
 ---
 
-##  Deployment
+ ## What This Project Demonstrates
 
-* Docker / Docker Compose
-* Kubernetes-ready
-* Worker containers
-* Prometheus metrics
-* Redis caching & pub/sub
-* Cloud PostgreSQL
+- Backend ownership of a complete domain
 
+- Role-based access control (RBAC)
+
+- Clean Architecture implementation
+
+- Structured business logic separation
+
+- Database transaction handling
+ 
+- Cron-based background processing
+
+## Limitations
+
+- Not deployed to production
+
+- No distributed scaling setup
+
+- No Kubernetes or cloud deployment included
+
+- Intended for backend system design demonstration
+  
 ---
 
-##  Why This Project is Valuable for Recruiters
-- Shows backend ownership end-to-end
-- Demonstrates realistic fintech domain knowledge
-- Highlights distributed cron workers & automation
-- Proves understanding of architecture & scalability
-- Perfect fit for Backend (Golang) / Fintech / SaaS roles
+## Author
 
-
-##  Why This Project Stands Out
-
-* Rare multi-role fintech system
-* Realistic wallet + subscription engine
-* Clean Architecture + DDD
-* Horizontally scalable
-* Production-like engineering
-
----
-
-##  System Diagram
-
-```
-       +-----------------------+
-       |      Client (UI)      |
-       +-----------+-----------+
-                   |
-                   v
-          +--------+--------+
-          |     API Layer    |
-          |   (Gin Handlers) |
-          +--------+--------+
-                   |
-                   v
-          +--------+--------+
-          |     Services     |
-          | (Business Logic) |
-          +--------+--------+
-                   |
-                   v
-          +--------+--------+
-          |   Repositories   |
-          |    (DB Layer)    |
-          +--------+--------+
-                   |
-                   v
-          +-------------------+
-          |   PostgreSQL DB   |
-          +-------------------+
-```
-
----
-
-##  Author
-
-**Fathima Sithara**
-Backend Developer — Golang • Microservices • Fintech
-Email: fathimasithara011@gmail.com
-GitHub: github.com/fathimasithara01
-
----
+Fathima Sithara
+Backend Engineer (Golang)
+GitHub: https://github.com/fathimasithara01
