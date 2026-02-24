@@ -3,8 +3,7 @@
 TradeVerse is a backend trading platform built using Go (Gin), PostgreSQL, and Clean Architecture principles.  
 It supports multiple user roles (Admin, Trader, Customer) and includes wallet management, subscription automation, and signal publishing.
 
-This project demonstrates backend system design, structured layering, and domain modeling for a trading platform.
-
+TradeVerse is a modular monolith backend application built using Go (Gin) and PostgreSQL. It implements role-based trading workflows, wallet accounting, and subscription lifecycle management using structured service-layer business logic.
 ---
 
 ##  Overview
@@ -37,12 +36,12 @@ It includes:
 
 ##  Architecture
 
-TradeVerse follows Clean Architecture layering:
+The project follows layered architecture with clear separation:
 
-- **Handlers** — HTTP routing and request handling  
-- **Services** — Business logic  
-- **Repositories** — Database interaction  
-- **Domain Models** — Core entities  
+- Handler Layer — HTTP request parsing and routing
+- Service Layer — Business rules and transaction orchestration
+- Repository Layer — Database access using GORM
+- Domain Models — Core entities and validation logic
 
 ### Request Flow
 
@@ -79,18 +78,16 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 - Deposit and withdraw functionality  
 - Transaction ledger stored in PostgreSQL  
 - Balance updates handled through service layer logic  
-- Basic race-condition safety using database transactions  
-
+- Balance updates are executed within database transactions to ensure atomicity and prevent inconsistent wallet states.
 ---
 
 ## ⏱ Subscription Automation
 
-Implemented using cron jobs:
+Subscription status is validated using scheduled cron jobs:
 
-- Auto-expiry of subscriptions  
-- Access disable after expiry  
-- Scheduled checks for subscription status  
-
+- Automatic expiry of inactive subscriptions
+- Access restriction after expiry
+- Periodic verification of subscription validity
 ---
 
 ## 📈 Market Data
@@ -168,8 +165,8 @@ go run cmd/server/main.go
 
 ## Limitations
 
-- Not deployed to production
-
+- Deployment: Local Docker setup for development and testing.
+  
 - No distributed scaling setup
 
 - No Kubernetes or cloud deployment included
