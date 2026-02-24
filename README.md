@@ -1,14 +1,13 @@
 # TradeVerse — Multi-Role Trading Platform (Golang + PostgreSQL)
 
-TradeVerse is a backend trading platform built using Go (Gin), PostgreSQL, and Clean Architecture principles.  
-It supports multiple user roles (Admin, Trader, Customer) and includes wallet management, subscription automation, and signal publishing.
+TradeVerse is a modular monolith backend application built using Go (Gin) and PostgreSQL. 
+It implements role-based trading workflows, wallet accounting, and subscription lifecycle management using structured service-layer business logic.
 
-TradeVerse is a modular monolith backend application built using Go (Gin) and PostgreSQL. It implements role-based trading workflows, wallet accounting, and subscription lifecycle management using structured service-layer business logic.
 ---
 
 ##  Overview
 
-TradeVerse is designed as a **modular monolith** with clear separation of concerns using Clean Architecture.
+TradeVerse follows a modular monolith design with clear separation between HTTP handling, business logic, and data access layers.
 
 It includes:
 
@@ -29,14 +28,14 @@ It includes:
 - JWT Authentication
 - Cron Jobs (Schedulers)
 - Server-rendered Admin UI
-- Clean Architecture (Handler → Service → Repository)
+- Layered Architecture (Handler → Service → Repository)
 - Docker (local setup)
 
 ---
 
 ##  Architecture
 
-The project follows layered architecture with clear separation:
+The project follows a layered architecture with clear separation of responsibilities:
 
 - Handler Layer — HTTP request parsing and routing
 - Service Layer — Business rules and transaction orchestration
@@ -77,8 +76,8 @@ Client → Router → Handler → Service → Repository → PostgreSQL
 
 - Deposit and withdraw functionality  
 - Transaction ledger stored in PostgreSQL  
-- Balance updates handled through service layer logic  
-- Balance updates are executed within database transactions to ensure atomicity and prevent inconsistent wallet states.
+- Balance updates executed within database transactions to ensure atomicity and consistency
+    
 ---
 
 ## ⏱ Subscription Automation
@@ -149,29 +148,11 @@ go run cmd/server/main.go
 
 ---
 
- ## What This Project Demonstrates
-
-- Backend ownership of a complete domain
-
-- Role-based access control (RBAC)
-
-- Clean Architecture implementation
-
-- Structured business logic separation
-
-- Database transaction handling
- 
-- Cron-based background processing
-
 ## Limitations
 
-- Deployment: Local Docker setup for development and testing.
-  
+- Local Docker setup for development and testing
 - No distributed scaling setup
-
 - No Kubernetes or cloud deployment included
-
-- Intended for backend system design demonstration
   
 ---
 
