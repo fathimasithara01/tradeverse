@@ -36,7 +36,7 @@ func InitializeApp() (*App, error) {
 		return nil, fmt.Errorf("error loading config: %w", err)
 	}
 
-	DB, err := migrations.ConnectDB(*cfg)
+	DB, err := migrations.ConnectDB(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting db: %w", err)
 	}

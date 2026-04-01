@@ -27,7 +27,7 @@ func InitializeApp() (*App, error) {
 		return nil, err
 	}
 
-	db, err := migrations.ConnectDB(*cfg)
+	db, err := migrations.ConnectDB(cfg)
 	if err != nil {
 		return nil, err
 	}
