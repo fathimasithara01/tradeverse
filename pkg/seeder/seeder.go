@@ -1,6 +1,7 @@
 package seeder
 
 import (
+	"errors"
 	"log"
 
 	"github.com/fathimasithara01/tradeverse/config"
@@ -10,7 +11,8 @@ import (
 
 func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 	var adminUser models.User
-	if db.Where("email = ?", cfg.Admin.Email).First(&adminUser).Error == gorm.ErrRecordNotFound {
+	err := db.Unscoped().Where("email = ?", cfg.Admin.Email).First(&adminUser).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Println("Admin user not found. Seeding admin data...")
 
 		adminRole := models.Role{Name: string(models.RoleAdmin), Description: "Super administrator with all permissions."}
@@ -26,7 +28,7 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 			{Name: "manage_subscriptions", Description: "Manage subscription plans and user subscriptions"},
 			{Name: "manage_wallet", Description: "Manage admin wallet, deposits, and withdrawals"},
 			{Name: "view_transactions", Description: "View all platform transactions"},
-			{Name: "delete_users", Description: "Permanently delete user accounts"}, 
+			{Name: "delete_users", Description: "Permanently delete user accounts"},
 
 			{Name: "view_admin_profile", Description: "View own admin profile details"},
 			{Name: "edit_admin_profile", Description: "Edit own admin profile details, including password"},
@@ -44,12 +46,12 @@ func CreateAdminSeeder(db *gorm.DB, cfg config.Config) {
 		log.Printf("Admin role '%s' created and all permissions assigned.", adminRole.Name)
 
 		admin := models.User{
-			Name:      "Super Admin",
-			Email:     cfg.Admin.Email,
-			Password:  cfg.Admin.Password,
-			Role:      models.RoleAdmin,
-			RoleID:    &adminRole.ID,
-			IsBlocked: false,
+			Name:       "Super Admin",
+			Email:      cfg.Admin.Email,
+			Password:   cfg.Admin.Password,
+			Role:       models.RoleAdmin,
+			RoleID:     &adminRole.ID,
+			IsBlocked:  false,
 			IsVerified: true,
 		}
 

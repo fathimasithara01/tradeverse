@@ -3,6 +3,7 @@ package migrations
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/fathimasithara01/tradeverse/config"
 	"github.com/fathimasithara01/tradeverse/pkg/models"
@@ -16,6 +17,8 @@ func ConnectDB(cfg config.Config) (*gorm.DB, error) {
 		cfg.Database.Host, cfg.Database.User, cfg.Database.Password, cfg.Database.Name, cfg.Database.Port)
 
 	var err error
+	fmt.Println("HOST:", os.Getenv("DB_HOST"))
+	fmt.Println("PORT:", os.Getenv("DB_PORT"))
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

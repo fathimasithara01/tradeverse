@@ -18,10 +18,10 @@ cookie:
   domain: localhost 
 
 database:
-  host: localhost
-  port: 5432
+  host:  172.27.82.58
+  port: "5432"
   user: postgres
-  password: "@postgres"
+  password: postgres@
   name: tradeverse
   sslmode: disable
 

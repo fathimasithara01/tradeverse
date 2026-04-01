@@ -32,12 +32,12 @@ type Config struct {
 	}
 
 	Database struct {
-		Host     string
-		Port     string
-		User     string
-		Password string
-		Name     string
-		SSLMode  string
+		Host     string `mapstructure:"host"`
+		Port     string `mapstructure:"port"`
+		User     string `mapstructure:"user"`
+		Password string `mapstructure:"password"`
+		Name     string `mapstructure:"name"`
+		SSLMode  string `mapstructure:"sslmode"`
 	}
 
 	JWT struct {
