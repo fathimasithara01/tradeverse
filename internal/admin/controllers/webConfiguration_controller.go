@@ -8,10 +8,10 @@ import (
 )
 
 type WebConfigurationController struct {
-	webConfigService service.WebConfigurationService
+	webConfigService service.IWebConfigurationService
 }
 
-func NewWebConfigurationController(webConfigService service.WebConfigurationService) *WebConfigurationController {
+func NewWebConfigurationController(webConfigService service.IWebConfigurationService) *WebConfigurationController {
 	return &WebConfigurationController{webConfigService: webConfigService}
 }
 

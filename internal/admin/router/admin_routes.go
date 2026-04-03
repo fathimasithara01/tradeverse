@@ -22,11 +22,10 @@ func WireAdminRoutes(
 	adminWalletController *controllers.AdminWalletController,
 	subscriptionController *controllers.SubscriptionController,
 	tranasactionController *controllers.TransactionController,
-	db *gorm.DB,
+	db *gorm.DB, 
 	signalCtrl *controllers.SignalController,
 	commissionCtrl *controllers.CommissionController,
 	adminWebConfigController *controllers.WebConfigurationController,
-
 ) {
 	authz := middleware.NewAuthzMiddleware(roleService)
 

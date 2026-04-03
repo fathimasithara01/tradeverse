@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type TransactionRepository interface {
+type ITransactionRepository interface {
 	GetAllTransactions(page, limit int, search string, year, month, day int) ([]models.WalletTransaction, int64, error)
 	GetAvailableYears() ([]int, error)
 }
@@ -14,7 +14,7 @@ type transactionRepository struct {
 	db *gorm.DB
 }
 
-func NewTransactionRepository(db *gorm.DB) TransactionRepository {
+func NewTransactionRepository(db *gorm.DB) ITransactionRepository {
 	return &transactionRepository{db: db}
 }
 

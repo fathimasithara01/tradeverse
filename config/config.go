@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -68,7 +67,7 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
 
-	log.Println("Config loaded from:", v.ConfigFileUsed())
+	// log.Println("Config loaded from:", v.ConfigFileUsed()): Config loaded from: config/config.yaml
 
 	if err := v.Unmarshal(&AppConfig); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)

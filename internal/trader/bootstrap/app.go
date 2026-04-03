@@ -1,18 +1,19 @@
 package bootstrap
 
 import (
+	"context"
 	"log"
 
 	"github.com/fathimasithara01/tradeverse/config"
 	adminRepo "github.com/fathimasithara01/tradeverse/internal/admin/repository"
 	adminService "github.com/fathimasithara01/tradeverse/internal/admin/service"
+	"github.com/fathimasithara01/tradeverse/internal/database"
 
 	"github.com/fathimasithara01/tradeverse/internal/trader/controllers"
 	"github.com/fathimasithara01/tradeverse/internal/trader/cron"
 	"github.com/fathimasithara01/tradeverse/internal/trader/repository"
 	"github.com/fathimasithara01/tradeverse/internal/trader/router"
 	"github.com/fathimasithara01/tradeverse/internal/trader/service"
-	"github.com/fathimasithara01/tradeverse/migrations"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,14 +23,21 @@ type App struct {
 }
 
 func InitializeApp() (*App, error) {
+
+	ctx := context.Background()
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := migrations.ConnectDB(cfg)
+	db, err := database.ConnectDB(ctx, cfg)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := database.RunMigrations(db); err != nil {
+		panic(err)
 	}
 
 	userRepo := adminRepo.NewUserRepository(db)

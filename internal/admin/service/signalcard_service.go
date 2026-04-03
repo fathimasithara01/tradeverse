@@ -18,15 +18,15 @@ type ILiveSignalService interface {
 	GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error)
 }
 
-type liveSignalService struct {
+type LiveSignalService struct {
 	signalRepo repository.ISignalRepository
 }
 
 func NewLiveSignalService(signalRepo repository.ISignalRepository) ILiveSignalService {
-	return &liveSignalService{signalRepo: signalRepo}
+	return &LiveSignalService{signalRepo: signalRepo}
 }
 
-func (s *liveSignalService) CreateSignal(ctx context.Context, signal *models.Signal) (*models.Signal, error) {
+func (s *LiveSignalService) CreateSignal(ctx context.Context, signal *models.Signal) (*models.Signal, error) {
 	if signal.TradeStartDate.After(time.Now()) {
 		signal.Status = "Pending"
 	} else {
@@ -37,7 +37,7 @@ func (s *liveSignalService) CreateSignal(ctx context.Context, signal *models.Sig
 	return s.signalRepo.CreateSignal(ctx, signal)
 }
 
-func (s *liveSignalService) GetAllSignals(ctx context.Context) ([]models.Signal, error) {
+func (s *LiveSignalService) GetAllSignals(ctx context.Context) ([]models.Signal, error) {
 	signals, err := s.signalRepo.GetAllSignals(ctx)
 	if err != nil {
 		log.Printf("ERROR: Failed to get all signals in GetAllSignals service: %v", err)
@@ -47,11 +47,11 @@ func (s *liveSignalService) GetAllSignals(ctx context.Context) ([]models.Signal,
 	return signals, nil
 }
 
-func (s *liveSignalService) GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error) {
+func (s *LiveSignalService) GetMarketDataBySymbol(ctx context.Context, symbol string) (*models.MarketData, error) {
 	return s.signalRepo.GetMarketDataBySymbol(ctx, symbol)
 }
 
-func (s *liveSignalService) UpdateAllSignalsCurrentPrices(ctx context.Context) error {
+func (s *LiveSignalService) UpdateAllSignalsCurrentPrices(ctx context.Context) error {
 	log.Println("Starting to update current prices for all signals...")
 
 	signals, err := s.signalRepo.GetAllSignals(ctx)
@@ -94,7 +94,7 @@ func (s *liveSignalService) UpdateAllSignalsCurrentPrices(ctx context.Context) e
 	return nil
 }
 
-func (s *liveSignalService) CheckAndSetSignalStatuses(ctx context.Context) error {
+func (s *LiveSignalService) CheckAndSetSignalStatuses(ctx context.Context) error {
 	log.Println("Starting signal status check (SL/Target/Activation)...")
 
 	signals, err := s.signalRepo.GetActiveAndPendingSignals(ctx)
@@ -146,7 +146,7 @@ func (s *liveSignalService) CheckAndSetSignalStatuses(ctx context.Context) error
 			if err != nil {
 				log.Printf("Error setting signal ID %d to Target Hit: %v", signal.ID, err)
 			}
-			continue 
+			continue
 		}
 	}
 	return nil

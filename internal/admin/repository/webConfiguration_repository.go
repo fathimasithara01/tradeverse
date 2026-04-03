@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type WebConfigurationRepository interface {
+type IWebConfigurationRepository interface {
 	GetWebConfiguration() (*models.WebConfiguration, error)
 	UpdateWebConfiguration(config *models.WebConfiguration) error
 }
@@ -15,7 +15,7 @@ type webConfigurationRepository struct {
 	db *gorm.DB
 }
 
-func NewWebConfigurationRepository(db *gorm.DB) WebConfigurationRepository {
+func NewWebConfigurationRepository(db *gorm.DB) IWebConfigurationRepository {
 	return &webConfigurationRepository{db: db}
 }
 

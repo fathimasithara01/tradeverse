@@ -5,16 +5,16 @@ import (
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 )
 
-type WebConfigurationService interface {
+type IWebConfigurationService interface {
 	GetWebConfiguration() (*models.WebConfiguration, error)
 	UpdateWebConfiguration(primaryCountry, primaryCurrency, primaryTimezone string) error
 }
 
 type webConfigurationService struct {
-	webConfigRepo repository.WebConfigurationRepository
+	webConfigRepo repository.IWebConfigurationRepository
 }
 
-func NewWebConfigurationService(webConfigRepo repository.WebConfigurationRepository) WebConfigurationService {
+func NewWebConfigurationService(webConfigRepo repository.IWebConfigurationRepository) IWebConfigurationService {
 	return &webConfigurationService{webConfigRepo: webConfigRepo}
 }
 

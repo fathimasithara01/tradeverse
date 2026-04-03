@@ -5,16 +5,16 @@ import (
 	"github.com/fathimasithara01/tradeverse/pkg/models"
 )
 
-type TransactionService interface {
+type ITransactionService interface {
 	GetTransactions(page, limit int, search string, year, month, day int) ([]models.WalletTransaction, int64, error)
 	GetAvailableYears() ([]int, error)
 }
 
 type transactionService struct {
-	repo repository.TransactionRepository
+	repo repository.ITransactionRepository
 }
 
-func NewTransactionService(repo repository.TransactionRepository) TransactionService {
+func NewTransactionService(repo repository.ITransactionRepository) ITransactionService {
 	return &transactionService{repo: repo}
 }
 
